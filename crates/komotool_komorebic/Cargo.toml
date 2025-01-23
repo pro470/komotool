@@ -5,3 +5,5 @@ edition = "2021"
 
 [dependencies]
 bevy = { workspace = true, default-features = false }
+komorebi-client = {workspace = true}
+bevy_mod_scripting = {workspace = true}
