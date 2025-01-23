@@ -5,3 +5,14 @@ edition = "2021"
 
 [dependencies]
 bevy = { workspace = true, default-features = false }
+[package]
+name = "komotool_pipe"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bevy = { workspace = true }
+anyhow = { workspace = true }
+serde_json = { workspace = true }
+komorebi_client = { workspace = true }
+log = { workspace = true }
