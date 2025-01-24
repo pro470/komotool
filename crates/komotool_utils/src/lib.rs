@@ -1,4 +1,4 @@
-use bevy::*;
+use bevy::prelude::*;
 
 pub struct KomoToolUtilsPlugin;
 

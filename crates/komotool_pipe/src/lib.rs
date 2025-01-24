@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use anyhow::Result;
-use komorebi_client::{Notification, subscribe, UnixListener};
+use komorebi_client::{Notification, subscribe};
 use std::io::{BufRead, BufReader};
 use std::sync::mpsc::{Sender, Receiver};
 
@@ -37,7 +37,7 @@ fn run_pipe_listener(sender: Sender<Notification>) -> Result<()> {
         match incoming {
             Ok(data) => {
                 let reader = BufReader::new(data.try_clone()?);
-                for line in reader.lines().flatten() {
+                for line in reader.lines().map_while(Result::ok) {
                     match serde_json::from_str(&line) {
                         Ok(notification) => sender.send(notification)?,
                         Err(e) => log::debug!("Malformed notification: {}", e),
