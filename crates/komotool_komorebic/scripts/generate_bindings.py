@@ -12,13 +12,13 @@ def snake_to_camel(name: str) -> str:
 def camel_to_snake(name):
     return re.sub(r'(?<!^)(?=[A-Z])', '_', name).lower()
 
-def get_param_type(content: dict, schema: dict) -> str:
-    """Resolve parameter types to primitives for registration functions"""
+def get_param_type(content: dict, schema: dict) -> tuple[str, bool]:
+    """Resolve parameter types to primitives and check for optional (null) types"""
     # Handle array items that are lists (tuples)
     if isinstance(content, list):
         # Return tuple type string
-        types = [get_param_type(item, schema) for item in content]
-        return f"({', '.join(types)})"
+        types = [get_param_type(item, schema)[0] for item in content]
+        return (f"({', '.join(types)})", False)
     
     if '$ref' in content:
         type_name = content['$ref'].split('/')[-1]
@@ -27,23 +27,30 @@ def get_param_type(content: dict, schema: dict) -> str:
         # Handle union enums like MoveBehaviour
         if 'oneOf' in def_data:
             if all('enum' in item for item in def_data['oneOf']):
-                return 'String'
+                return ('String', False)
             # Handle enum struct variants
             if any('properties' in item for item in def_data['oneOf']):
-                return 'String'
+                return ('String', False)
             
         if 'enum' in def_data:
-            return 'String'
-        return type_name
-    
+            return ('String', False)
+        return (type_name, False)
+
+    is_optional = False
     item_type = content.get('type', 'string')
+    
     if isinstance(item_type, list):
-        item_type = [t for t in item_type if t != 'null'][0]
+        if 'null' in item_type:
+            is_optional = True
+            # Get first non-null type
+            item_type = next(t for t in item_type if t != 'null')
+        else:
+            item_type = item_type[0]
     
     # Handle integer formats explicitly
     if item_type == 'integer':
         fmt = content.get('format', 'int32')
-        return {
+        rust_type = {
             'uint': 'usize',
             'uint8': 'u8',
             'uint16': 'u16',
@@ -55,12 +62,14 @@ def get_param_type(content: dict, schema: dict) -> str:
             'int32': 'i32',
             'int64': 'i64'
         }.get(fmt, 'i32')  # Default to i32 if format unknown
+    else:
+        rust_type = {
+            'string': 'String',
+            'boolean': 'bool',
+            'array': 'Vec<String>'
+        }.get(item_type, 'String')
     
-    return {
-        'string': 'String',
-        'boolean': 'bool',
-        'array': 'Vec<String>'
-    }.get(item_type, 'String')
+    return (rust_type, is_optional)
 
 def generate_param_list(content: dict, schema: dict) -> list:
     """Generate parameters with primitive types for registration functions"""
@@ -85,11 +94,11 @@ def generate_param_list(content: dict, schema: dict) -> list:
                     # Use numbered params for primitives
                     param_name = f"param_{i}"
                 
-                params.append((param_name, get_param_type(item, schema)))
+                params.append((param_name, *get_param_type(item, schema)))
             return params
         
         # Handle single-type arrays
-        return [("params", get_param_type(items, schema))]
+        return [("params", *get_param_type(items, schema))]
     
     if '$ref' in content:
         type_name = content['$ref'].split('/')[-1]
@@ -102,21 +111,21 @@ def generate_param_list(content: dict, schema: dict) -> list:
                 if 'properties' in variant:
                     # Add discriminant field (palette)
                     if 'palette' in variant['properties']:
-                        params.append(("palette", "String"))
+                        params.append(("palette", "String", False))
                     # Add variant fields
                     for prop_name, prop in variant['properties'].items():
                         if prop_name != 'palette':
-                            params.append((camel_to_snake(prop_name), get_param_type(prop, schema)))
+                            params.append((camel_to_snake(prop_name), *get_param_type(prop, schema)))
             return params
 
         if def_data.get('type') == 'object':
             return [
-                (camel_to_snake(p), get_param_type(prop, schema))
+                (camel_to_snake(p), *get_param_type(prop, schema))
                 for p, prop in def_data.get('properties', {}).items()
             ]
-        return [(camel_to_snake(type_name), get_param_type(content, schema))]
+        return [(camel_to_snake(type_name), *get_param_type(content, schema))]
     
-    return [("param", get_param_type(content, schema))]
+    return [("param", *get_param_type(content, schema))]
 
 def generate_conversion_code(def_name: str, def_data: dict, param_name: str) -> str:
     """Generate type conversion code for registration functions"""
@@ -213,7 +222,7 @@ def generate_registrations(schema_file):
         else:
             content = variant['properties']['content']
             param_list = generate_param_list(content, schema)
-            param_str = ', '.join([f"{name}: {typ}" for name, typ in param_list])
+            param_str = ', '.join([f"{name}: {typ}" for name, typ, _ in param_list])
             
             registration += f"|{param_str}| {{\n"
             
@@ -221,7 +230,7 @@ def generate_registrations(schema_file):
             converted_params = []
             
             # Process each parameter for potential conversion
-            for param_name, original_type in param_list:
+            for param_name, original_type, is_optional in param_list:
                 if snake_to_camel(param_name) in schema['definitions']:
                     def_data = schema['definitions'][snake_to_camel(param_name)]
                     conversion = generate_conversion_code(
@@ -229,6 +238,13 @@ def generate_registrations(schema_file):
                         def_data=def_data,
                         param_name=param_name
                     )
+                    conversions.append(conversion)
+                    converted_params.append(param_name)
+                elif is_optional:
+                    conversion = f"""let {param_name} = match {param_name}.as_str() {{
+        "" => None,
+        _ => Some({param_name}),
+    }};"""
                     conversions.append(conversion)
                     converted_params.append(param_name)
                 else:
