@@ -23,6 +23,12 @@ def get_param_type(content: dict, schema: dict) -> str:
     if '$ref' in content:
         type_name = content['$ref'].split('/')[-1]
         def_data = schema['definitions'].get(type_name, {})
+        
+        # Handle union enums like MoveBehaviour
+        if 'oneOf' in def_data:
+            if all('enum' in item for item in def_data['oneOf']):
+                return 'String'
+            
         if 'enum' in def_data:
             return 'String'
         return type_name
@@ -96,9 +102,18 @@ def generate_param_list(content: dict, schema: dict) -> list:
 
 def generate_conversion_code(def_name: str, def_data: dict, param_name: str) -> str:
     """Generate type conversion code for registration functions"""
-    if 'enum' in def_data:
+    # Collect all enum variants from oneOf entries
+    variants = []
+    if 'oneOf' in def_data:
+        variants = [
+            v for item in def_data['oneOf'] 
+            for v in item.get('enum', [])
+        ]
+    elif 'enum' in def_data:
         variants = def_data['enum']
-        code = f"let {param_name}: {def_name} = match {camel_to_snake(def_name)}.to_lowercase().as_str() {{\n"
+        
+    if variants:
+        code = f"let {param_name}: {def_name} = match {param_name}.to_lowercase().as_str() {{\n"
         for v in variants:
             code += f'    "{v.lower()}" => {def_name}::{v},\n'
         code += f'    _ => {{\n'
