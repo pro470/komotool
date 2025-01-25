@@ -124,21 +124,35 @@ def generate_registrations(schema_file):
             registration += "|| {\n    let message = SocketMessage::" + msg_type + ";\n"
         else:
             content = variant['properties']['content']
-            params = generate_param_list(content, schema)
-            param_str = ', '.join([f"{name}: {typ}" for name, typ in params])
-            param_names = ', '.join([name for name, _ in params])
+            param_list = generate_param_list(content, schema)
+            param_str = ', '.join([f"{name}: {typ}" for name, typ in param_list])
             
             registration += f"|{param_str}| {{\n"
             
-            if '$ref' in content:
-                type_name = content['$ref'].split('/')[-1]
-                def_data = schema['definitions'].get(type_name, {})
-                conversion = generate_conversion_code(type_name, def_data, "param")
-                if conversion:
-                    registration += conversion
-                    param_names = "param"
+            conversions = []
+            converted_params = []
             
-            registration += f"    let message = SocketMessage::{msg_type}({param_names});\n"
+            # Process each parameter for potential conversion
+            for param_name, param_type in param_list:
+                # Check if this is a user-defined type
+                if param_type in schema['definitions']:
+                    def_data = schema['definitions'][param_type]
+                    # Generate conversion code for this parameter
+                    conversion = generate_conversion_code(
+                        def_name=param_type,
+                        def_data=def_data,
+                        param_name=param_name
+                    )
+                    conversions.append(conversion)
+                    converted_params.append(param_name)
+                else:
+                    converted_params.append(param_name)
+            
+            # Add all conversion blocks
+            registration += '\n'.join(conversions)
+            
+            # Build message with converted params
+            registration += f"    let message = SocketMessage::{msg_type}({', '.join(converted_params)});\n"
         
         registration += f"""    match send_message(&message) {{
         Ok(_) => true,
