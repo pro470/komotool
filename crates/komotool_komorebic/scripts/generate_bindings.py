@@ -2,6 +2,13 @@ import json
 import re
 import sys
 
+def snake_to_camel(name: str) -> str:
+    """
+    Converts snake_case string to CamelCase
+    Example: "operation_direction" -> "OperationDirection"
+    """
+    return re.sub(r'(?:^|_)([a-z])', lambda m: m.group(1).upper(), name)
+
 def camel_to_snake(name):
     return re.sub(r'(?<!^)(?=[A-Z])', '_', name).lower()
 
@@ -150,7 +157,9 @@ def generate_registrations(schema_file):
             registration += '\n'.join(conversions)
             
             # Build message with converted params
-            registration += f"    let message = SocketMessage::{msg_type}({', '.join(converted_params)});\n"
+            # Convert snake_case parameter names to CamelCase for enum variants
+            camelized_params = [snake_to_camel(p) if p in schema['definitions'] else p for p in converted_params]
+            registration += f"    let message = SocketMessage::{msg_type}({', '.join(camelized_params)});\n"
         
         registration += f"""    match send_message(&message) {{
         Ok(_) => true,
