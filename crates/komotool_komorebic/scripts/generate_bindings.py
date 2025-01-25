@@ -53,10 +53,24 @@ def generate_param_list(content: dict, schema: dict) -> list:
         
         # Handle tuple types (array items as list)
         if isinstance(items, list):
-            return [
-                (f"param_{i}", get_param_type(item, schema))
-                for i, item in enumerate(items)
-            ]
+            params = []
+            for i, item in enumerate(items):
+                if '$ref' in item:
+                    # Handle referenced types
+                    type_name = item['$ref'].split('/')[-1]
+                    def_data = schema['definitions'].get(type_name, {})
+                    if 'enum' in def_data:
+                        # Use snake_cased type name for enum parameters
+                        param_name = camel_to_snake(type_name)
+                    else:
+                        # Fallback to numbered params for objects
+                        param_name = f"param_{i}"
+                else:
+                    # Use numbered params for primitives
+                    param_name = f"param_{i}"
+                
+                params.append((param_name, get_param_type(item, schema)))
+            return params
         
         # Handle single-type arrays
         return [("params", get_param_type(items, schema))]
