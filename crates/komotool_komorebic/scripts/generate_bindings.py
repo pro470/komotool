@@ -28,6 +28,9 @@ def get_param_type(content: dict, schema: dict) -> str:
         if 'oneOf' in def_data:
             if all('enum' in item for item in def_data['oneOf']):
                 return 'String'
+            # Handle enum struct variants
+            if any('properties' in item for item in def_data['oneOf']):
+                return 'String'
             
         if 'enum' in def_data:
             return 'String'
@@ -91,6 +94,21 @@ def generate_param_list(content: dict, schema: dict) -> list:
     if '$ref' in content:
         type_name = content['$ref'].split('/')[-1]
         def_data = schema['definitions'].get(type_name, {})
+        
+        # Handle enum struct variants
+        if 'oneOf' in def_data:
+            params = []
+            for variant in def_data['oneOf']:
+                if 'properties' in variant:
+                    # Add discriminant field (palette)
+                    if 'palette' in variant['properties']:
+                        params.append(("palette", "String"))
+                    # Add variant fields
+                    for prop_name, prop in variant['properties'].items():
+                        if prop_name != 'palette':
+                            params.append((camel_to_snake(prop_name), get_param_type(prop, schema)))
+            return params
+
         if def_data.get('type') == 'object':
             return [
                 (camel_to_snake(p), get_param_type(prop, schema))
@@ -102,17 +120,65 @@ def generate_param_list(content: dict, schema: dict) -> list:
 
 def generate_conversion_code(def_name: str, def_data: dict, param_name: str) -> str:
     """Generate type conversion code for registration functions"""
-    # Collect all enum variants from oneOf entries
-    variants = []
+    # Handle enum struct variants
     if 'oneOf' in def_data:
+        if any('properties' in item for item in def_data['oneOf']):
+            code = f"let {param_name} = match {param_name}_palette.to_lowercase().as_str() {{\n"
+            
+            for variant in def_data['oneOf']:
+                if 'properties' in variant:
+                    # Get variant name from palette enum
+                    palette = variant['properties']['palette']['enum'][0].lower()
+                    variant_name = snake_to_camel(palette)
+                    
+                    code += f'    "{palette}" => {{\n'
+                    code += f'        let name = {variant_name}::from_str(&{param_name}_name)?;\n'
+                    
+                    # Handle each field
+                    for field, spec in variant['properties'].items():
+                        if field not in ['name', 'palette']:
+                            field_snake = camel_to_snake(field)
+                            type_name = spec['anyOf'][0]['$ref'].split('/')[-1]
+                            code += f"""
+            let {field_snake} = if let Some({field_snake}) = {param_name}_{field_snake} {{
+                Some({type_name}::from_str(&{field_snake})?)
+            }} else {{
+                None
+            }};"""
+                    
+                    # Build variant
+                    code += f"\n        {def_name}::{variant_name} {{\n"
+                    code += f"            name,\n"
+                    for field in variant['properties']:
+                        if field not in ['name', 'palette']:
+                            code += f"            {field}: {camel_to_snake(field)},\n"
+                    code += "        }\n    }\n"
+            
+            code += f'    _ => {{\n'
+            code += f'        log::error!("Invalid {def_name} palette: {{{param_name}_palette}}");\n'
+            code += f'        return false;\n'
+            code += f'    }}\n}};\n'
+            
+            return code
+
+        # Handle regular enums
         variants = [
             v for item in def_data['oneOf'] 
             for v in item.get('enum', [])
         ]
-    elif 'enum' in def_data:
+        if variants:
+            code = f"let {param_name}: {def_name} = match {param_name}.to_lowercase().as_str() {{\n"
+            for v in variants:
+                code += f'    "{v.lower()}" => {def_name}::{v},\n'
+            code += f'    _ => {{\n'
+            code += f'        log::error!("Invalid {def_name}: {{{param_name}}}");\n'
+            code += f'        return false;\n'
+            code += f'    }}\n}};\n'
+            return code
+    
+    # Handle regular enums
+    if 'enum' in def_data:
         variants = def_data['enum']
-        
-    if variants:
         code = f"let {param_name}: {def_name} = match {param_name}.to_lowercase().as_str() {{\n"
         for v in variants:
             code += f'    "{v.lower()}" => {def_name}::{v},\n'
