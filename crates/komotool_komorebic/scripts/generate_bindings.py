@@ -7,6 +7,12 @@ def camel_to_snake(name):
 
 def get_param_type(content: dict, schema: dict) -> str:
     """Resolve parameter types to primitives for registration functions"""
+    # Handle array items that are lists (tuples)
+    if isinstance(content, list):
+        # Return tuple type string
+        types = [get_param_type(item, schema) for item in content]
+        return f"({', '.join(types)})"
+    
     if '$ref' in content:
         type_name = content['$ref'].split('/')[-1]
         def_data = schema['definitions'].get(type_name, {})
@@ -29,6 +35,15 @@ def generate_param_list(content: dict, schema: dict) -> list:
     """Generate parameters with primitive types for registration functions"""
     if content.get('type') == 'array':
         items = content.get('items', {})
+        
+        # Handle tuple types (array items as list)
+        if isinstance(items, list):
+            return [
+                (f"param_{i}", get_param_type(item, schema))
+                for i, item in enumerate(items)
+            ]
+        
+        # Handle single-type arrays
         return [("params", get_param_type(items, schema))]
     
     if '$ref' in content:
