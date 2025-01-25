@@ -24,8 +24,23 @@ def get_param_type(content: dict, schema: dict) -> str:
     if isinstance(item_type, list):
         item_type = [t for t in item_type if t != 'null'][0]
     
+    # Handle integer formats explicitly
+    if item_type == 'integer':
+        fmt = content.get('format', 'int32')
+        return {
+            'uint': 'usize',
+            'uint8': 'u8',
+            'uint16': 'u16',
+            'uint32': 'u32',
+            'uint64': 'u64',
+            'int': 'isize',
+            'int8': 'i8', 
+            'int16': 'i16',
+            'int32': 'i32',
+            'int64': 'i64'
+        }.get(fmt, 'i32')  # Default to i32 if format unknown
+    
     return {
-        'integer': 'i32',
         'string': 'String',
         'boolean': 'bool',
         'array': 'Vec<String>'
