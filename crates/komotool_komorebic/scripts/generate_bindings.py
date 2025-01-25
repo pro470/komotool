@@ -141,10 +141,10 @@ def generate_registrations(schema_file):
             
             # Process each parameter for potential conversion
             for param_name, original_type in param_list:
-                if original_type in schema['definitions']:
-                    def_data = schema['definitions'][original_type]
+                if snake_to_camel(param_name) in schema['definitions']:
+                    def_data = schema['definitions'][snake_to_camel(param_name)]
                     conversion = generate_conversion_code(
-                        def_name=original_type,
+                        def_name=snake_to_camel(param_name),
                         def_data=def_data,
                         param_name=param_name
                     )
