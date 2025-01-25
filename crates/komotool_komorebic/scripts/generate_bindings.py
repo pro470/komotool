@@ -133,13 +133,11 @@ def generate_registrations(schema_file):
             converted_params = []
             
             # Process each parameter for potential conversion
-            for param_name, param_type in param_list:
-                # Check if this is a user-defined type
-                if param_type in schema['definitions']:
-                    def_data = schema['definitions'][param_type]
-                    # Generate conversion code for this parameter
+            for param_name, original_type in param_list:
+                if original_type in schema['definitions']:
+                    def_data = schema['definitions'][original_type]
                     conversion = generate_conversion_code(
-                        def_name=param_type,
+                        def_name=original_type,
                         def_data=def_data,
                         param_name=param_name
                     )
