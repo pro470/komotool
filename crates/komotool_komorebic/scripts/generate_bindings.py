@@ -77,7 +77,7 @@ def generate_conversion_code(def_name: str, def_data: dict, param_name: str) -> 
     """Generate type conversion code for registration functions"""
     if 'enum' in def_data:
         variants = def_data['enum']
-        code = f"let {param_name}: {def_name} = match {param_name}.to_lowercase().as_str() {{\n"
+        code = f"let {param_name}: {def_name} = match {camel_to_snake(def_name)}.to_lowercase().as_str() {{\n"
         for v in variants:
             code += f'    "{v.lower()}" => {def_name}::{v},\n'
         code += f'    _ => {{\n'
