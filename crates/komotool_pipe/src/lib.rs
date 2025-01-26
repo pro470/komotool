@@ -1,8 +1,8 @@
-use bevy::prelude::*;
 use anyhow::Result;
-use komorebi_client::{Notification, subscribe};
+use bevy::prelude::*;
+use komorebi_client::{subscribe, Notification};
 use std::io::{BufRead, BufReader};
-use std::sync::mpsc::{Sender, Receiver};
+use std::sync::mpsc::{Receiver, Sender};
 
 pub struct KomoToolPipePlugin;
 
@@ -15,7 +15,7 @@ impl Plugin for KomoToolPipePlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<PipeNotificationEvent>();
         let (sender, receiver) = std::sync::mpsc::channel();
-        
+
         // Spawn listener thread
         std::thread::spawn(move || {
             if let Err(e) = run_pipe_listener(sender) {
@@ -47,7 +47,7 @@ fn run_pipe_listener(sender: Sender<Notification>) -> Result<()> {
             Err(e) => log::debug!("Connection error: {}", e),
         }
     }
-    
+
     Ok(())
 }
 

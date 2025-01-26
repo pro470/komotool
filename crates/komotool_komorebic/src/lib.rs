@@ -1,6 +1,6 @@
-use bevy::prelude::{App,Plugin,Reflect};
-use komorebi_client::*;
+use bevy::prelude::{App, Plugin, Reflect};
 use bevy_mod_scripting::core::bindings::function::namespace::NamespaceBuilder;
+use komorebi_client::*;
 
 #[derive(Reflect)]
 struct KomorebiMessageWrapper;
@@ -10,8 +10,6 @@ pub struct KomoToolKomorebicPlugin;
 impl Plugin for KomoToolKomorebicPlugin {
     fn build(&self, app: &mut App) {
         let mut world = app.world_mut();
-
-
 
         NamespaceBuilder::<KomorebiMessageWrapper>::new(world)
             .register("focus_window", |operation_direction: String| {
@@ -2227,6 +2225,5 @@ impl Plugin for KomoToolKomorebicPlugin {
                     }
                 }
             });
-
     }
 }
