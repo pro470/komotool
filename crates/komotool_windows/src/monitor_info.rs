@@ -7,6 +7,7 @@ use windows::{
     Win32::{
         Foundation::*,
         Graphics::Gdi::*,
+        UI::HiDpi::{GetDpiForMonitor, MDT_EFFECTIVE_DPI},
     },
 };
 use windows::Win32::UI::WindowsAndMessaging::MONITORINFOF_PRIMARY;
@@ -27,6 +28,8 @@ pub struct MonitorInfo {
     pub height: i32,
     pub work_area: (i32, i32, i32, i32), // (left, top, right, bottom)
     pub is_primary: bool,
+    pub dpi_x: u32,
+    pub dpi_y: u32,
 }
 
 #[derive(Resource, Default)]
@@ -76,6 +79,19 @@ unsafe extern "system" fn monitor_enum_callback(
     };
 
     if GetMonitorInfoW(hmonitor, &mut info as *mut _ as *mut MONITORINFO).as_bool() {
+        // Add DPI detection
+        let mut dpi_x = 96;
+        let mut dpi_y = 96;
+        
+        if let Err(e) = GetDpiForMonitor(
+            hmonitor,
+            MDT_EFFECTIVE_DPI,
+            &mut dpi_x,
+            &mut dpi_y
+        ) {
+            error!("Failed to get DPI for monitor: {}", e);
+        }
+
         let device_name = OsString::from_wide(&info.szDevice)
             .to_string_lossy()
             .into_owned();
@@ -92,6 +108,8 @@ unsafe extern "system" fn monitor_enum_callback(
                 info.monitorInfo.rcWork.bottom,
             ),
             is_primary: (info.monitorInfo.dwFlags & MONITORINFOF_PRIMARY) != 0,
+            dpi_x,
+            dpi_y,
         });
     }
 

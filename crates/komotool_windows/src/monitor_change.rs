@@ -83,10 +83,12 @@ pub(crate) fn handle_monitor_changes(
         // Add new monitors
         monitors.0.extend(event.added.iter().cloned());
         for added_monitor in &event.added {
-            info!("New monitor detected: {} ({}x{})", 
+            info!("New monitor detected: {} ({}x{}) @ {}x{} DPI", 
                 added_monitor.device_name,
                 added_monitor.width,
-                added_monitor.height
+                added_monitor.height,
+                added_monitor.dpi_x,
+                added_monitor.dpi_y
             );
         }
     }
