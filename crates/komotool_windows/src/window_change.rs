@@ -109,7 +109,7 @@ pub(crate) fn handle_window_changes(
     // Collect all events first to release the mutable borrow
     let collected_events: Vec<_> = events.read().collect();
     
-    for event in collected_events {
+    for event in &collected_events {
         // Handle new windows
         for window in &event.added {
             info!("New window added: {} (PID: {})", window.title, window.pid);
