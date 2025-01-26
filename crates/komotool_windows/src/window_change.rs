@@ -57,13 +57,13 @@ pub fn update_window_list(
             let old_identifiers = tracker.last_update.take().unwrap_or_default();
 
             // Calculate differences
-            let added = new_windows
+            let added: Vec<WindowInfo> = new_windows
                 .iter()
                 .filter(|w| !old_identifiers.contains(&WindowIdentifier::from(*w)))
                 .cloned()
                 .collect();
 
-            let removed = old_identifiers
+            let removed: Vec<WindowInfo> = old_identifiers
                 .iter()
                 .filter(|id| !new_identifiers.contains(id))
                 .filter_map(|id| find_window_by_id(id, &windows.0))
