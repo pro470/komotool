@@ -75,7 +75,7 @@ unsafe extern "system" fn enum_callback(hwnd: HWND, lparam: LPARAM) -> BOOL {
     BOOL::from(true)
 }
 
-fn get_window_info(hwnd: HWND) -> Result<WindowInfo> {
+fn get_window_info(hwnd: HWND) -> std::result::Result<WindowInfo, WindowError> {
     unsafe {
         // Get window title
         let mut title_buffer = [0u16; 512];
@@ -126,7 +126,7 @@ fn get_process_path(pid: u32) -> std::result::Result<String, WindowError> {
             &mut size
         ).map_err(WindowError::WinApi)?;
 
-        CloseHandle(process).ok().map_err(WindowError::WinApi)?;
+        CloseHandle(process).map_err(WindowError::WinApi)?;
 
         Ok(OsString::from_wide(&buffer[..size as usize])
             .to_string_lossy()
