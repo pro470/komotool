@@ -1,4 +1,5 @@
 use std::ffi::OsString;
+use std::os::windows::ffi::OsStringExt;
 use windows::{
     core::*,
     Win32::{
@@ -41,7 +42,7 @@ pub struct SystemTheme {
 pub struct WindowList(pub Vec<WindowInfo>);
 
 // Core window enumeration functionality
-pub fn list_windows() -> Result<Vec<WindowInfo>, WindowError> {
+pub fn list_windows() -> std::result::Result<Vec<WindowInfo>, WindowError> {
     unsafe {
         let mut windows = Vec::new();
         let mut data = EnumWindowsData { windows: &mut windows };
@@ -107,19 +108,13 @@ fn get_window_info(hwnd: HWND) -> Result<WindowInfo> {
     }
 }
 
-fn get_process_path(pid: u32) -> Result<String, WindowError> {
+fn get_process_path(pid: u32) -> std::result::Result<String, WindowError> {
     unsafe {
         let process = OpenProcess(
             PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
             false,
             pid
-        ).map_err(|e| {
-            if e.code() == ERROR_ACCESS_DENIED.to_hresult() {
-                WindowError::AccessDenied
-            } else {
-                WindowError::WinApi(e)
-            }
-        })?;
+        ).map_err(|e| WindowError::WinApi(e.into()))?;
 
         let mut buffer = [0u16; MAX_PATH as usize];
         let mut size = buffer.len() as u32;
@@ -127,11 +122,11 @@ fn get_process_path(pid: u32) -> Result<String, WindowError> {
         QueryFullProcessImageNameW(
             process,
             PROCESS_NAME_NATIVE,
-            &mut buffer,
+            PWSTR(buffer.as_mut_ptr()),
             &mut size
         ).map_err(WindowError::WinApi)?;
 
-        CloseHandle(process).map_err(WindowError::WinApi)?;
+        CloseHandle(process).ok().map_err(WindowError::WinApi)?;
 
         Ok(OsString::from_wide(&buffer[..size as usize])
             .to_string_lossy()
