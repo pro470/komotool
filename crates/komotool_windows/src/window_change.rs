@@ -1,6 +1,7 @@
 use crate::window_info::{WindowInfo, WindowList, list_windows};
 use bevy::prelude::*;
 use windows::Win32::Foundation::HWND;
+use windows::Win32::UI::WindowsAndMessaging::*;
 use std::collections::HashSet;
 
 #[derive(Event)]
@@ -106,16 +107,46 @@ pub(crate) fn handle_window_changes(
     mut events: EventReader<WindowChangeEvent>,
 ) {
     for event in events.read() {
-        if !event.added.is_empty() {
-            info!("New windows added: {}", event.added.len());
+        // Handle new windows
+        for window in &event.added {
+            info!("New window added: {} (PID: {})", window.title, window.pid);
+            
+            // Example: Focus new windows (requires unsafe block for WinAPI calls)
+            unsafe {
+                let _ = SetForegroundWindow(HWND(window.hwnd as isize));
+                FlashWindow(HWND(window.hwnd as isize), true);
+            }
         }
 
-        if !event.removed.is_empty() {
-            info!("Windows closed: {}", event.removed.len());
+        // Handle removed windows
+        for window in &event.removed {
+            info!("Window closed: {} (PID: {})", window.title, window.pid);
+            
+            // Example: Clean up any related resources
+            // (You could add cleanup logic here)
         }
 
-        if !event.changed.is_empty() {
-            info!("Windows changed: {}", event.changed.len());
+        // Handle changed windows
+        for window in &event.changed {
+            if let Some(previous_state) = find_previous_state(window, &events) {
+                info!("Window changed: {} (PID: {})", window.title, window.pid);
+                
+                // Example: Handle title changes
+                if previous_state.title != window.title {
+                    info!("Title changed from '{}' to '{}'", 
+                        previous_state.title, window.title);
+                }
+            }
         }
     }
+}
+
+// Helper to find previous state of changed windows
+fn find_previous_state<'a>(
+    current: &WindowInfo,
+    events: &'a EventReader<WindowChangeEvent>
+) -> Option<&'a WindowInfo> {
+    events.read()
+        .flat_map(|e| e.removed.iter().chain(e.changed.iter()))
+        .find(|w| w.hwnd == current.hwnd)
 }
