@@ -1,8 +1,8 @@
-use crate::window_info::{WindowInfo, WindowList, list_windows};
+use crate::window_info::{list_windows, WindowInfo, WindowList};
 use bevy::prelude::*;
+use std::collections::HashSet;
 use windows::Win32::Foundation::HWND;
 use windows::Win32::UI::WindowsAndMessaging::*;
-use std::collections::HashSet;
 
 #[derive(Event)]
 pub struct WindowChangeEvent {
@@ -10,7 +10,6 @@ pub struct WindowChangeEvent {
     pub removed: Vec<WindowInfo>,
     pub changed: Vec<WindowInfo>,
 }
-
 
 #[derive(Debug, Clone, Hash, Eq, PartialEq)]
 struct WindowIdentifier {
@@ -42,10 +41,8 @@ pub fn update_window_list(
 ) {
     match list_windows() {
         Ok(new_windows) => {
-            let new_identifiers: HashSet<_> = new_windows
-                .iter()
-                .map(WindowIdentifier::from)
-                .collect();
+            let new_identifiers: HashSet<_> =
+                new_windows.iter().map(WindowIdentifier::from).collect();
 
             let old_identifiers = tracker.last_update.take().unwrap_or_default();
 
@@ -83,37 +80,32 @@ pub fn update_window_list(
 }
 
 fn find_window_by_id<'a>(id: &WindowIdentifier, list: &'a [WindowInfo]) -> Option<&'a WindowInfo> {
-    list.iter().find(|w|
-        w.hwnd == id.hwnd &&
-            w.title == id.title &&
-            w.exe_path == id.exe_path
-    )
+    list.iter()
+        .find(|w| w.hwnd == id.hwnd && w.title == id.title && w.exe_path == id.exe_path)
 }
 
 pub fn detect_changed_windows(previous: &[WindowInfo], current: &[WindowInfo]) -> Vec<WindowInfo> {
     current
         .iter()
         .filter(|curr| {
-            previous.iter().any(|prev|
-                prev.hwnd == curr.hwnd &&
-                    (prev.title != curr.title || prev.exe_path != curr.exe_path)
-            )
+            previous.iter().any(|prev| {
+                prev.hwnd == curr.hwnd
+                    && (prev.title != curr.title || prev.exe_path != curr.exe_path)
+            })
         })
         .cloned()
         .collect()
 }
 
-pub(crate) fn handle_window_changes(
-    mut events: EventReader<WindowChangeEvent>,
-) {
+pub(crate) fn handle_window_changes(mut events: EventReader<WindowChangeEvent>) {
     // Collect all events first to release the mutable borrow
     let collected_events: Vec<_> = events.read().collect();
-    
+
     for event in &collected_events {
         // Handle new windows
         for window in &event.added {
             info!("New window added: {} (PID: {})", window.title, window.pid);
-            
+
             unsafe {
                 let _ = SetForegroundWindow(HWND(window.hwnd as *mut std::ffi::c_void));
                 FlashWindow(HWND(window.hwnd as *mut std::ffi::c_void), true);
@@ -130,10 +122,12 @@ pub(crate) fn handle_window_changes(
             // Pass collected_events instead of &events
             if let Some(previous_state) = find_previous_state(window, &collected_events) {
                 info!("Window changed: {} (PID: {})", window.title, window.pid);
-                
+
                 if previous_state.title != window.title {
-                    info!("Title changed from '{}' to '{}'", 
-                        previous_state.title, window.title);
+                    info!(
+                        "Title changed from '{}' to '{}'",
+                        previous_state.title, window.title
+                    );
                 }
             }
         }
@@ -143,9 +137,10 @@ pub(crate) fn handle_window_changes(
 // Updated helper function signature
 fn find_previous_state<'a>(
     current: &WindowInfo,
-    events: &'a [&WindowChangeEvent]  // Changed to use slice of events
+    events: &'a [&WindowChangeEvent], // Changed to use slice of events
 ) -> Option<&'a WindowInfo> {
-    events.iter()
+    events
+        .iter()
         .flat_map(|e| e.removed.iter().chain(e.changed.iter()))
         .find(|w| w.hwnd == current.hwnd)
 }
