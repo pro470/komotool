@@ -12,6 +12,9 @@ impl Plugin for KomoToolWindowsPlugin {
         app.add_event::<WindowChangeEvent>()
             .init_resource::<WindowList>()
             .init_resource::<window_change::WindowChangeTracker>()
-            .add_systems(Update, (handle_window_changes, update_window_list));
+            .add_systems(Update, (
+                update_window_list,
+                handle_window_changes
+            ));
     }
 }

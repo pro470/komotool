@@ -97,11 +97,28 @@ pub fn detect_changed_windows(previous: &[WindowInfo], current: &[WindowInfo]) -
         .collect()
 }
 
-pub(crate) fn handle_window_changes(mut events: EventReader<WindowChangeEvent>) {
-    // Collect all events first to release the mutable borrow
+pub(crate) fn handle_window_changes(
+    mut events: EventReader<WindowChangeEvent>,
+    mut windows: ResMut<WindowList>,
+) {
     let collected_events: Vec<_> = events.read().collect();
 
     for event in &collected_events {
+        // Remove old windows first
+        for removed_window in &event.removed {
+            windows.0.retain(|w| w.hwnd != removed_window.hwnd);
+        }
+
+        // Update changed windows
+        for changed_window in &event.changed {
+            if let Some(index) = windows.0.iter().position(|w| w.hwnd == changed_window.hwnd) {
+                windows.0[index] = changed_window.clone();
+            }
+        }
+
+        // Add new windows
+        windows.0.extend(event.added.iter().cloned());
+
         // Handle new windows
         for window in &event.added {
             info!("New window added: {} (PID: {})", window.title, window.pid);
