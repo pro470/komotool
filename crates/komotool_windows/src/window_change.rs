@@ -113,8 +113,8 @@ pub(crate) fn handle_window_changes(
             
             // Example: Focus new windows (requires unsafe block for WinAPI calls)
             unsafe {
-                let _ = SetForegroundWindow(HWND(window.hwnd as isize));
-                FlashWindow(HWND(window.hwnd as isize), true);
+                let _ = SetForegroundWindow(HWND(window.hwnd as *mut std::ffi::c_void));
+                FlashWindow(HWND(window.hwnd as *mut std::ffi::c_void), true);
             }
         }
 
