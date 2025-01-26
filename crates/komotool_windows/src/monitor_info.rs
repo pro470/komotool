@@ -40,7 +40,7 @@ pub fn list_monitors() -> std::result::Result<Vec<MonitorInfo>, MonitorError> {
         };
 
         EnumDisplayMonitors(
-            HDC::default(),
+            Some(HDC::default()),
             None,
             Some(monitor_enum_callback),
             LPARAM(&mut data as *mut _ as _)
