@@ -41,7 +41,7 @@ pub struct SystemTheme {
 pub struct WindowList(pub Vec<WindowInfo>);
 
 // Core window enumeration functionality
-pub fn list_windows() -> Result<Vec<WindowInfo>> {
+pub fn list_windows() -> Result<Vec<WindowInfo>, WindowError> {
     unsafe {
         let mut windows = Vec::new();
         let mut data = EnumWindowsData { windows: &mut windows };
@@ -49,7 +49,7 @@ pub fn list_windows() -> Result<Vec<WindowInfo>> {
         EnumWindows(
             Some(enum_callback),
             LPARAM(&mut data as *mut _ as _)
-        )?;
+        ).map_err(WindowError::WinApi)?;
 
         Ok(windows)
     }
@@ -107,13 +107,19 @@ fn get_window_info(hwnd: HWND) -> Result<WindowInfo> {
     }
 }
 
-fn get_process_path(pid: u32) -> Result<String> {
+fn get_process_path(pid: u32) -> Result<String, WindowError> {
     unsafe {
         let process = OpenProcess(
             PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
             false,
             pid
-        ).map_err(|_| WindowError::AccessDenied)?;
+        ).map_err(|e| {
+            if e.code() == ERROR_ACCESS_DENIED.to_hresult() {
+                WindowError::AccessDenied
+            } else {
+                WindowError::WinApi(e)
+            }
+        })?;
 
         let mut buffer = [0u16; MAX_PATH as usize];
         let mut size = buffer.len() as u32;
@@ -123,9 +129,9 @@ fn get_process_path(pid: u32) -> Result<String> {
             PROCESS_NAME_NATIVE,
             &mut buffer,
             &mut size
-        )?;
+        ).map_err(WindowError::WinApi)?;
 
-        CloseHandle(process)?;
+        CloseHandle(process).map_err(WindowError::WinApi)?;
 
         Ok(OsString::from_wide(&buffer[..size as usize])
             .to_string_lossy()
