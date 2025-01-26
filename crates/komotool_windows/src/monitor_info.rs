@@ -91,7 +91,7 @@ unsafe extern "system" fn monitor_enum_callback(
                 info.monitorInfo.rcWork.right,
                 info.monitorInfo.rcWork.bottom,
             ),
-            is_primary: (info.monitorInfo.dwFlags & MONITORINFOF_PRIMARY as u32) != 0,
+            is_primary: (info.monitorInfo.dwFlags & MONITORINFOF_PRIMARY) != 0,
         });
     }
 
