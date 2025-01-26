@@ -9,7 +9,7 @@ use windows::{
         Graphics::Gdi::*,
     },
 };
-use windows::Win32::Graphics::Gdi::MONITORINFOF_PRIMARY;
+use windows::Win32::UI::WindowsAndMessaging::MONITORINFOF_PRIMARY;
 
 #[derive(Debug, Error)]
 pub enum MonitorError {
@@ -88,7 +88,7 @@ unsafe extern "system" fn monitor_enum_callback(
                 info.monitorInfo.rcWork.right,
                 info.monitorInfo.rcWork.bottom,
             ),
-            is_primary: (info.monitorInfo.dwFlags & MONITORINFOF_PRIMARY) != 0,
+            is_primary: (info.monitorInfo.dwFlags & MONITORINFOF_PRIMARY as u32) != 0,
         });
     }
 
