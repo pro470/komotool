@@ -1,8 +1,7 @@
 use crate::window_info::{WindowInfo, WindowList, list_windows};
 use bevy::prelude::*;
-use windows::{core::*, Win32::Foundation::*, Win32::UI::WindowsAndMessaging::*};
+use windows::Win32::Foundation::HWND;
 use std::collections::HashSet;
-use crate::window_info;
 
 #[derive(Event)]
 pub struct WindowChangeEvent {
