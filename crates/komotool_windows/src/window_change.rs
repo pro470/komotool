@@ -28,17 +28,9 @@ impl From<&WindowInfo> for WindowIdentifier {
     }
 }
 
-#[derive(Resource)]
+#[derive(Resource, Default)]
 pub struct WindowChangeTracker {
     last_update: Option<HashSet<WindowIdentifier>>,
-}
-
-impl Default for WindowChangeTracker {
-    fn default() -> Self {
-        Self {
-            last_update: None,
-        }
-    }
 }
 
 // Updated system with change detection

@@ -114,7 +114,7 @@ fn get_process_path(pid: u32) -> std::result::Result<String, WindowError> {
             PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
             false,
             pid
-        ).map_err(|e| WindowError::WinApi(e.into()))?;
+        ).map_err(|e| WindowError::WinApi(e))?;
 
         let mut buffer = [0u16; MAX_PATH as usize];
         let mut size = buffer.len() as u32;
