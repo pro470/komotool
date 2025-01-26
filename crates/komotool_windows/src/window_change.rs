@@ -1,8 +1,6 @@
 use crate::window_info::{list_windows, WindowInfo, WindowList};
 use bevy::prelude::*;
 use std::collections::HashSet;
-use windows::Win32::Foundation::HWND;
-use windows::Win32::UI::WindowsAndMessaging::*;
 
 #[derive(Event)]
 pub struct WindowChangeEvent {
@@ -121,12 +119,7 @@ pub(crate) fn handle_window_changes(
 
         // Handle new windows
         for window in &event.added {
-            info!("New window added: {} (PID: {})", window.title, window.pid);
-
-            unsafe {
-                let _ = SetForegroundWindow(HWND(window.hwnd as *mut std::ffi::c_void));
-                FlashWindow(HWND(window.hwnd as *mut std::ffi::c_void), true);
-            }
+            info!("New window detected: {} (PID: {})", window.title, window.pid);
         }
 
         // Handle removed windows
