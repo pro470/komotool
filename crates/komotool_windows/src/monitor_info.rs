@@ -2,6 +2,7 @@ use bevy::prelude::*;
 use std::ffi::OsString;
 use std::os::windows::ffi::OsStringExt;
 use thiserror::Error;
+use windows::Win32::UI::WindowsAndMessaging::MONITORINFOF_PRIMARY;
 use windows::{
     core::*,
     Win32::{
@@ -10,7 +11,6 @@ use windows::{
         UI::HiDpi::{GetDpiForMonitor, MDT_EFFECTIVE_DPI},
     },
 };
-use windows::Win32::UI::WindowsAndMessaging::MONITORINFOF_PRIMARY;
 
 #[derive(Debug, Error)]
 pub enum MonitorError {
@@ -43,14 +43,13 @@ pub fn list_monitors() -> std::result::Result<Vec<MonitorInfo>, MonitorError> {
         };
 
         EnumDisplayMonitors(
-            Some(HDC::default()), 
-            None, 
-            Some(monitor_enum_callback), 
+            Some(HDC::default()),
+            None,
+            Some(monitor_enum_callback),
             LPARAM(&mut data as *mut _ as _),
         )
         .ok()
         .map_err(|_| MonitorError::WinApi(windows::core::Error::from_win32()))?;
-        
 
         Ok(monitors)
     }
@@ -64,10 +63,10 @@ unsafe extern "system" fn monitor_enum_callback(
     hmonitor: HMONITOR,
     _hdc: HDC,
     _rect: *mut RECT,
-    lparam: LPARAM
+    lparam: LPARAM,
 ) -> BOOL {
     let data = &mut *(lparam.0 as *mut EnumMonitorsData<'_>);
-    
+
     let mut info: MONITORINFOEXW = MONITORINFOEXW {
         monitorInfo: MONITORINFO {
             cbSize: std::mem::size_of::<MONITORINFOEXW>() as u32,
@@ -82,13 +81,8 @@ unsafe extern "system" fn monitor_enum_callback(
         // Add DPI detection
         let mut dpi_x = 96;
         let mut dpi_y = 96;
-        
-        if let Err(e) = GetDpiForMonitor(
-            hmonitor,
-            MDT_EFFECTIVE_DPI,
-            &mut dpi_x,
-            &mut dpi_y
-        ) {
+
+        if let Err(e) = GetDpiForMonitor(hmonitor, MDT_EFFECTIVE_DPI, &mut dpi_x, &mut dpi_y) {
             error!("Failed to get DPI for monitor: {}", e);
         }
 

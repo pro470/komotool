@@ -119,7 +119,10 @@ pub(crate) fn handle_window_changes(
 
         // Handle new windows
         for window in &event.added {
-            info!("New window detected: {} (PID: {})", window.title, window.pid);
+            info!(
+                "New window detected: {} (PID: {})",
+                window.title, window.pid
+            );
         }
 
         // Handle removed windows

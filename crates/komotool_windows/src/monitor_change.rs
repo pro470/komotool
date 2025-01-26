@@ -35,7 +35,8 @@ pub fn update_monitor_list(
 ) {
     match list_monitors() {
         Ok(new_monitors) => {
-            let new_identifiers: HashSet<_> = new_monitors.iter().map(MonitorIdentifier::from).collect();
+            let new_identifiers: HashSet<_> =
+                new_monitors.iter().map(MonitorIdentifier::from).collect();
             let old_identifiers = tracker.last_state.take().unwrap_or_default();
 
             let added: Vec<MonitorInfo> = new_monitors
@@ -64,7 +65,10 @@ pub fn update_monitor_list(
     }
 }
 
-fn find_monitor_by_id<'a>(id: &MonitorIdentifier, list: &'a [MonitorInfo]) -> Option<&'a MonitorInfo> {
+fn find_monitor_by_id<'a>(
+    id: &MonitorIdentifier,
+    list: &'a [MonitorInfo],
+) -> Option<&'a MonitorInfo> {
     list.iter()
         .find(|m| m.handle == id.handle && m.device_name == id.device_name)
 }
@@ -83,7 +87,8 @@ pub(crate) fn handle_monitor_changes(
         // Add new monitors
         monitors.0.extend(event.added.iter().cloned());
         for added_monitor in &event.added {
-            info!("New monitor detected: {} ({}x{}) @ {}x{} DPI", 
+            info!(
+                "New monitor detected: {} ({}x{}) @ {}x{} DPI",
                 added_monitor.device_name,
                 added_monitor.width,
                 added_monitor.height,

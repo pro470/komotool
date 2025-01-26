@@ -19,11 +19,14 @@ impl Plugin for KomoToolWindowsPlugin {
             .init_resource::<MonitorList>()
             .init_resource::<window_change::WindowChangeTracker>()
             .init_resource::<monitor_change::MonitorChangeTracker>()
-            .add_systems(Update, (
-                update_window_list,
-                update_monitor_list,
-                handle_window_changes,
-                handle_monitor_changes
-            ));
+            .add_systems(
+                Update,
+                (
+                    update_window_list,
+                    update_monitor_list,
+                    handle_window_changes,
+                    handle_monitor_changes,
+                ),
+            );
     }
 }
