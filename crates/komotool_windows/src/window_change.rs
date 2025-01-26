@@ -11,11 +11,6 @@ pub struct WindowChangeEvent {
     pub changed: Vec<WindowInfo>,
 }
 
-#[derive(Resource)]
-pub struct WindowState {
-    previous_windows: HashSet<WindowIdentifier>,
-    current_windows: HashSet<WindowIdentifier>,
-}
 
 #[derive(Debug, Clone, Hash, Eq, PartialEq)]
 struct WindowIdentifier {
@@ -114,26 +109,6 @@ pub fn detect_changed_windows(previous: &[WindowInfo], current: &[WindowInfo]) -
         })
         .cloned()
         .collect()
-}
-fn handle_new_windows(
-    mut events: EventReader<WindowChangeEvent>,
-) {
-    for event in events.read() {
-        for window in &event.added {
-            info!("New window: {}", window.title);
-        }
-    }
-}
-
-fn handle_closed_windows(
-    mut events: EventReader<WindowChangeEvent>,
-    mut commands: Commands,
-) {
-    for event in events.read() {
-        for window in &event.removed {
-            commands.entity(window.entity).despawn();
-        }
-    }
 }
 
 pub(crate) fn handle_window_changes(

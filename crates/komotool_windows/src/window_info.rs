@@ -133,15 +133,3 @@ fn get_process_path(pid: u32) -> Result<String> {
     }
 }
 
-// Bevy system implementation
-pub fn update_window_list(mut windows: ResMut<WindowList>) {
-    match list_windows() {
-        Ok(new_windows) => {
-            // Simple change detection
-            if new_windows != windows.0 {
-                windows.0 = new_windows;
-            }
-        }
-        Err(e) => error!("Failed to update window list: {}", e),
-    }
-}
