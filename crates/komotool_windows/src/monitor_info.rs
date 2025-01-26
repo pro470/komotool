@@ -6,9 +6,10 @@ use windows::{
     core::*,
     Win32::{
         Foundation::*,
-        Graphics::Gdi::*
+        Graphics::Gdi::*,
     },
 };
+use windows::Win32::Graphics::Gdi::MONITORINFOF_PRIMARY;
 
 #[derive(Debug, Error)]
 pub enum MonitorError {
