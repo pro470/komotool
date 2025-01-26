@@ -90,7 +90,7 @@ pub fn update_window_list(
     }
 }
 
-fn find_window_by_id(id: &WindowIdentifier, list: &[WindowInfo]) -> Option<&WindowInfo> {
+fn find_window_by_id<'a>(id: &WindowIdentifier, list: &'a [WindowInfo]) -> Option<&'a WindowInfo> {
     list.iter().find(|w|
         w.hwnd == id.hwnd &&
             w.title == id.title &&

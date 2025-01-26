@@ -97,7 +97,7 @@ fn get_window_info(hwnd: HWND) -> Result<WindowInfo> {
         let is_visible = IsWindowVisible(hwnd).as_bool();
 
         Ok(WindowInfo {
-            hwnd: hwnd.0,
+            hwnd: hwnd.0 as isize,
             title,
             class,
             pid,
