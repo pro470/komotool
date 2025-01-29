@@ -53,6 +53,32 @@ pub struct Window {
     pub rect: Rect
 }
 
+#[derive(Component)]
+struct MonocleContainer; // Marker for monocle containers
+
+#[derive(Component)]
+struct FloatingWindow;
+
+#[derive(Component)]
+struct FocusedWorkspaceMaker;
+
+#[derive(Component)]
+struct LastFocusedWorkspace;
+
+#[derive(Component)]
+struct FocusedContainerMaker;
+
+#[derive(Component)]
+struct FocusedWindowMaker;
+
+#[derive(Component)]
+struct MaximizedWindow;
+
+#[derive(Component)]
+struct Focused(pub i32);
+
+
+
 #[derive(Resource)]
 pub struct AppState {
     pub is_paused: bool,
