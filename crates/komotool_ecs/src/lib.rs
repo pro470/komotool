@@ -41,7 +41,7 @@ pub struct Workspace {
 #[derive(Component)]
 pub struct Container {
     pub id: String,
-    pub focused: bool
+    pub focused: i32
 }
 
 #[derive(Component)]
@@ -75,11 +75,7 @@ impl Plugin for KomoToolEcsPlugin {
     fn build(&self, app: &mut App) {
         app
             .init_resource::<AppState>()
-            .init_resource::<FocusState>()
-            .register_type::<Monitor>()
-            .register_type::<Workspace>()
-            .register_type::<Container>()
-            .register_type::<Window>();
+            .init_resource::<FocusState>();
     }
 }
 
