@@ -61,13 +61,17 @@ pub struct AppState {
     pub mouse_follows_focus: bool
 }
 
-#[derive(Resource)]
-pub struct FocusState {
-    pub focused_monitor: Option<Entity>,
-    pub focused_workspace: Option<Entity>,
-    pub focused_container: Option<Entity>,
-    pub focused_window: Option<Entity>
-}
+#[derive(Resource, Default)]
+pub struct FocusedMonitor(pub Option<Entity>);
+
+#[derive(Resource, Default)]
+pub struct FocusedWorkspace(pub Option<Entity>);
+
+#[derive(Resource, Default)]
+pub struct FocusedContainer(pub Option<Entity>);
+
+#[derive(Resource, Default)]
+pub struct FocusedWindow(pub Option<Entity>);
 
 pub struct KomoToolEcsPlugin;
 
@@ -75,7 +79,10 @@ impl Plugin for KomoToolEcsPlugin {
     fn build(&self, app: &mut App) {
         app
             .init_resource::<AppState>()
-            .init_resource::<FocusState>();
+            .init_resource::<FocusedMonitor>()
+            .init_resource::<FocusedWorkspace>()
+            .init_resource::<FocusedContainer>()
+            .init_resource::<FocusedWindow>();
     }
 }
 
@@ -86,17 +93,6 @@ impl Default for AppState {
             resize_delta: 50,
             focus_follows_mouse: false,
             mouse_follows_focus: false
-        }
-    }
-}
-
-impl Default for FocusState {
-    fn default() -> Self {
-        Self {
-            focused_monitor: None,
-            focused_workspace: None,
-            focused_container: None,
-            focused_window: None
         }
     }
 }
