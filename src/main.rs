@@ -6,6 +6,7 @@ use komotool_rhai::KomoToolRhaiPlugin;
 use komotool_utils::KomoToolUtilsPlugin;
 use komotool_windows::KomoToolWindowsPlugin;
 use komotoolc_pipe::KomoToolcPipePlugin;
+use komotool_ecs::KomoToolEcsPlugin;
 
 fn main() {
     App::new()
@@ -16,5 +17,6 @@ fn main() {
         .add_plugins(KomoToolcPipePlugin)
         .add_plugins(KomoToolLuaPlugin)
         .add_plugins(KomoToolRhaiPlugin)
+        .add_plugins(KomoToolEcsPlugin)
         .run();
 }

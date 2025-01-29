@@ -52,12 +52,11 @@ pub fn update_monitor_list(
                 .cloned()
                 .collect();
 
-            // Update resources
-            monitors.0 = new_monitors;
-            tracker.last_state = Some(new_identifiers);
 
             // Send event if changes detected
             if !added.is_empty() || !removed.is_empty() {
+                // Update resources
+                tracker.last_state = Some(new_identifiers);
                 change_events.send(MonitorChangeEvent { added, removed });
             }
         }

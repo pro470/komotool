@@ -60,12 +60,10 @@ pub fn update_window_list(
 
             let changed = detect_changed_windows(&windows.0, &new_windows);
 
-            // Update resources
-            windows.0 = new_windows;
-            tracker.last_update = Some(new_identifiers);
-
             // Send event if changes detected
             if !added.is_empty() || !removed.is_empty() || !changed.is_empty() {
+                // Update resources
+                tracker.last_update = Some(new_identifiers);
                 change_events.send(WindowChangeEvent {
                     added,
                     removed,
@@ -105,13 +103,7 @@ pub(crate) fn handle_window_changes(
         // Remove old windows first
         for removed_window in &event.removed {
             windows.0.retain(|w| w.hwnd != removed_window.hwnd);
-        }
-
-        // Update changed windows
-        for changed_window in &event.changed {
-            if let Some(index) = windows.0.iter().position(|w| w.hwnd == changed_window.hwnd) {
-                windows.0[index] = changed_window.clone();
-            }
+            info!("Window closed: {} (PID: {})", removed_window.title, removed_window.pid);
         }
 
         // Add new windows
@@ -125,13 +117,11 @@ pub(crate) fn handle_window_changes(
             );
         }
 
-        // Handle removed windows
-        for window in &event.removed {
-            info!("Window closed: {} (PID: {})", window.title, window.pid);
-        }
-
         // Handle changed windows
         for window in &event.changed {
+            if let Some(index) = windows.0.iter().position(|w| w.hwnd == window.hwnd) {
+                windows.0[index] = window.clone();
+            }
             // Pass collected_events instead of &events
             if let Some(previous_state) = find_previous_state(window, &collected_events) {
                 info!("Window changed: {} (PID: {})", window.title, window.pid);
