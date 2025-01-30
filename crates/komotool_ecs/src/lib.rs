@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use komorebi_client::*;
 
 #[derive(Debug, Clone, Reflect)]
 pub struct Rect {
@@ -114,9 +113,18 @@ impl Plugin for KomoToolEcsPlugin {
             .init_resource::<FocusedWorkspaceGlobal>()
             .init_resource::<FocusedContainerGlobal>()
             .init_resource::<FocusedWindowGlobal>()
-            .register_type::<>()
-            .register_type::<>()
-            ;
+            .register_type::<Monitor>()
+            .register_type::<Window>()
+            .register_type::<Container>()
+            .register_type::<Workspace>()
+            .register_type::<MonocleContainer>()
+            .register_type::<FloatingWindow>()
+            .register_type::<FocusedWindow>()
+            .register_type::<FocusedContainer>()
+            .register_type::<LastFocusedWorkspace>()
+            .register_type::<FocusedWorkspace>()
+            .register_type::<LastFocusedContainer>()
+            .register_type::<MaximizedWindow>();
             
     }
 }
