@@ -3484,10 +3484,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "komotool_client"
+version = "0.1.0"
+
+[[package]]
 name = "komotool_ecs"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "komorebi-client",
 ]
 
 [[package]]
@@ -3499,6 +3504,10 @@ dependencies = [
  "komorebi-client",
  "log",
 ]
+
+[[package]]
+name = "komotool_lib"
+version = "0.1.0"
 
 [[package]]
 name = "komotool_lua"

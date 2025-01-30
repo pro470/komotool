@@ -1,6 +1,7 @@
 use bevy::prelude::*;
+use komorebi_client::*;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Reflect)]
 pub struct Rect {
     pub left: i32,
     pub top: i32,
@@ -8,7 +9,7 @@ pub struct Rect {
     pub bottom: i32
 }
 
-#[derive(Component)]
+#[derive(Component, Reflect)]
 pub enum LayoutType {
     RightMainVerticalStack,
     VerticalStack,
@@ -18,7 +19,7 @@ pub enum LayoutType {
     BSP
 }
 
-#[derive(Component)]
+#[derive(Component, Reflect)]
 pub struct Monitor {
     pub id: u32,
     pub name: String,
@@ -29,7 +30,7 @@ pub struct Monitor {
     pub work_area_offset: Rect
 }
 
-#[derive(Component)]
+#[derive(Component, Reflect)]
 pub struct Workspace {
     pub name: String,
     pub layout: LayoutType,
@@ -38,13 +39,13 @@ pub struct Workspace {
     pub tile: bool
 }
 
-#[derive(Component)]
+#[derive(Component, Reflect)]
 pub struct Container {
     pub id: String,
     pub focused: i32
 }
 
-#[derive(Component)]
+#[derive(Component, Reflect)]
 pub struct Window {
     pub hwnd: i32,
     pub title: String,
@@ -53,31 +54,32 @@ pub struct Window {
     pub rect: Rect
 }
 
-#[derive(Component)]
-struct MonocleContainer; // Marker for monocle containers
+#[derive(Component, Reflect)]
+pub struct MonocleContainer(pub Option<Entity>); // Marker for monocle containers
 
-#[derive(Component)]
-struct FloatingWindow;
+#[derive(Component, Reflect)]
+pub struct FloatingWindow;
 
-#[derive(Component)]
-struct FocusedWorkspaceMaker;
+#[derive(Component, Reflect)]
+pub struct FocusedWindow(pub Option<Entity>);
 
-#[derive(Component)]
-struct LastFocusedWorkspace;
+#[derive(Component, Reflect)]
+pub struct FocusedContainer(pub Option<Entity>);
 
-#[derive(Component)]
-struct FocusedContainerMaker;
+#[derive(Component, Reflect)]
+pub struct LastFocusedContainer(pub Option<Entity>);
 
-#[derive(Component)]
-struct FocusedWindowMaker;
+#[derive(Component, Reflect)]
+pub struct FocusedWorkspace(pub Option<Entity>);
 
-#[derive(Component)]
-struct MaximizedWindow;
+#[derive(Component, Reflect)]
+pub struct LastFocusedWorkspace(pub Option<Entity>);
 
-#[derive(Component)]
+#[derive(Component, Reflect)]
+pub struct MaximizedWindow(pub Option<Entity>);
+
+#[derive(Component, Reflect)]
 struct Focused(pub i32);
-
-
 
 #[derive(Resource)]
 pub struct AppState {
@@ -91,13 +93,16 @@ pub struct AppState {
 pub struct FocusedMonitor(pub Option<Entity>);
 
 #[derive(Resource, Default)]
-pub struct FocusedWorkspace(pub Option<Entity>);
+struct LastFocusedMonitor(pub Option<Entity>);
 
 #[derive(Resource, Default)]
-pub struct FocusedContainer(pub Option<Entity>);
+pub struct FocusedWorkspaceGlobal(pub Option<Entity>);
 
 #[derive(Resource, Default)]
-pub struct FocusedWindow(pub Option<Entity>);
+pub struct FocusedContainerGlobal(pub Option<Entity>);
+
+#[derive(Resource, Default)]
+pub struct FocusedWindowGlobal(pub Option<Entity>);
 
 pub struct KomoToolEcsPlugin;
 
@@ -106,9 +111,13 @@ impl Plugin for KomoToolEcsPlugin {
         app
             .init_resource::<AppState>()
             .init_resource::<FocusedMonitor>()
-            .init_resource::<FocusedWorkspace>()
-            .init_resource::<FocusedContainer>()
-            .init_resource::<FocusedWindow>();
+            .init_resource::<FocusedWorkspaceGlobal>()
+            .init_resource::<FocusedContainerGlobal>()
+            .init_resource::<FocusedWindowGlobal>()
+            .register_type::<>()
+            .register_type::<>()
+            ;
+            
     }
 }
 
