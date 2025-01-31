@@ -1,8 +1,10 @@
 mod components;
 mod resources;
+mod relations;
 
 pub use components::*;
 pub use resources::*;
+pub use relations::*;
 
 use bevy::prelude::*;
 
@@ -16,6 +18,10 @@ impl Plugin for KomoToolEcsPlugin {
             .init_resource::<FocusedWorkspaceGlobal>()
             .init_resource::<FocusedContainerGlobal>()
             .init_resource::<FocusedWindowGlobal>()
+            .init_resource::<MonitorReg>()
+            .init_resource::<WorkspaceReg>()
+            .init_resource::<ContainerReg>()
+            .init_resource::<WindowReg>()
             .register_type::<Monitor>()
             .register_type::<Window>()
             .register_type::<Container>()

@@ -1,3 +1,4 @@
+use crate::relations::RelationRegistry;
 use bevy::prelude::*;
 
 #[derive(Resource)]
@@ -23,7 +24,7 @@ impl Default for AppState {
 pub struct FocusedMonitor(pub Option<Entity>);
 
 #[derive(Resource, Default)]
-pub(crate) struct LastFocusedMonitor(pub Option<Entity>);
+pub struct LastFocusedMonitor(pub Option<Entity>);
 
 #[derive(Resource, Default)]
 pub struct FocusedWorkspaceGlobal(pub Option<Entity>);
@@ -33,3 +34,16 @@ pub struct FocusedContainerGlobal(pub Option<Entity>);
 
 #[derive(Resource, Default)]
 pub struct FocusedWindowGlobal(pub Option<Entity>);
+
+#[derive(Resource, Default)]
+pub struct MonitorReg(pub RelationRegistry);
+
+#[derive(Resource, Default)]
+pub struct WorkspaceReg(pub RelationRegistry);
+
+#[derive(Resource, Default)]
+pub struct ContainerReg(pub RelationRegistry);
+
+#[derive(Resource, Default)]
+pub struct WindowReg(pub RelationRegistry);
+
