@@ -1,16 +1,18 @@
-use super::registry::RelationRegistry; 
+use super::registry::{RelationRegistry, EntityRecord};
 use bevy::prelude::*;
 use std::cmp::Ordering;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
 pub struct RelationQueryBuilder<'a> {
     registry: &'a RelationRegistry,
-    current_set: HashSet<Entity>,
+    /// Instead of storing Entity we store indices into the `records` Vec.
+    current_set: HashSet<usize>,
+    /// Which components to sort by. (For simplicity, we sort on the record field names.)
     ordering: Vec<&'static str>,
 }
 
 impl<'a> RelationQueryBuilder<'a> {
-    fn new(registry: &'a RelationRegistry) -> Self {
+    pub fn new(registry: &'a RelationRegistry) -> Self {
         Self {
             registry,
             current_set: HashSet::new(),
@@ -18,9 +20,8 @@ impl<'a> RelationQueryBuilder<'a> {
         }
     }
 
-    // --------- Filtering Methods ---------
     fn or(mut self, tags: &[&str]) -> Self {
-        let mut result = HashSet::new();
+        let mut result = self.current_set;
         for tag in tags {
             if let Some(entities) = self.registry.index.get(*tag) {
                 result.extend(entities);
@@ -30,11 +31,14 @@ impl<'a> RelationQueryBuilder<'a> {
         self
     }
 
-    fn and(mut self, tags: &[&str]) -> Self {
+    /// AND: intersection of the current set with all indices matching all the given tags.
+    pub fn and(mut self, tags: &[&str]) -> Self {
         let mut result = self.current_set.clone();
         for tag in tags {
-            if let Some(entities) = self.registry.index.get(*tag) {
-                result.retain(|e| entities.contains(e));
+            if let Some(indices) = self.registry.index.get(*tag) {
+                // Convert the indices list into a set for fast lookup.
+                let tag_set: HashSet<_> = indices.iter().copied().collect();
+                result.retain(|i| tag_set.contains(i));
             } else {
                 result.clear();
             }
@@ -43,67 +47,76 @@ impl<'a> RelationQueryBuilder<'a> {
         self
     }
 
-    fn with(mut self, tag: &str) -> Self {
-        if let Some(entities) = self.registry.index.get(tag) {
+    /// WITH: same as AND, but handles the “current set is empty” case.
+    pub fn with(mut self, tag: &str) -> Self {
+        if let Some(indices) = self.registry.index.get(tag) {
             if self.current_set.is_empty() {
-                self.current_set = entities.clone();
+                self.current_set = indices.iter().copied().collect();
             } else {
-                self.current_set.retain(|e| entities.contains(e));
+                let tag_set: HashSet<_> = indices.iter().copied().collect();
+                self.current_set.retain(|i| tag_set.contains(i));
             }
         }
         self
     }
 
-    fn without(mut self, tag: &str) -> Self {
-        if let Some(entities) = self.registry.index.get(tag) {
-            self.current_set.retain(|e| !entities.contains(e));
+    /// WITHOUT: remove all indices that match the tag.
+    pub fn without(mut self, tag: &str) -> Self {
+        if let Some(indices) = self.registry.index.get(tag) {
+            let tag_set: HashSet<_> = indices.iter().copied().collect();
+            self.current_set.retain(|i| !tag_set.contains(i));
         }
         self
     }
 
-    // --------- Sorting Methods ---------
-    fn order_by(mut self, components: &[&'static str]) -> Self {
+    /// Order by one or more components.
+    pub fn order_by(mut self, components: &[&'static str]) -> Self {
         self.ordering = components.to_vec();
         self
     }
 
-    // --------- Execution ---------
-    fn execute(self) -> Vec<Entity> {
-        // Destructure self to move components separately
-        let Self {
-            registry,
-            current_set,
-            ordering,
-        } = self;
+    /// Returns the raw indices as a HashSet.
+    /// This is useful if the caller wishes to iterate over the indices and
+    /// look up records directly in the registry.
+    pub fn execute_indices(self) -> HashSet<usize> {
+        // When no ordering is requested, there's no need to convert to a Vec.
+        self.current_set
+    }
 
-        let mut entities: Vec<Entity> = current_set.into_iter().collect();
-        
-        if !ordering.is_empty() {
-            // Create a closure that captures registry and ordering
-            entities.sort_unstable_by(|a, b| {
-                for component in &ordering {
-                    let a_val = get_component_value(registry, *a, component);
-                    let b_val = get_component_value(registry, *b, component);
-                    
+    /// Execute the query returning the matching entities.
+    pub fn execute(self) -> Vec<Entity> {
+        // Collect the indices into a vector.
+        let mut indices: Vec<usize> = self.current_set.into_iter().collect();
+
+        if !self.ordering.is_empty() {
+            // Sort the indices by the specified ordering.
+            indices.sort_unstable_by(|&a, &b| {
+                let rec_a = &self.registry.records[a];
+                let rec_b = &self.registry.records[b];
+                for component in &self.ordering {
+                    let a_val = get_component_value(rec_a, component);
+                    let b_val = get_component_value(rec_b, component);
                     match a_val.cmp(&b_val) {
                         Ordering::Equal => continue,
-                        ord => return ord,
+                        non_eq => return non_eq,
                     }
                 }
                 Ordering::Equal
             });
         }
-        
-        entities
+
+        // Map the indices back to the actual Entity.
+        indices.into_iter().map(|i| self.registry.records[i].entity).collect()
     }
 }
 
-fn get_component_value(registry: &RelationRegistry, entity: Entity, component: &str) -> u32 {
+/// Helper to extract a component value from an EntityRecord.
+fn get_component_value(record: &EntityRecord, component: &str) -> u32 {
     match component {
-        "Monitor" => registry.monitor.get(&entity).copied().unwrap_or(0),
-        "Workspace" => registry.workspace.get(&entity).copied().unwrap_or(0),
-        "Container" => registry.container.get(&entity).copied().unwrap_or(0),
-        "Window" => registry.window.get(&entity).copied().unwrap_or(0),
+        "Monitor" => record.monitor,
+        "Workspace" => record.workspace,
+        "Container" => record.container,
+        "Window" => record.window,
         _ => 0,
     }
 }
