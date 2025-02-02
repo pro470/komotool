@@ -13,6 +13,7 @@ komotool_utils = {path = "crates/komotool_utils"}
 komotool_windows = {path = "crates/komotool_windows"}
 komotoolc_pipe = {path = "crates/komotoolc_pipe"}
 komotool_ecs = {path = "crates/komotool_ecs"}
+komotool_assets = {path = "crates/komotool_assets"}
 
 [workspace]
 members = ["crates/*"]
@@ -24,4 +25,4 @@ anyhow = "1.0"
 serde_json = "1.0"
 komorebi-client  = { git = "https://github.com/LGUG2Z/komorebi", tag = "v0.1.33"}
 log = "0.4"
-bevy_mod_scripting = {version = "0.9.0-alpha.9", features = ["lua","lua54"]}
+bevy_mod_scripting = {version = "0.9.1", features = ["lua","lua54", "rhai"]}

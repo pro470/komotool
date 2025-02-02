@@ -1017,9 +1017,9 @@ dependencies = [
 
 [[package]]
 name = "bevy_mod_scripting"
-version = "0.9.0-alpha.9"
+version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2863c50f7a71ba430115af7ce2ce04f775f72d20bf309913a301104b2a2e9d81"
+checksum = "d560da600f5b67f4a07bff7be5b663e18d9da41c7bc231404731b54d08a15613"
 dependencies = [
  "bevy",
  "bevy_mod_scripting_core",
@@ -1029,9 +1029,9 @@ dependencies = [
 
 [[package]]
 name = "bevy_mod_scripting_core"
-version = "0.9.0-alpha.9"
+version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5e25c597bb618ae8b55bbfc92e099a664458cc02d90b9ae061f39f2e4a370993"
+checksum = "ff8c63e91daf2fab0d8bd6db17fafe43320939bec3b97adfcd31875a33ea2ebc"
 dependencies = [
  "bevy",
  "dashmap",
@@ -1039,33 +1039,36 @@ dependencies = [
  "itertools 0.13.0",
  "mlua",
  "parking_lot",
+ "profiling",
  "smallvec",
  "thiserror 1.0.69",
 ]
 
 [[package]]
 name = "bevy_mod_scripting_functions"
-version = "0.9.0-alpha.9"
+version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d56ded7d2a7ae245a6c70b10d120fc59a31f66544d0a71a6d4307f2478b7a6f8"
+checksum = "56287f11ba68ca7dd543ecbe2f5ac61aaaf94c62944c63cbd7b6fe2d68527f4e"
 dependencies = [
  "bevy",
  "bevy_mod_scripting_core",
+ "profiling",
  "smol_str",
  "uuid",
 ]
 
 [[package]]
 name = "bevy_mod_scripting_lua"
-version = "0.9.0-alpha.9"
+version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f30e29ad98ef74b95b934cc4497b7b3ae9fdd5dd23194ea4e5932bb79697f92e"
+checksum = "519300f889e0393d31a160dba645b9b9b98a3783697939d0345aaa65aee9f3a6"
 dependencies = [
  "bevy",
  "bevy_mod_scripting_core",
  "bevy_mod_scripting_functions",
  "mlua",
  "parking_lot",
+ "profiling",
  "smallvec",
  "smol_str",
  "uuid",
@@ -3473,6 +3476,7 @@ name = "komotool"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "komotool_assets",
  "komotool_ecs",
  "komotool_komorebic",
  "komotool_lua",
@@ -3481,6 +3485,14 @@ dependencies = [
  "komotool_utils",
  "komotool_windows",
  "komotoolc_pipe",
+]
+
+[[package]]
+name = "komotool_assets"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "pathdiff",
 ]
 
 [[package]]
@@ -3514,6 +3526,7 @@ name = "komotool_lua"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "bevy_mod_scripting",
 ]
 
 [[package]]
@@ -4466,6 +4479,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "57c0d7b74b563b49d38dae00a0c37d4d6de9b432382b2892f0574ddcae73fd0a"
 
 [[package]]
+name = "pathdiff"
+version = "0.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "df94ce210e5bc13cb6651479fa48d14f601d9858cfe0467f43ae157023b938d3"
+
+[[package]]
 name = "percent-encoding"
 version = "2.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4645,6 +4664,19 @@ name = "profiling"
 version = "1.0.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "afbdc74edc00b6f6a218ca6a5364d6226a259d4b8ea1af4a0ea063f27e179f4d"
+dependencies = [
+ "profiling-procmacros",
+]
+
+[[package]]
+name = "profiling-procmacros"
+version = "1.0.16"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a65f2e60fbf1063868558d69c6beacf412dc755f9fc020f514b7955fc914fe30"
+dependencies = [
+ "quote",
+ "syn 2.0.96",
+]
 
 [[package]]
 name = "quick-xml"
