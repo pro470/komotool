@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy_mod_scripting::prelude::*;
+use bevy_mod_scripting::*;
 
 pub struct KomoToolLuaPlugin;
 

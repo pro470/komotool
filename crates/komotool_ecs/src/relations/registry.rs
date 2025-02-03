@@ -1,7 +1,37 @@
 use bevy::prelude::Entity;
-use std::collections::{HashMap, HashSet};
+use std::cmp::{max, min};
+use std::collections::HashMap;
+use std::ops::Range;
 
-/// Each entity is stored exactly once here.
+
+pub trait RangeExt {
+    /// Returns the intersection of two ranges, or None if they do not overlap.
+    fn intersect(&self, other: &Self) -> Option<Range<usize>>;
+    /// Returns the union of two ranges if they overlap or are adjacent.
+    fn union(&self, other: &Self) -> Option<Range<usize>>;
+}
+
+impl RangeExt for Range<usize> {
+    fn intersect(&self, other: &Self) -> Option<Range<usize>> {
+        let start = max(self.start, other.start);
+        let end = min(self.end, other.end);
+        if start < end {
+            Some(start..end)
+        } else {
+            None
+        }
+    }
+
+    fn union(&self, other: &Self) -> Option<Range<usize>> {
+        if self.end >= other.start && other.end >= self.start {
+            Some(self.start.min(other.start)..self.end.max(other.end))
+        } else {
+            None
+        }
+    }
+}
+
+
 #[derive(Debug, Clone)]
 pub struct EntityRecord {
     pub entity: Entity,
@@ -11,86 +41,99 @@ pub struct EntityRecord {
     pub window: u32,
 }
 
+impl EntityRecord {
+    /// The canonical key used for ordering.
+    pub fn key(&self) -> (u32, u32, u32, u32) {
+        (self.monitor, self.workspace, self.container, self.window)
+    }
+}
+
 #[derive(Default)]
 pub struct RelationRegistry {
-    /// Our “database” of entities.
+    /// Our master list of records, maintained in sorted order.
     pub records: Vec<EntityRecord>,
-    /// Maps an Entity to its index in `records`.
+    /// Mapping from an Entity to its index in `records`.
     pub entity_to_index: HashMap<Entity, usize>,
-    /// Our “secondary index”: for each tag string, we store the list of indices in `records`
-    /// that have that tag. (For example, "Monitor=1" might map to [0, 4, 7] if those records have monitor 1.)
-    pub index: HashMap<String, Vec<usize>>,
+    /// Secondary index mapping tag (e.g. "Monitor=1") to one or more ranges in `records`.
+    pub index: HashMap<String, Vec<Range<usize>>>,
 }
 
 impl RelationRegistry {
-    /// Insert a new entity with its components.
+    /// Insert a new record and then re-sort and rebuild indexes.
     pub fn insert(&mut self, entity: Entity, monitor: u32, workspace: u32, container: u32, window: u32) {
-        let record = EntityRecord { entity, monitor, workspace, container, window };
-        self.records.push(record);
-        let idx = self.records.len() - 1;
-        self.entity_to_index.insert(entity, idx);
-
-        // Update our secondary index for each tag.
-        // In this design, a "tag" is a string like "Monitor=1".
-        self.add_tag(idx, format!("Monitor={}", monitor));
-        self.add_tag(idx, format!("Workspace={}", workspace));
-        self.add_tag(idx, format!("Container={}", container));
-        self.add_tag(idx, format!("Window={}", window));
+        self.records.push(EntityRecord {
+            entity,
+            monitor,
+            workspace,
+            container,
+            window,
+        });
+        self.resort_and_rebuild();
     }
 
-    fn add_tag(&mut self, idx: usize, tag: String) {
-        self.index.entry(tag).or_insert_with(Vec::new).push(idx);
+    /// Resort the Vec and rebuild the auxiliary indexes.
+    pub fn resort_and_rebuild(&mut self) {
+        self.records.sort_unstable_by(|a, b| a.key().cmp(&b.key()));
+
+        self.entity_to_index.clear();
+        for (i, record) in self.records.iter().enumerate() {
+            self.entity_to_index.insert(record.entity, i);
+        }
+
+        self.rebuild_range_index();
     }
 
+    /// Rebuild the secondary index mapping each tag to contiguous ranges.
+    pub fn rebuild_range_index(&mut self) {
+        self.index.clear();
+        self.build_range_index_for_component("Monitor", |r: &EntityRecord| r.monitor);
+        self.build_range_index_for_component("Workspace", |r: &EntityRecord| r.workspace);
+        self.build_range_index_for_component("Container", |r: &EntityRecord| r.container);
+        self.build_range_index_for_component("Window", |r: &EntityRecord| r.window);
+    }
+
+    fn build_range_index_for_component<F>(&mut self, comp: &str, getter: F)
+    where
+        F: Fn(&EntityRecord) -> u32,
+    {
+        let mut current_tag: Option<String> = None;
+        let mut range_start: Option<usize> = None;
+
+        for (i, record) in self.records.iter().enumerate() {
+            let tag = format!("{}={}", comp, getter(record));
+            if current_tag.as_ref() != Some(&tag) {
+                if let (Some(prev_tag), Some(start)) = (current_tag.take(), range_start) {
+                    self.index
+                        .entry(prev_tag)
+                        .or_default()
+                        .push(start..i);
+                }
+                current_tag = Some(tag);
+                range_start = Some(i);
+            }
+        }
+
+        if let (Some(tag_val), Some(start)) = (current_tag, range_start) {
+            self.index.entry(tag_val).or_default().push(start..self.records.len());
+        }
+    }
+
+    /// Update a component and then re-sort/rebuild.
     pub fn update_component(&mut self, entity: Entity, tag: &str) {
         if let Some((component, value_str)) = tag.split_once('=') {
             if let Ok(new_val) = value_str.parse::<u32>() {
                 if let Some(&idx) = self.entity_to_index.get(&entity) {
                     let record = &mut self.records[idx];
-                    // Remove the old tag for this component
-                    let old_tag = match component {
-                        "Monitor" => {
-                            let old = record.monitor;
-                            record.monitor = new_val;
-                            format!("Monitor={}", old)
-                        },
-                        "Workspace" => {
-                            let old = record.workspace;
-                            record.workspace = new_val;
-                            format!("Workspace={}", old)
-                        },
-                        "Container" => {
-                            let old = record.container;
-                            record.container = new_val;
-                            format!("Container={}", old)
-                        },
-                        "Window" => {
-                            let old = record.window;
-                            record.window = new_val;
-                            format!("Window={}", old)
-                        },
-                        _ => return,
-                    };
-                    // Remove the index from the old tag vector.
-                    if let Some(vec) = self.index.get_mut(&old_tag) {
-                        vec.retain(|&i| i != idx);
+                    match component {
+                        "Monitor" => record.monitor = new_val,
+                        "Workspace" => record.workspace = new_val,
+                        "Container" => record.container = new_val,
+                        "Window" => record.window = new_val,
+                        _ => {},
                     }
-                    // Add the new tag.
-                    self.add_tag(idx, tag.to_string());
+                    self.resort_and_rebuild();
                 }
             }
         }
-        self.rebuild_index();
-    }
-
-    pub fn rebuild_index(&mut self) {
-        self.index.clear();
-        for (idx, record) in self.records.iter().enumerate() {
-            self.add_tag(idx, format!("Monitor={}", record.monitor));
-            self.add_tag(idx, format!("Workspace={}", record.workspace));
-            self.add_tag(idx, format!("Container={}", record.container));
-            self.add_tag(idx, format!("Window={}", record.window));
-        }
     }
 }
-

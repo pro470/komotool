@@ -11,6 +11,7 @@ use komotool_assets::KomotoolAssetsPlugin;
 
 fn main() {
     App::new()
+        .add_plugins(MinimalPlugins)
         .add_plugins(KomoToolPipePlugin)
         .add_plugins(KomoToolWindowsPlugin)
         .add_plugins(KomoToolcPipePlugin)

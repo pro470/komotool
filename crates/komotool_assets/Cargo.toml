@@ -5,4 +5,4 @@ edition = "2021"
 
 [dependencies]
 pathdiff = "0.2.3"
-bevy = { workspace = true }
+bevy = { workspace = true, default-features = false, features = ["bevy_asset", "file_watcher"]}
