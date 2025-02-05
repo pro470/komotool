@@ -122,11 +122,11 @@ fn check_pre_startup(
     mut writer: EventWriter<ScriptCallbackEvent>,
     mut next_state: ResMut<NextState<ScriptLoadState>>,
 ) {
-    if let Some(loading_state) = asset_server.get_recursive_dependency_load_state(&tracker.handle) {
-        if let RecursiveDependencyLoadState::Loaded = loading_state {
-            writer.send(ScriptCallbackEvent::new_for_all(PreStartUp, vec![]));
-            next_state.set(ScriptLoadState::PreStartupDone);
-        }
+    if let Some(RecursiveDependencyLoadState::Loaded) = 
+        asset_server.get_recursive_dependency_load_state(&tracker.handle) 
+    {
+        writer.send(ScriptCallbackEvent::new_for_all(PreStartUp, vec![]));
+        next_state.set(ScriptLoadState::PreStartupDone);
     }
 }
 
