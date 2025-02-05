@@ -1,10 +1,10 @@
 mod components;
-mod resources;
 mod relations;
+mod resources;
 
 pub use components::*;
-pub use resources::*;
 pub use relations::*;
+pub use resources::*;
 
 use bevy::prelude::*;
 
@@ -12,8 +12,7 @@ pub struct KomoToolEcsPlugin;
 
 impl Plugin for KomoToolEcsPlugin {
     fn build(&self, app: &mut App) {
-        app
-            .init_resource::<AppState>()
+        app.init_resource::<AppState>()
             .init_resource::<FocusedMonitor>()
             .init_resource::<FocusedWorkspaceGlobal>()
             .init_resource::<FocusedContainerGlobal>()
@@ -34,7 +33,5 @@ impl Plugin for KomoToolEcsPlugin {
             .register_type::<FocusedWorkspace>()
             .register_type::<LastFocusedContainer>()
             .register_type::<MaximizedWindow>();
-            
     }
 }
-

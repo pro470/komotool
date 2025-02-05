@@ -94,7 +94,10 @@ impl<'a> RelationQueryBuilder<'a> {
             for cur in self.current_ranges {
                 let mut remaining = vec![cur];
                 for tr in &tag_ranges {
-                    remaining = remaining.into_iter().flat_map(|r| subtract_range(r, tr.clone())).collect();
+                    remaining = remaining
+                        .into_iter()
+                        .flat_map(|r| subtract_range(r, tr.clone()))
+                        .collect();
                 }
                 new_ranges.extend(remaining);
             }

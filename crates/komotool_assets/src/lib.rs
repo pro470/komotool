@@ -4,8 +4,7 @@ use bevy::{
 };
 use pathdiff::diff_paths;
 use std::{
-    env,
-    fs,
+    env, fs,
     path::{Path, PathBuf},
 };
 
@@ -18,8 +17,8 @@ impl Plugin for KomotoolAssetsPlugin {
         let mut komotool_config_path = get_or_create_komotool_config_path()
             .expect("Failed to set up `.config/Komotool` directory");
 
-        komotool_config_path =  compute_relative_path_to_komotool(&komotool_config_path)
-            .expect("didnt found the path to the Komotool config"); 
+        komotool_config_path = compute_relative_path_to_komotool(&komotool_config_path)
+            .expect("didnt found the path to the Komotool config");
 
         app.register_asset_source(
             "komotool_config",
@@ -35,7 +34,8 @@ impl Plugin for KomotoolAssetsPlugin {
 
 /// Function that retrieves the `.config\Komotool` path and ensures the directory exists.
 fn get_or_create_komotool_config_path() -> std::io::Result<PathBuf> {
-    let user_profile = env::var("USERPROFILE").expect("Failed to fetch USERPROFILE environment variable");
+    let user_profile =
+        env::var("USERPROFILE").expect("Failed to fetch USERPROFILE environment variable");
 
     let komotool_path = Path::new(&user_profile).join(".config").join("Komotool");
 
@@ -51,7 +51,9 @@ fn get_or_create_komotool_config_path() -> std::io::Result<PathBuf> {
 fn compute_relative_path_to_komotool(komotool_path: &Path) -> Option<PathBuf> {
     let current_exe = env::current_exe().expect("Failed to fetch the current executable path");
 
-    let current_exe_dir = current_exe.parent().expect("Executable should have a parent directory");
+    let current_exe_dir = current_exe
+        .parent()
+        .expect("Executable should have a parent directory");
 
     diff_paths(komotool_path, current_exe_dir)
 }

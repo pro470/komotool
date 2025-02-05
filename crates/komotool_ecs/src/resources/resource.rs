@@ -46,4 +46,3 @@ pub struct ContainerReg(pub RelationRegistry);
 
 #[derive(Resource, Default)]
 pub struct WindowReg(pub RelationRegistry);
-

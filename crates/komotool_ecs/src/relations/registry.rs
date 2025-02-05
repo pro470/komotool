@@ -3,7 +3,6 @@ use std::cmp::{max, min};
 use std::collections::HashMap;
 use std::ops::Range;
 
-
 pub trait RangeExt {
     /// Returns the intersection of two ranges, or None if they do not overlap.
     fn intersect(&self, other: &Self) -> Option<Range<usize>>;
@@ -30,7 +29,6 @@ impl RangeExt for Range<usize> {
         }
     }
 }
-
 
 #[derive(Debug, Clone)]
 pub struct EntityRecord {
@@ -60,7 +58,14 @@ pub struct RelationRegistry {
 
 impl RelationRegistry {
     /// Insert a new record and then re-sort and rebuild indexes.
-    pub fn insert(&mut self, entity: Entity, monitor: u32, workspace: u32, container: u32, window: u32) {
+    pub fn insert(
+        &mut self,
+        entity: Entity,
+        monitor: u32,
+        workspace: u32,
+        container: u32,
+        window: u32,
+    ) {
         self.records.push(EntityRecord {
             entity,
             monitor,
@@ -103,10 +108,7 @@ impl RelationRegistry {
             let tag = format!("{}={}", comp, getter(record));
             if current_tag.as_ref() != Some(&tag) {
                 if let (Some(prev_tag), Some(start)) = (current_tag.take(), range_start) {
-                    self.index
-                        .entry(prev_tag)
-                        .or_default()
-                        .push(start..i);
+                    self.index.entry(prev_tag).or_default().push(start..i);
                 }
                 current_tag = Some(tag);
                 range_start = Some(i);
@@ -114,7 +116,10 @@ impl RelationRegistry {
         }
 
         if let (Some(tag_val), Some(start)) = (current_tag, range_start) {
-            self.index.entry(tag_val).or_default().push(start..self.records.len());
+            self.index
+                .entry(tag_val)
+                .or_default()
+                .push(start..self.records.len());
         }
     }
 
@@ -129,7 +134,7 @@ impl RelationRegistry {
                         "Workspace" => record.workspace = new_val,
                         "Container" => record.container = new_val,
                         "Window" => record.window = new_val,
-                        _ => {},
+                        _ => {}
                     }
                     self.resort_and_rebuild();
                 }

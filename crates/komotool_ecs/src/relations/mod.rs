@@ -1,5 +1,5 @@
-mod registry;
 mod komotoolquerybuilder;
+mod registry;
 
-pub use registry::*;
 pub use komotoolquerybuilder::*;
+pub use registry::*;

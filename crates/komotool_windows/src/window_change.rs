@@ -103,7 +103,10 @@ pub(crate) fn handle_window_changes(
         // Remove old windows first
         for removed_window in &event.removed {
             windows.0.retain(|w| w.hwnd != removed_window.hwnd);
-            info!("Window closed: {} (PID: {})", removed_window.title, removed_window.pid);
+            info!(
+                "Window closed: {} (PID: {})",
+                removed_window.title, removed_window.pid
+            );
         }
 
         // Add new windows

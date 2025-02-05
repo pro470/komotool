@@ -52,7 +52,6 @@ pub fn update_monitor_list(
                 .cloned()
                 .collect();
 
-
             // Send event if changes detected
             if !added.is_empty() || !removed.is_empty() {
                 // Update resources

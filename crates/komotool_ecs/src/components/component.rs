@@ -5,7 +5,7 @@ pub struct Rect {
     pub left: i32,
     pub top: i32,
     pub right: i32,
-    pub bottom: i32
+    pub bottom: i32,
 }
 
 #[derive(Component, Reflect)]
@@ -15,7 +15,7 @@ pub enum LayoutType {
     HorizontalStack,
     UltrawideVerticalStack,
     Rows,
-    BSP
+    BSP,
 }
 
 #[derive(Component, Reflect)]
@@ -26,7 +26,7 @@ pub struct Monitor {
     pub serial_number: String,
     pub physical_size: Rect,
     pub work_area: Rect,
-    pub work_area_offset: Rect
+    pub work_area_offset: Rect,
 }
 
 #[derive(Component, Reflect)]
@@ -35,13 +35,13 @@ pub struct Workspace {
     pub layout: LayoutType,
     pub padding: i32,
     pub container_padding: i32,
-    pub tile: bool
+    pub tile: bool,
 }
 
 #[derive(Component, Reflect)]
 pub struct Container {
     pub id: String,
-    pub focused: i32
+    pub focused: i32,
 }
 
 #[derive(Component, Reflect)]
@@ -50,7 +50,7 @@ pub struct Window {
     pub title: String,
     pub exe: String,
     pub class: String,
-    pub rect: Rect
+    pub rect: Rect,
 }
 
 #[derive(Component, Reflect)]
