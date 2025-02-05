@@ -80,6 +80,22 @@ impl Plugin for KomoToolLuaPlugin {
                 advance_to_all_done
                     .run_if(in_state(ScriptLoadState::PostStartupDone))
                     .after(event_handler::<PostStartUp, LuaScriptingPlugin>)
+            )
+            // Add systems for the main loop phases
+            .add_systems(
+                PreUpdate,
+                event_handler::<PreUpdate, LuaScriptingPlugin>
+                    .run_if(in_state(ScriptLoadState::AllDone))
+            )
+            .add_systems(
+                Update,
+                event_handler::<Update, LuaScriptingPlugin>
+                    .run_if(in_state(ScriptLoadState::AllDone))
+            )
+            .add_systems(
+                PostUpdate,
+                event_handler::<PostUpdate, LuaScriptingPlugin>
+                    .run_if(in_state(ScriptLoadState::AllDone))
             );
     }
 }
