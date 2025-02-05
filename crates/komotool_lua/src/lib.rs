@@ -3,9 +3,18 @@ use bevy::prelude::*;
 use bevy_mod_scripting::core::{callback_labels, event::*, handler::event_handler};
 use bevy_mod_scripting::lua::LuaScriptingPlugin;
 
+#[derive(States, Default, Debug, Clone, Eq, PartialEq, Hash)]
+enum ScriptLoadState {
+    #[default]
+    Loading,
+    PreStartupDone,
+    StartupDone,
+    PostStartupDone,
+}
+
 #[derive(Resource)]
-pub struct LuaScripts {
-    pub folder_handle: Handle<LoadedFolder>,
+struct ScriptLoadTracker {
+    handle: Handle<LoadedFolder>,
 }
 
 // Add near other label definitions
@@ -27,48 +36,79 @@ impl Plugin for KomoToolLuaPlugin {
     fn build(&self, app: &mut App) {
         app
             .add_plugins(LuaScriptingPlugin)
-            // PreStartup phase
+            .init_state::<ScriptLoadState>()
+            // Original load system remains in PreStartup
+            .add_systems(PreStartup, load_lua_scripts)
+            // Phased initialization systems
             .add_systems(
-                PreStartup,
-                (
-                    load_lua_scripts,
-                    send_pre_startup,
-                    event_handler::<PreStartUp, LuaScriptingPlugin>,
-                ),
+                PreUpdate,
+                check_pre_startup
+                    .run_if(in_state(ScriptLoadState::Loading))
+                    .before(event_handler::<PreStartUp, LuaScriptingPlugin>)
             )
-            // Startup phase
             .add_systems(
-                Startup,
-                (send_startup, event_handler::<StartUp, LuaScriptingPlugin>),
+                Update,
+                check_startup
+                    .run_if(in_state(ScriptLoadState::PreStartupDone))
+                    .before(event_handler::<StartUp, LuaScriptingPlugin>)
             )
-            // PostStartup phase
             .add_systems(
-                PostStartup,
-                (
-                    send_post_startup,
-                    event_handler::<PostStartUp, LuaScriptingPlugin>,
-                ),
+                PostUpdate,
+                check_post_startup
+                    .run_if(in_state(ScriptLoadState::StartupDone))
+                    .before(event_handler::<PostStartUp, LuaScriptingPlugin>)
+            )
+            // Keep original event handlers but move to main schedules
+            .add_systems(
+                PreUpdate,
+                event_handler::<PreStartUp, LuaScriptingPlugin>
+                    .run_if(in_state(ScriptLoadState::PreStartupDone))
+            )
+            .add_systems(
+                Update,
+                event_handler::<StartUp, LuaScriptingPlugin>
+                    .run_if(in_state(ScriptLoadState::StartupDone))
+            )
+            .add_systems(
+                PostUpdate,
+                event_handler::<PostStartUp, LuaScriptingPlugin>
+                    .run_if(in_state(ScriptLoadState::PostStartupDone))
             );
     }
 }
 
-fn load_lua_scripts(asset_server: Res<AssetServer>, mut commands: Commands) {
+fn load_lua_scripts(
+    asset_server: Res<AssetServer>,
+    mut commands: Commands,
+) {
     let handle = asset_server.load_folder("komotool_config://Lua");
-
-    commands.insert_resource(LuaScripts {
-        folder_handle: handle,
-    });
+    commands.insert_resource(ScriptLoadTracker { handle });
 }
 
-// Add these systems to your app setup
-fn send_pre_startup(mut writer: EventWriter<ScriptCallbackEvent>) {
-    writer.send(ScriptCallbackEvent::new_for_all(PreStartUp, vec![]));
+fn check_pre_startup(
+    asset_server: Res<AssetServer>,
+    tracker: Res<ScriptLoadTracker>,
+    mut writer: EventWriter<ScriptCallbackEvent>,
+    mut next_state: ResMut<NextState<ScriptLoadState>>,
+) {
+    if asset_server.get_recursive_dependency_load_state(&tracker.handle) == LoadState::Loaded {
+        writer.send(ScriptCallbackEvent::new_for_all(PreStartUp, vec![]));
+        next_state.set(ScriptLoadState::PreStartupDone);
+    }
 }
 
-fn send_startup(mut writer: EventWriter<ScriptCallbackEvent>) {
+fn check_startup(
+    mut writer: EventWriter<ScriptCallbackEvent>,
+    mut next_state: ResMut<NextState<ScriptLoadState>>,
+) {
     writer.send(ScriptCallbackEvent::new_for_all(StartUp, vec![]));
+    next_state.set(ScriptLoadState::StartupDone);
 }
 
-fn send_post_startup(mut writer: EventWriter<ScriptCallbackEvent>) {
+fn check_post_startup(
+    mut writer: EventWriter<ScriptCallbackEvent>,
+    mut next_state: ResMut<NextState<ScriptLoadState>>,
+) {
     writer.send(ScriptCallbackEvent::new_for_all(PostStartUp, vec![]));
+    next_state.set(ScriptLoadState::PostStartupDone);
 }
