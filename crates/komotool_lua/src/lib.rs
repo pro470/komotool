@@ -10,6 +10,7 @@ enum ScriptLoadState {
     PreStartupDone,
     StartupDone,
     PostStartupDone,
+    AllDone,
 }
 
 #[derive(Resource)]
@@ -73,6 +74,12 @@ impl Plugin for KomoToolLuaPlugin {
                 PostUpdate,
                 event_handler::<PostStartUp, LuaScriptingPlugin>
                     .run_if(in_state(ScriptLoadState::PostStartupDone))
+            )
+            .add_systems(
+                PostUpdate,
+                advance_to_all_done
+                    .run_if(in_state(ScriptLoadState::PostStartupDone))
+                    .after(event_handler::<PostStartUp, LuaScriptingPlugin>)
             );
     }
 }
@@ -111,4 +118,10 @@ fn check_post_startup(
 ) {
     writer.send(ScriptCallbackEvent::new_for_all(PostStartUp, vec![]));
     next_state.set(ScriptLoadState::PostStartupDone);
+}
+
+fn advance_to_all_done(
+    mut next_state: ResMut<NextState<ScriptLoadState>>,
+) {
+    next_state.set(ScriptLoadState::AllDone);
 }
