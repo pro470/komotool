@@ -31,6 +31,18 @@ callback_labels!(
     PostStartUp => "post_startup"
 );
 
+callback_labels!(
+    PreUpdate => "pre_update"
+);
+
+callback_labels!(
+    Update => "update"
+);
+
+callback_labels!(
+    PostUpdate => "post_update"
+);
+
 pub struct KomoToolLuaPlugin;
 
 impl Plugin for KomoToolLuaPlugin {
