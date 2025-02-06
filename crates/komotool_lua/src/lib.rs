@@ -1,6 +1,8 @@
 use bevy::asset::{LoadedFolder, RecursiveDependencyLoadState};
 use bevy::prelude::*;
-use bevy_mod_scripting::core::{callback_labels, event::*, handler::event_handler};
+use bevy_mod_scripting::core::{
+    asset::ScriptAssetLoader, callback_labels, event::*, handler::event_handler,
+};
 use bevy_mod_scripting::lua::LuaScriptingPlugin;
 
 #[derive(States, Default, Debug, Clone, Eq, PartialEq, Hash)]
@@ -20,27 +22,27 @@ struct ScriptLoadTracker {
 
 // Add near other label definitions
 callback_labels!(
-PreStartUp => "pre_startup"
+PreStartUp => "on_pre_startup"
 );
 
 callback_labels!(
-StartUp => "startup"
+StartUp => "on_startup"
 );
 
 callback_labels!(
-    PostStartUp => "post_startup"
+    PostStartUp => "on_post_startup"
 );
 
 callback_labels!(
-    PreUpdate => "pre_update"
+    PreUpdate => "on_pre_update"
 );
 
 callback_labels!(
-    Update => "update"
+    Update => "on_update"
 );
 
 callback_labels!(
-    PostUpdate => "post_update"
+    PostUpdate => "on_post_update"
 );
 
 pub struct KomoToolLuaPlugin;
@@ -112,7 +114,13 @@ impl Plugin for KomoToolLuaPlugin {
 }
 
 fn load_lua_scripts(asset_server: Res<AssetServer>, mut commands: Commands) {
-    let handle = asset_server.load_folder("komotool_config://Lua");
+    let mut luascriptloader = ScriptAssetLoader::default();
+    luascriptloader.extensions = &["lua"];
+    asset_server.register_loader(luascriptloader);
+    let path = std::path::Path::new("lua");
+    let source = bevy::asset::io::AssetSourceId::from("komotool_config");
+    let asset_path = bevy::asset::AssetPath::from_path(path).with_source(source);
+    let handle = asset_server.load_folder(asset_path);
     commands.insert_resource(ScriptLoadTracker { handle });
 }
 
@@ -122,11 +130,16 @@ fn check_pre_startup(
     mut writer: EventWriter<ScriptCallbackEvent>,
     mut next_state: ResMut<NextState<ScriptLoadState>>,
 ) {
-    if let Some(RecursiveDependencyLoadState::Loaded) = 
-        asset_server.get_recursive_dependency_load_state(&tracker.handle) 
+    if let Some(RecursiveDependencyLoadState::Loaded) =
+        asset_server.get_recursive_dependency_load_state(&tracker.handle)
     {
         writer.send(ScriptCallbackEvent::new_for_all(PreStartUp, vec![]));
         next_state.set(ScriptLoadState::PreStartupDone);
+    }
+    if let Some(RecursiveDependencyLoadState::Failed(e)) =
+        asset_server.get_recursive_dependency_load_state(&tracker.handle)
+    {
+        println!("{}", e);
     }
 }
 

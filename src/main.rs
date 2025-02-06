@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, state::app::StatesPlugin};
 use komotool_assets::KomotoolAssetsPlugin;
 use komotool_ecs::KomoToolEcsPlugin;
 use komotool_komorebic::KomoToolKomorebicPlugin;
@@ -11,9 +11,10 @@ use komotoolc_pipe::KomoToolcPipePlugin;
 
 fn main() {
     App::new()
+        .add_plugins(StatesPlugin)
         .add_plugins(MinimalPlugins)
         .add_plugins(KomoToolPipePlugin)
-        .add_plugins(KomoToolWindowsPlugin)
+        //.add_plugins(KomoToolWindowsPlugin)
         .add_plugins(KomoToolcPipePlugin)
         .add_plugins(KomoToolUtilsPlugin)
         .add_plugins(KomoToolEcsPlugin)
