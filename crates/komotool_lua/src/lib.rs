@@ -1,7 +1,8 @@
 use bevy::asset::{LoadedFolder, RecursiveDependencyLoadState};
 use bevy::prelude::*;
 use bevy_mod_scripting::core::{
-    asset::ScriptAssetLoader, callback_labels, event::*, handler::event_handler, script::ScriptComponent,
+    asset::ScriptAssetLoader, callback_labels, event::*, handler::event_handler,
+    script::ScriptComponent,
 };
 use bevy_mod_scripting::lua::LuaScriptingPlugin;
 
@@ -20,29 +21,28 @@ struct LuaScriptLoadTracker {
     handle: Handle<LoadedFolder>,
 }
 
-// Add near other label definitions
 callback_labels!(
-PreStartUp => "on_pre_startup"
+    OnPreStartUp => "on_pre_startup"
 );
 
 callback_labels!(
-StartUp => "on_startup"
+    OnStartUp => "on_startup"
 );
 
 callback_labels!(
-    PostStartUp => "on_post_startup"
+    OnPostStartUp => "on_post_startup"
 );
 
 callback_labels!(
-    PreUpdate => "on_pre_update"
+    OnPreUpdate => "on_pre_update"
 );
 
 callback_labels!(
-    Update => "on_update"
+    OnUpdate => "on_update"
 );
 
 callback_labels!(
-    PostUpdate => "on_post_update"
+    OnPostUpdate => "on_post_update"
 );
 
 pub struct KomoToolLuaPlugin;
@@ -51,88 +51,83 @@ impl Plugin for KomoToolLuaPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(LuaScriptingPlugin::default())
             .init_state::<LuaScriptLoadState>()
-            // Original load system remains in PreStartup
             .add_systems(PreStartup, load_lua_scripts)
             // Phased initialization systems
             .add_systems(
-                bevy::prelude::PreUpdate,
+                PreUpdate,
                 check_pre_startup
                     .run_if(in_state(LuaScriptLoadState::Loading))
-                    .before(event_handler::<PreStartUp, LuaScriptingPlugin>),
+                    .before(event_handler::<OnPreStartUp, LuaScriptingPlugin>),
             )
             .add_systems(
-                bevy::prelude::Update,
+                Update,
                 check_startup
                     .run_if(in_state(LuaScriptLoadState::PreStartupDone))
-                    .before(event_handler::<StartUp, LuaScriptingPlugin>),
+                    .before(event_handler::<OnStartUp, LuaScriptingPlugin>),
             )
             .add_systems(
-                bevy::prelude::PostUpdate,
+                PostUpdate,
                 check_post_startup
                     .run_if(in_state(LuaScriptLoadState::StartupDone))
-                    .before(event_handler::<PostStartUp, LuaScriptingPlugin>),
+                    .before(event_handler::<OnPostStartUp, LuaScriptingPlugin>),
             )
-            // Keep original event handlers but move to main schedules
             .add_systems(
-                bevy::prelude::PreUpdate,
-                event_handler::<PreStartUp, LuaScriptingPlugin>
+                PreUpdate,
+                event_handler::<OnPreStartUp, LuaScriptingPlugin>
                     .run_if(in_state(LuaScriptLoadState::PreStartupDone)),
             )
             .add_systems(
-                bevy::prelude::Update,
-                event_handler::<StartUp, LuaScriptingPlugin>
+                Update,
+                event_handler::<OnStartUp, LuaScriptingPlugin>
                     .run_if(in_state(LuaScriptLoadState::StartupDone)),
             )
             .add_systems(
-                bevy::prelude::PostUpdate,
-                event_handler::<PostStartUp, LuaScriptingPlugin>
+                PostUpdate,
+                event_handler::<OnPostStartUp, LuaScriptingPlugin>
                     .run_if(in_state(LuaScriptLoadState::PostStartupDone)),
             )
             .add_systems(
-                bevy::prelude::PostUpdate,
+                PostUpdate,
                 advance_to_all_done
                     .run_if(in_state(LuaScriptLoadState::PostStartupDone))
-                    .after(event_handler::<PostStartUp, LuaScriptingPlugin>),
+                    .after(event_handler::<OnPostStartUp, LuaScriptingPlugin>),
             )
             // Add systems for the main loop phases
             .add_systems(
-                bevy::prelude::Last,
-                send_pre_update_events
-                    .run_if(in_state(LuaScriptLoadState::AllDone))
-                    .before(event_handler::<PreUpdate, LuaScriptingPlugin>),
+                Last,
+                send_pre_update_events.run_if(in_state(LuaScriptLoadState::AllDone)),
             )
             .add_systems(
-                bevy::prelude::PreUpdate,
-                send_update_events
-                    .run_if(in_state(LuaScriptLoadState::AllDone))
-                    .before(event_handler::<Update, LuaScriptingPlugin>),
+                PreUpdate,
+                send_update_events.run_if(in_state(LuaScriptLoadState::AllDone)),
             )
             .add_systems(
-                bevy::prelude::Update,
-                send_post_update_events
-                    .run_if(in_state(LuaScriptLoadState::AllDone))
-                    .before(event_handler::<PostUpdate, LuaScriptingPlugin>),
+                Update,
+                send_post_update_events.run_if(in_state(LuaScriptLoadState::AllDone)),
             )
             .add_systems(
-                bevy::prelude::PreUpdate,
-                event_handler::<PreUpdate, LuaScriptingPlugin>
+                PreUpdate,
+                event_handler::<OnPreUpdate, LuaScriptingPlugin>
                     .run_if(in_state(LuaScriptLoadState::AllDone)),
             )
             .add_systems(
-                bevy::prelude::Update,
-                event_handler::<Update, LuaScriptingPlugin>
+                Update,
+                event_handler::<OnUpdate, LuaScriptingPlugin>
                     .run_if(in_state(LuaScriptLoadState::AllDone)),
             )
             .add_systems(
-                bevy::prelude::PostUpdate,
-                event_handler::<PostUpdate, LuaScriptingPlugin>
+                PostUpdate,
+                event_handler::<OnPostUpdate, LuaScriptingPlugin>
                     .run_if(in_state(LuaScriptLoadState::AllDone)),
             );
     }
 }
 
 fn load_lua_scripts(asset_server: Res<AssetServer>, mut commands: Commands) {
-    let luascriptloader = ScriptAssetLoader { extensions: &["lua"], ..Default::default() };
+    let luascriptloader = ScriptAssetLoader {
+        extensions: &["lua"],
+        ..Default::default()
+    };
     asset_server.register_loader(luascriptloader);
     let path = std::path::Path::new("lua");
     let source = bevy::asset::io::AssetSourceId::from("komotool_config");
@@ -156,11 +151,12 @@ fn check_pre_startup(
             for handle in &folder.handles {
                 if let Some(path) = handle.path() {
                     commands.spawn(ScriptComponent::new(vec![path.to_string()]));
+                    println!("{}", path.to_string());
                 }
             }
         }
 
-        writer.send(ScriptCallbackEvent::new_for_all(PreStartUp, vec![]));
+        writer.send(ScriptCallbackEvent::new_for_all(OnPreStartUp, vec![]));
         next_state.set(LuaScriptLoadState::PreStartupDone);
     }
     if let Some(RecursiveDependencyLoadState::Failed(e)) =
@@ -174,7 +170,7 @@ fn check_startup(
     mut writer: EventWriter<ScriptCallbackEvent>,
     mut next_state: ResMut<NextState<LuaScriptLoadState>>,
 ) {
-    writer.send(ScriptCallbackEvent::new_for_all(StartUp, vec![]));
+    writer.send(ScriptCallbackEvent::new_for_all(OnStartUp, vec![]));
     next_state.set(LuaScriptLoadState::StartupDone);
 }
 
@@ -182,7 +178,7 @@ fn check_post_startup(
     mut writer: EventWriter<ScriptCallbackEvent>,
     mut next_state: ResMut<NextState<LuaScriptLoadState>>,
 ) {
-    writer.send(ScriptCallbackEvent::new_for_all(PostStartUp, vec![]));
+    writer.send(ScriptCallbackEvent::new_for_all(OnPostStartUp, vec![]));
     next_state.set(LuaScriptLoadState::PostStartupDone);
 }
 
@@ -191,13 +187,13 @@ fn advance_to_all_done(mut next_state: ResMut<NextState<LuaScriptLoadState>>) {
 }
 
 fn send_pre_update_events(mut writer: EventWriter<ScriptCallbackEvent>) {
-    writer.send(ScriptCallbackEvent::new_for_all(PreUpdate, vec![]));
+    writer.send(ScriptCallbackEvent::new_for_all(OnPreUpdate, vec![]));
 }
 
 fn send_update_events(mut writer: EventWriter<ScriptCallbackEvent>) {
-    writer.send(ScriptCallbackEvent::new_for_all(Update, vec![]));
+    writer.send(ScriptCallbackEvent::new_for_all(OnUpdate, vec![]));
 }
 
 fn send_post_update_events(mut writer: EventWriter<ScriptCallbackEvent>) {
-    writer.send(ScriptCallbackEvent::new_for_all(PostUpdate, vec![]));
+    writer.send(ScriptCallbackEvent::new_for_all(OnPostUpdate, vec![]));
 }
