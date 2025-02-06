@@ -1,7 +1,7 @@
 use bevy::asset::{LoadedFolder, RecursiveDependencyLoadState};
 use bevy::prelude::*;
 use bevy_mod_scripting::core::{
-    asset::ScriptAssetLoader, callback_labels, event::*, handler::event_handler,
+    asset::ScriptAssetLoader, callback_labels, event::*, handler::event_handler, script::ScriptComponent,
 };
 use bevy_mod_scripting::lua::LuaScriptingPlugin;
 
@@ -127,12 +127,22 @@ fn load_lua_scripts(asset_server: Res<AssetServer>, mut commands: Commands) {
 fn check_pre_startup(
     asset_server: Res<AssetServer>,
     tracker: Res<ScriptLoadTracker>,
+    loaded_folders: Res<Assets<LoadedFolder>>,
+    mut commands: Commands,
     mut writer: EventWriter<ScriptCallbackEvent>,
     mut next_state: ResMut<NextState<ScriptLoadState>>,
 ) {
     if let Some(RecursiveDependencyLoadState::Loaded) =
         asset_server.get_recursive_dependency_load_state(&tracker.handle)
     {
+        if let Some(folder) = loaded_folders.get(&tracker.handle) {
+            for handle in &folder.handles {
+                if let Some(path) = handle.path() {
+                    commands.spawn(ScriptComponent::new(vec![path.to_string()]));
+                }
+            }
+        }
+
         writer.send(ScriptCallbackEvent::new_for_all(PreStartUp, vec![]));
         next_state.set(ScriptLoadState::PreStartupDone);
     }
