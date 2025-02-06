@@ -22,26 +22,11 @@ struct LuaScriptLoadTracker {
 }
 
 callback_labels!(
-    OnPreStartUp => "on_pre_startup"
-);
-
-callback_labels!(
-    OnStartUp => "on_startup"
-);
-
-callback_labels!(
-    OnPostStartUp => "on_post_startup"
-);
-
-callback_labels!(
-    OnPreUpdate => "on_pre_update"
-);
-
-callback_labels!(
-    OnUpdate => "on_update"
-);
-
-callback_labels!(
+    OnPreStartUp => "on_pre_startup",
+    OnStartUp => "on_startup",
+    OnPostStartUp => "on_post_startup",
+    OnPreUpdate => "on_pre_update",
+    OnUpdate => "on_update",
     OnPostUpdate => "on_post_update"
 );
 
@@ -150,8 +135,9 @@ fn check_pre_startup(
         if let Some(folder) = loaded_folders.get(&tracker.handle) {
             for handle in &folder.handles {
                 if let Some(path) = handle.path() {
-                    commands.spawn(ScriptComponent::new(vec![path.to_string()]));
+                    let en = commands.spawn(ScriptComponent::new(vec![path.to_string()]));
                     println!("{}", path.to_string());
+                    println!("{}", en.id());
                 }
             }
         }
