@@ -96,19 +96,19 @@ impl Plugin for KomoToolLuaPlugin {
             )
             // Add systems for the main loop phases
             .add_systems(
-                bevy::prelude::PreUpdate,
+                bevy::prelude::Last,
                 send_pre_update_events
                     .run_if(in_state(LuaScriptLoadState::AllDone))
                     .before(event_handler::<PreUpdate, LuaScriptingPlugin>),
             )
             .add_systems(
-                bevy::prelude::Update,
+                bevy::prelude::PreUpdate,
                 send_update_events
                     .run_if(in_state(LuaScriptLoadState::AllDone))
                     .before(event_handler::<Update, LuaScriptingPlugin>),
             )
             .add_systems(
-                bevy::prelude::PostUpdate,
+                bevy::prelude::Update,
                 send_post_update_events
                     .run_if(in_state(LuaScriptLoadState::AllDone))
                     .before(event_handler::<PostUpdate, LuaScriptingPlugin>),
