@@ -97,6 +97,24 @@ impl Plugin for KomoToolLuaPlugin {
             // Add systems for the main loop phases
             .add_systems(
                 bevy::prelude::PreUpdate,
+                send_pre_update_events
+                    .run_if(in_state(LuaScriptLoadState::AllDone))
+                    .before(event_handler::<PreUpdate, LuaScriptingPlugin>),
+            )
+            .add_systems(
+                bevy::prelude::Update,
+                send_update_events
+                    .run_if(in_state(LuaScriptLoadState::AllDone))
+                    .before(event_handler::<Update, LuaScriptingPlugin>),
+            )
+            .add_systems(
+                bevy::prelude::PostUpdate,
+                send_post_update_events
+                    .run_if(in_state(LuaScriptLoadState::AllDone))
+                    .before(event_handler::<PostUpdate, LuaScriptingPlugin>),
+            )
+            .add_systems(
+                bevy::prelude::PreUpdate,
                 event_handler::<PreUpdate, LuaScriptingPlugin>
                     .run_if(in_state(LuaScriptLoadState::AllDone)),
             )
@@ -170,4 +188,16 @@ fn check_post_startup(
 
 fn advance_to_all_done(mut next_state: ResMut<NextState<LuaScriptLoadState>>) {
     next_state.set(LuaScriptLoadState::AllDone);
+}
+
+fn send_pre_update_events(mut writer: EventWriter<ScriptCallbackEvent>) {
+    writer.send(ScriptCallbackEvent::new_for_all(PreUpdate, vec![]));
+}
+
+fn send_update_events(mut writer: EventWriter<ScriptCallbackEvent>) {
+    writer.send(ScriptCallbackEvent::new_for_all(Update, vec![]));
+}
+
+fn send_post_update_events(mut writer: EventWriter<ScriptCallbackEvent>) {
+    writer.send(ScriptCallbackEvent::new_for_all(PostUpdate, vec![]));
 }
