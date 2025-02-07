@@ -135,7 +135,7 @@ fn check_pre_startup(
         if let Some(folder) = loaded_folders.get(&tracker.handle) {
             for handle in &folder.handles {
                 if let Some(path) = handle.path() {
-                    let en = commands.spawn(ScriptComponent::new(vec![path
+                    commands.spawn(ScriptComponent::new(vec![path
                         .path()
                         .to_string_lossy()
                         .to_string()]));
