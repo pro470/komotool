@@ -80,15 +80,15 @@ impl Plugin for KomoToolLuaPlugin {
             // Add systems for the main loop phases
             .add_systems(
                 Last,
-                send_pre_update_events.run_if(in_state(LuaScriptLoadState::AllDone)),
+                lua_send_pre_update_events.run_if(in_state(LuaScriptLoadState::AllDone)),
             )
             .add_systems(
                 PreUpdate,
-                send_update_events.run_if(in_state(LuaScriptLoadState::AllDone)),
+                lua_send_update_events.run_if(in_state(LuaScriptLoadState::AllDone)),
             )
             .add_systems(
                 Update,
-                send_post_update_events.run_if(in_state(LuaScriptLoadState::AllDone)),
+                lua_send_post_update_events.run_if(in_state(LuaScriptLoadState::AllDone)),
             )
             .add_systems(
                 PreUpdate,
@@ -169,18 +169,18 @@ fn lua_check_post_startup(
     next_state.set(LuaScriptLoadState::PostStartupDone);
 }
 
-fn advance_to_all_done(mut next_state: ResMut<NextState<LuaScriptLoadState>>) {
+fn lua_advance_to_all_done(mut next_state: ResMut<NextState<LuaScriptLoadState>>) {
     next_state.set(LuaScriptLoadState::AllDone);
 }
 
-fn send_pre_update_events(mut writer: EventWriter<ScriptCallbackEvent>) {
+fn lua_send_pre_update_events(mut writer: EventWriter<ScriptCallbackEvent>) {
     writer.send(ScriptCallbackEvent::new_for_all(OnPreUpdate, vec![]));
 }
 
-fn send_update_events(mut writer: EventWriter<ScriptCallbackEvent>) {
+fn lua_send_update_events(mut writer: EventWriter<ScriptCallbackEvent>) {
     writer.send(ScriptCallbackEvent::new_for_all(OnUpdate, vec![]));
 }
 
-fn send_post_update_events(mut writer: EventWriter<ScriptCallbackEvent>) {
+fn lua_send_post_update_events(mut writer: EventWriter<ScriptCallbackEvent>) {
     writer.send(ScriptCallbackEvent::new_for_all(OnPostUpdate, vec![]));
 }
