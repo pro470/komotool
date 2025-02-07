@@ -40,19 +40,19 @@ impl Plugin for KomoToolLuaPlugin {
             // Phased initialization systems
             .add_systems(
                 PreUpdate,
-                check_pre_startup
+                lua_check_pre_startup
                     .run_if(in_state(LuaScriptLoadState::Loading))
                     .before(event_handler::<OnPreStartUp, LuaScriptingPlugin>),
             )
             .add_systems(
                 Update,
-                check_startup
+                lua_check_startup
                     .run_if(in_state(LuaScriptLoadState::PreStartupDone))
                     .before(event_handler::<OnStartUp, LuaScriptingPlugin>),
             )
             .add_systems(
                 PostUpdate,
-                check_post_startup
+                lua_check_post_startup
                     .run_if(in_state(LuaScriptLoadState::StartupDone))
                     .before(event_handler::<OnPostStartUp, LuaScriptingPlugin>),
             )
@@ -73,7 +73,7 @@ impl Plugin for KomoToolLuaPlugin {
             )
             .add_systems(
                 PostUpdate,
-                advance_to_all_done
+                lua_advance_to_all_done
                     .run_if(in_state(LuaScriptLoadState::PostStartupDone))
                     .after(event_handler::<OnPostStartUp, LuaScriptingPlugin>),
             )
@@ -121,7 +121,7 @@ fn load_lua_scripts(asset_server: Res<AssetServer>, mut commands: Commands) {
     commands.insert_resource(LuaScriptLoadTracker { handle });
 }
 
-fn check_pre_startup(
+fn lua_check_pre_startup(
     asset_server: Res<AssetServer>,
     tracker: Res<LuaScriptLoadTracker>,
     loaded_folders: Res<Assets<LoadedFolder>>,
@@ -153,7 +153,7 @@ fn check_pre_startup(
     }
 }
 
-fn check_startup(
+fn lua_check_startup(
     mut writer: EventWriter<ScriptCallbackEvent>,
     mut next_state: ResMut<NextState<LuaScriptLoadState>>,
 ) {
@@ -161,7 +161,7 @@ fn check_startup(
     next_state.set(LuaScriptLoadState::StartupDone);
 }
 
-fn check_post_startup(
+fn lua_check_post_startup(
     mut writer: EventWriter<ScriptCallbackEvent>,
     mut next_state: ResMut<NextState<LuaScriptLoadState>>,
 ) {

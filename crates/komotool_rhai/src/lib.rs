@@ -40,19 +40,19 @@ impl Plugin for KomoToolRhaiPlugin {
             // Phased initialization systems
             .add_systems(
                 PreUpdate,
-                check_pre_startup
+                rhai_check_pre_startup
                     .run_if(in_state(RhaiScriptLoadState::Loading))
                     .before(event_handler::<OnPreStartUp, RhaiScriptingPlugin>),
             )
             .add_systems(
                 Update,
-                check_startup
+                rhai_check_startup
                     .run_if(in_state(RhaiScriptLoadState::PreStartupDone))
                     .before(event_handler::<OnStartUp, RhaiScriptingPlugin>),
             )
             .add_systems(
                 PostUpdate,
-                check_post_startup
+                rhai_check_post_startup
                     .run_if(in_state(RhaiScriptLoadState::StartupDone))
                     .before(event_handler::<OnPostStartUp, RhaiScriptingPlugin>),
             )
@@ -73,7 +73,7 @@ impl Plugin for KomoToolRhaiPlugin {
             )
             .add_systems(
                 PostUpdate,
-                advance_to_all_done
+                rhai_advance_to_all_done
                     .run_if(in_state(RhaiScriptLoadState::PostStartupDone))
                     .after(event_handler::<OnPostStartUp, RhaiScriptingPlugin>),
             )
@@ -121,7 +121,7 @@ fn load_rhai_scripts(asset_server: Res<AssetServer>, mut commands: Commands) {
     commands.insert_resource(RhaiScriptLoadTracker { handle });
 }
 
-fn check_pre_startup(
+fn rhai_check_pre_startup(
     asset_server: Res<AssetServer>,
     tracker: Res<RhaiScriptLoadTracker>,
     loaded_folders: Res<Assets<LoadedFolder>>,
@@ -153,7 +153,7 @@ fn check_pre_startup(
     }
 }
 
-fn check_startup(
+fn rhai_check_startup(
     mut writer: EventWriter<ScriptCallbackEvent>,
     mut next_state: ResMut<NextState<RhaiScriptLoadState>>,
 ) {
@@ -161,7 +161,7 @@ fn check_startup(
     next_state.set(RhaiScriptLoadState::StartupDone);
 }
 
-fn check_post_startup(
+fn rhai_check_post_startup(
     mut writer: EventWriter<ScriptCallbackEvent>,
     mut next_state: ResMut<NextState<RhaiScriptLoadState>>,
 ) {
