@@ -1,7 +1,10 @@
 use bevy::asset::{LoadedFolder, RecursiveDependencyLoadState};
 use bevy::prelude::*;
 use bevy_mod_scripting::core::{
-    asset::ScriptAssetLoader, callback_labels, event::*, handler::event_handler,
+    asset::{Language, ScriptAssetLoader},
+    callback_labels,
+    event::*,
+    handler::event_handler,
     script::ScriptComponent,
 };
 use bevy_mod_scripting::rhai::RhaiScriptingPlugin;
@@ -143,7 +146,11 @@ fn rhai_check_pre_startup(
             }
         }
 
-        writer.send(ScriptCallbackEvent::new_for_all(OnPreStartUp, vec![]));
+        writer.send(ScriptCallbackEvent::new(
+            OnPreStartUp,
+            vec![],
+            Recipients::Language(Language::Rhai),
+        ));
         next_state.set(RhaiScriptLoadState::PreStartupDone);
     }
     if let Some(RecursiveDependencyLoadState::Failed(e)) =
@@ -157,7 +164,11 @@ fn rhai_check_startup(
     mut writer: EventWriter<ScriptCallbackEvent>,
     mut next_state: ResMut<NextState<RhaiScriptLoadState>>,
 ) {
-    writer.send(ScriptCallbackEvent::new_for_all(OnStartUp, vec![]));
+    writer.send(ScriptCallbackEvent::new(
+        OnStartUp,
+        vec![],
+        Recipients::Language(Language::Rhai),
+    ));
     next_state.set(RhaiScriptLoadState::StartupDone);
 }
 
@@ -165,7 +176,11 @@ fn rhai_check_post_startup(
     mut writer: EventWriter<ScriptCallbackEvent>,
     mut next_state: ResMut<NextState<RhaiScriptLoadState>>,
 ) {
-    writer.send(ScriptCallbackEvent::new_for_all(OnPostStartUp, vec![]));
+    writer.send(ScriptCallbackEvent::new(
+        OnPostStartUp,
+        vec![],
+        Recipients::Language(Language::Rhai),
+    ));
     next_state.set(RhaiScriptLoadState::PostStartupDone);
 }
 
@@ -174,13 +189,25 @@ fn rhai_advance_to_all_done(mut next_state: ResMut<NextState<RhaiScriptLoadState
 }
 
 fn rhai_send_pre_update_events(mut writer: EventWriter<ScriptCallbackEvent>) {
-    writer.send(ScriptCallbackEvent::new_for_all(OnPreUpdate, vec![]));
+    writer.send(ScriptCallbackEvent::new(
+        OnPreUpdate,
+        vec![],
+        Recipients::Language(Language::Rhai),
+    ));
 }
 
 fn rhai_send_update_events(mut writer: EventWriter<ScriptCallbackEvent>) {
-    writer.send(ScriptCallbackEvent::new_for_all(OnUpdate, vec![]));
+    writer.send(ScriptCallbackEvent::new(
+        OnUpdate,
+        vec![],
+        Recipients::Language(Language::Rhai),
+    ));
 }
 
 fn rhai_send_post_update_events(mut writer: EventWriter<ScriptCallbackEvent>) {
-    writer.send(ScriptCallbackEvent::new_for_all(OnPostUpdate, vec![]));
+    writer.send(ScriptCallbackEvent::new(
+        OnPostUpdate,
+        vec![],
+        Recipients::Language(Language::Rhai),
+    ));
 }
