@@ -35,6 +35,44 @@ pub fn import_komorebi_state(
         }
     }
 
+    // Spawn workspaces
+    for komo_workspace in state.workspaces.elements() {
+        let mut workspace = Workspace {
+            name: komo_workspace.name().clone(),
+            layout: komo_workspace.layout().into(),
+            containers: Vec::new(),
+            monocle_container: None,
+            monocle_container_restore_idx: komo_workspace.monocle_container_restore_idx().clone(),
+            maximized_window: None,
+            maximized_window_restore_idx: komo_workspace.maximized_window_restore_idx().clone(),
+            floating_windows: Vec::new(),
+            layout_rules: komo_workspace.layout_rules()
+                .iter()
+                .map(|(idx, l)| (*idx, l.clone().into()))
+                .collect(),
+            layout_flip: komo_workspace.layout_flip().clone(),
+            workspace_padding: komo_workspace.workspace_padding().clone(),
+            container_padding: komo_workspace.container_padding().clone(),
+            latest_layout: komo_workspace.latest_layout()
+                .iter()
+                .map(|r| r.into())
+                .collect(),
+            resize_dimensions: komo_workspace.resize_dimensions()
+                .iter()
+                .map(|r| r.as_ref().map(|rect| rect.into()))
+                .collect(),
+            tile: komo_workspace.tile().clone(),
+            apply_window_based_work_area_offset: komo_workspace.apply_window_based_work_area_offset().clone(),
+            window_container_behaviour: komo_workspace.window_container_behaviour().clone(),
+            window_container_behaviour_rules: komo_workspace.window_container_behaviour_rules()
+                .clone()
+                .map(|v| v.iter().map(|(idx, b)| (*idx, b.clone())).collect()),
+            float_override: komo_workspace.float_override().clone(),
+        };
+        
+        commands.spawn(workspace);
+    }
+
     // Update AppState
     *app_state = AppState {
         is_paused: state.is_paused,
