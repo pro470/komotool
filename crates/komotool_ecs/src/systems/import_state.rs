@@ -25,8 +25,8 @@ pub fn import_komorebi_state(
             serial_number_id: komo_mon.serial_number_id().clone(),
             physical_size: komo_mon.size().into(),
             work_area_size: komo_mon.work_area_size().into(),
-            work_area_offset: komo_mon.work_area_offset().map(|r| r.into()),
-            window_based_work_area_offset: komo_mon.window_based_work_area_offset().map(|r| r.into()),
+            work_area_offset: komo_mon.work_area_offset().map(|r| (&r).into()),
+            window_based_work_area_offset: komo_mon.window_based_work_area_offset().map(|r| (&r).into()),
             window_based_work_area_offset_limit: komo_mon.window_based_work_area_offset_limit(),
         });
 
