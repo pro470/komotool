@@ -37,14 +37,14 @@ pub fn import_komorebi_state(
 
     // Update AppState
     *app_state = AppState {
-        is_paused: state.is_paused(),
-        resize_delta: state.resize_delta(),
-        float_override: state.float_override(),
-        cross_monitor_move_behaviour: state.cross_monitor_move_behaviour().clone(),
-        unmanaged_window_operation_behaviour: state.unmanaged_window_operation_behaviour().clone(),
-        work_area_offset: state.work_area_offset().map(|r| r.into()),
-        focus_follows_mouse: state.focus_follows_mouse().clone(),
-        mouse_follows_focus: state.mouse_follows_focus(),
-        has_pending_raise_op: state.has_pending_raise_op(),
+        is_paused: state.is_paused,
+        resize_delta: state.resize_delta,
+        float_override: state.float_override,
+        cross_monitor_move_behaviour: state.cross_monitor_move_behaviour.clone(),
+        unmanaged_window_operation_behaviour: state.unmanaged_window_operation_behaviour.clone(),
+        work_area_offset: state.work_area_offset.map(|r| (&r).into()),
+        focus_follows_mouse: state.focus_follows_mouse.clone(),
+        mouse_follows_focus: state.mouse_follows_focus,
+        has_pending_raise_op: state.has_pending_raise_op,
     };
 }
