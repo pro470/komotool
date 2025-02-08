@@ -22,7 +22,7 @@ pub fn import_komorebi_state(
             name: komo_mon.name().to_string(),
             device: komo_mon.device().to_string(),
             device_id: komo_mon.device_id().to_string(),
-            serial_number_id: komo_mon.serial_number_id().clone(),
+            //serial_number_id: komo_mon.serial_number_id().clone(),
             physical_size: komo_mon.size().into(),
             work_area_size: komo_mon.work_area_size().into(),
             work_area_offset: komo_mon.work_area_offset().map(|r| (&r).into()),

@@ -35,7 +35,7 @@ pub struct Monitor {
     pub name: String,
     pub device: String,
     pub device_id: String,
-    pub serial_number_id: Option<String>,
+    //pub serial_number_id: Option<String>,
     pub physical_size: Rect,
     pub work_area_size: Rect,
     pub work_area_offset: Option<Rect>,
