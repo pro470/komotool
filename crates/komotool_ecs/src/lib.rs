@@ -1,10 +1,12 @@
 mod components;
 mod relations;
 mod resources;
+mod systems;
 
 pub use components::*;
 pub use relations::*;
 pub use resources::*;
+pub use systems::*;
 
 use bevy::prelude::*;
 

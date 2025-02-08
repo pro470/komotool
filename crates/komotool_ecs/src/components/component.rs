@@ -20,13 +20,16 @@ pub enum LayoutType {
 
 #[derive(Component, Reflect)]
 pub struct Monitor {
-    pub id: u32,
+    pub id: isize,
     pub name: String,
+    pub device: String,
     pub device_id: String,
-    pub serial_number: String,
+    pub serial_number_id: Option<String>,
     pub physical_size: Rect,
-    pub work_area: Rect,
-    pub work_area_offset: Rect,
+    pub work_area_size: Rect,
+    pub work_area_offset: Option<Rect>,
+    pub window_based_work_area_offset: Option<Rect>,
+    pub window_based_work_area_offset_limit: isize,
 }
 
 #[derive(Component, Reflect)]
