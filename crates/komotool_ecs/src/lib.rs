@@ -8,7 +8,7 @@ pub use relations::*;
 pub use resources::*;
 pub use systems::*;
 
-use bevy::prelude::*;
+use bevy::{prelude::*, app::PreUpdate};
 
 pub struct KomoToolEcsPlugin;
 
@@ -34,6 +34,7 @@ impl Plugin for KomoToolEcsPlugin {
             .register_type::<LastFocusedWorkspace>()
             .register_type::<FocusedWorkspace>()
             .register_type::<LastFocusedContainer>()
-            .register_type::<MaximizedWindow>();
+            .register_type::<MaximizedWindow>()
+            .add_systems(PreUpdate, import_komorebi_state.first());
     }
 }
