@@ -3,12 +3,11 @@ mod relations;
 mod resources;
 mod systems;
 
+use bevy::prelude::*;
 pub use components::*;
 pub use relations::*;
 pub use resources::*;
 pub use systems::*;
-
-use bevy::{prelude::*, app::PreUpdate};
 
 pub struct KomoToolEcsPlugin;
 
