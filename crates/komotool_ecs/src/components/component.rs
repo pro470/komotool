@@ -8,8 +8,8 @@ pub struct Rect {
     pub bottom: i32,
 }
 
-impl From<komorebi_client::Rect> for Rect {
-    fn from(r: komorebi_client::Rect) -> Self {
+impl From<&komorebi_client::Rect> for Rect {
+    fn from(r: &komorebi_client::Rect) -> Self {
         Self {
             left: r.left,
             top: r.top,
