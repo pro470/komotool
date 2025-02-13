@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use komorebi_client::WindowContainerBehaviour;
 
 #[derive(Debug, Clone, Reflect)]
 pub struct Rect {
@@ -7,6 +6,13 @@ pub struct Rect {
     pub top: i32,
     pub right: i32,
     pub bottom: i32,
+}
+
+#[derive(Debug, Clone, Reflect)]
+pub enum Axis {
+    Horizontal,
+    Vertical,
+    HorizontalAndVertical,
 }
 
 impl From<&komorebi_client::Rect> for Rect {
@@ -36,7 +42,6 @@ pub struct Monitor {
     pub name: String,
     pub device: String,
     pub device_id: String,
-    //pub serial_number_id: Option<String>,
     pub physical_size: Rect,
     pub work_area_size: Rect,
     pub work_area_offset: Option<Rect>,
@@ -48,10 +53,7 @@ pub struct Monitor {
 pub struct Workspace {
     pub name: Option<String>,
     pub layout: LayoutType,
-    pub containers: Vec<Entity>,
-    pub monocle_container: Option<Entity>,
     pub monocle_container_restore_idx: Option<usize>,
-    pub maximized_window: Option<Entity>,
     pub maximized_window_restore_idx: Option<usize>,
     pub floating_windows: Vec<Entity>,
     pub layout_rules: Vec<(usize, LayoutType)>,
@@ -62,8 +64,6 @@ pub struct Workspace {
     pub resize_dimensions: Vec<Option<Rect>>,
     pub tile: bool,
     pub apply_window_based_work_area_offset: bool,
-    pub window_container_behaviour: Option<WindowContainerBehaviour>,
-    pub window_container_behaviour_rules: Option<Vec<(usize, WindowContainerBehaviour)>>,
     pub float_override: Option<bool>,
 }
 

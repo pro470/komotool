@@ -3,9 +3,9 @@ use crate::resources::*;
 use bevy::prelude::*;
 use komorebi_client::{send_query, SocketMessage, State};
 
-pub fn import_komorebi_state(
+pub fn import_komorebi_monitor_appstate_state(
     mut commands: Commands,
-    mut existing_monitors: Query<(Entity, &Monitor)>,
+    mut existing_monitors: Query<(Entity, &mut Monitor)>,
     mut app_state: ResMut<AppState>,
 ) {
     // Clear existing monitors
@@ -15,67 +15,22 @@ pub fn import_komorebi_state(
 
     let state: State = serde_json::from_str(&send_query(&SocketMessage::State).unwrap()).unwrap();
 
-    // Spawn monitors and their workspaces
-    for (m_idx, komo_mon) in state.monitors.elements().iter().enumerate() {
-        let monitor_entity = commands.spawn(Monitor {
+    // Spawn new monitor entities with getter methods
+    for (idx, komo_mon) in state.monitors.elements().iter().enumerate() {
+        let mut entity = commands.spawn(Monitor {
             id: komo_mon.id(),
             name: komo_mon.name().to_string(),
             device: komo_mon.device().to_string(),
             device_id: komo_mon.device_id().to_string(),
-            //serial_number_id: komo_mon.serial_number_id().clone(),
             physical_size: komo_mon.size().into(),
             work_area_size: komo_mon.work_area_size().into(),
             work_area_offset: komo_mon.work_area_offset().map(|r| (&r).into()),
             window_based_work_area_offset: komo_mon.window_based_work_area_offset().map(|r| (&r).into()),
             window_based_work_area_offset_limit: komo_mon.window_based_work_area_offset_limit(),
-        }).id();
+        });
 
-        // Spawn workspaces specific to this monitor
-        for (w_idx, komo_workspace) in komo_mon.workspaces().elements().iter().enumerate() {
-            let workspace_entity = commands.spawn(Workspace {
-                name: komo_workspace.name().clone(),
-                layout: komo_workspace.layout().into(),
-                containers: Vec::new(),
-                monocle_container: None,
-                monocle_container_restore_idx: komo_workspace.monocle_container_restore_idx().clone(),
-                maximized_window: None,
-                maximized_window_restore_idx: komo_workspace.maximized_window_restore_idx().clone(),
-                floating_windows: Vec::new(),
-                layout_rules: komo_workspace.layout_rules()
-                    .iter()
-                    .map(|(idx, l)| (*idx, l.clone().into()))
-                    .collect(),
-                layout_flip: komo_workspace.layout_flip().clone(),
-                workspace_padding: komo_workspace.workspace_padding().clone(),
-                container_padding: komo_workspace.container_padding().clone(),
-                latest_layout: komo_workspace.latest_layout()
-                    .iter()
-                    .map(|r| r.into())
-                    .collect(),
-                resize_dimensions: komo_workspace.resize_dimensions()
-                    .iter()
-                    .map(|r| r.as_ref().map(|rect| rect.into()))
-                    .collect(),
-                tile: komo_workspace.tile().clone(),
-                apply_window_based_work_area_offset: komo_workspace.apply_window_based_work_area_offset().clone(),
-                window_container_behaviour: komo_workspace.window_container_behaviour().clone(),
-                window_container_behaviour_rules: komo_workspace.window_container_behaviour_rules()
-                    .clone()
-                    .map(|v| v.iter().map(|(idx, b)| (*idx, b.clone())).collect()),
-                float_override: komo_workspace.float_override().clone(),
-            })
-            .set_parent(monitor_entity)
-            .id();
-
-            // Mark focused workspace
-            if w_idx == komo_mon.workspaces().focused_idx() {
-                commands.entity(workspace_entity).insert(Focused(1));
-            }
-        }
-
-        // Mark focused monitor
-        if m_idx == state.monitors.focused_idx() {
-            commands.entity(monitor_entity).insert(Focused(1));
+        if idx == state.monitors.focused_idx() {
+            entity.insert(Focused(1));
         }
     }
 
