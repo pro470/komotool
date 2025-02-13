@@ -2,13 +2,12 @@ use bevy::asset::{LoadedFolder, RecursiveDependencyLoadState};
 use bevy::prelude::*;
 use bevy_mod_scripting::core::{
     asset::Language,
-    callback_labels,
     event::*,
     handler::event_handler,
     script::ScriptComponent,
 };
 use bevy_mod_scripting::rhai::RhaiScriptingPlugin;
-use komotool_utils::{GlobalLoadingState, increment_loading_counter, decrement_loading_counter};
+use komotool_utils::prelude::*;
 
 #[derive(States, Default, Debug, Clone, Eq, PartialEq, Hash)]
 enum RhaiScriptLoadState {
@@ -24,15 +23,6 @@ enum RhaiScriptLoadState {
 struct RhaiScriptLoadTracker {
     handle: Handle<LoadedFolder>,
 }
-
-callback_labels!(
-    OnPreStartUp => "on_pre_startup",
-    OnStartUp => "on_startup",
-    OnPostStartUp => "on_post_startup",
-    OnPreUpdate => "on_pre_update",
-    OnUpdate => "on_update",
-    OnPostUpdate => "on_post_update"
-);
 
 pub struct KomoToolRhaiPlugin;
 
