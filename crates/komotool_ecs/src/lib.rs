@@ -14,6 +14,7 @@ pub struct KomoToolEcsPlugin;
 impl Plugin for KomoToolEcsPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<AppState>()
+            .init_resource::<KomorebiState>()
             .init_resource::<FocusedMonitor>()
             .init_resource::<FocusedWorkspaceGlobal>()
             .init_resource::<FocusedContainerGlobal>()
