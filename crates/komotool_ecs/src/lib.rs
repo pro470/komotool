@@ -34,6 +34,9 @@ impl Plugin for KomoToolEcsPlugin {
             .register_type::<FocusedWorkspace>()
             .register_type::<LastFocusedContainer>()
             .register_type::<MaximizedWindow>()
-            .add_systems(First, import_komorebi_monitor_appstate_state);
+            .add_systems(First, (
+                fetch_komorebi_state,
+                import_komorebi_monitor_appstate_state.after(fetch_komorebi_state)
+            ));
     }
 }

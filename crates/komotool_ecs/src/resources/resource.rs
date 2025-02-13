@@ -63,3 +63,9 @@ pub struct ContainerReg(pub RelationRegistry);
 
 #[derive(Resource, Default)]
 pub struct WindowReg(pub RelationRegistry);
+
+#[derive(Resource, Default)]
+pub struct KomorebiState {
+    pub current: Option<komorebi_client::State>,
+    pub last: Option<komorebi_client::State>,
+}

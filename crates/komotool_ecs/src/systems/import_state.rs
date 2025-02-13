@@ -7,13 +7,16 @@ pub fn import_komorebi_monitor_appstate_state(
     mut commands: Commands,
     mut existing_monitors: Query<(Entity, &mut Monitor)>,
     mut app_state: ResMut<AppState>,
+    komorebi_state: Res<KomorebiState>,
 ) {
     // Clear existing monitors
     for (entity, _) in existing_monitors.iter_mut() {
         commands.entity(entity).despawn();
     }
 
-    let state: State = serde_json::from_str(&send_query(&SocketMessage::State).unwrap()).unwrap();
+    let Some(state) = &komorebi_state.current else {
+        return;
+    };
 
     // Spawn new monitor entities with getter methods
     for (idx, komo_mon) in state.monitors.elements().iter().enumerate() {
