@@ -1018,12 +1018,13 @@ dependencies = [
 
 [[package]]
 name = "bevy_mod_scripting"
-version = "0.9.3"
+version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3463b11afff72d7eec54dd7b5d699d14607216bb4b9ea9efd4a1245a1daa02b9"
+checksum = "bcf28972f457c52e53026cbe3a8e9b0f1a66c54e3c978387dc6f5489af1dcef3"
 dependencies = [
  "bevy",
  "bevy_mod_scripting_core",
+ "bevy_mod_scripting_derive",
  "bevy_mod_scripting_functions",
  "bevy_mod_scripting_lua",
  "bevy_mod_scripting_rhai",
@@ -1031,11 +1032,12 @@ dependencies = [
 
 [[package]]
 name = "bevy_mod_scripting_core"
-version = "0.9.3"
+version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cbf43f0b9b358b82aa89c1b88e2bf13c99696944903e51c269b7a2b7410a7fd4"
+checksum = "2d9a7f5204dd7ac14f572404b2599487b41992a9f6e7218bb2fcd48562c661f6"
 dependencies = [
  "bevy",
+ "bevy_mod_scripting_derive",
  "dashmap",
  "derivative",
  "itertools 0.13.0",
@@ -1048,13 +1050,25 @@ dependencies = [
 ]
 
 [[package]]
-name = "bevy_mod_scripting_functions"
-version = "0.9.3"
+name = "bevy_mod_scripting_derive"
+version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "970d501011ca192531159abe10d1c88be8501c6cd2b3b5bb00e354bb93d74c6b"
+checksum = "fb50c8e65ad2e53e125e7575a4033dd36058aee476856ce52caf9624fff2d844"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.98",
+]
+
+[[package]]
+name = "bevy_mod_scripting_functions"
+version = "0.9.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f22bc9a65ea0dfb63ef0847b867f8f1e940015935cff47de1e2d3e59c727c095"
 dependencies = [
  "bevy",
  "bevy_mod_scripting_core",
+ "bevy_mod_scripting_derive",
  "profiling",
  "smol_str",
  "uuid",
@@ -1062,9 +1076,9 @@ dependencies = [
 
 [[package]]
 name = "bevy_mod_scripting_lua"
-version = "0.9.3"
+version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8c566723660e2a8f040621fa270de863459f8e095a679e87af18fa9ad151788c"
+checksum = "608f8b17ab91922e39ca6d309c571fd5a36f86e33496d8609cdd688df3681f6d"
 dependencies = [
  "bevy",
  "bevy_mod_scripting_core",
@@ -1079,9 +1093,9 @@ dependencies = [
 
 [[package]]
 name = "bevy_mod_scripting_rhai"
-version = "0.9.3"
+version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4702fe2918d397d0cdf12bac39869c1a5ae6ed7e8125aad9251a8ef9157ccf9a"
+checksum = "8b7b8610e12b04184849eb65f315416c11767a7e962a03ab87b0888568137ac2"
 dependencies = [
  "bevy",
  "bevy_mod_scripting_core",
@@ -3557,6 +3571,7 @@ name = "komotool_ecs"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "indexmap",
  "komorebi-client",
  "serde_json",
 ]
@@ -3581,6 +3596,7 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "bevy_mod_scripting",
+ "komotool_utils",
 ]
 
 [[package]]
@@ -3600,6 +3616,7 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "bevy_mod_scripting",
+ "komotool_utils",
 ]
 
 [[package]]
@@ -3607,6 +3624,7 @@ name = "komotool_utils"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "bevy_mod_scripting",
 ]
 
 [[package]]
