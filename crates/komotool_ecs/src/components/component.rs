@@ -108,8 +108,7 @@ pub enum Layout {
     Custom(CustomLayout),
 }
 
-#[derive(Component, Reflect, Debug, Clone, strum::Display, strum::EnumString)]
-#[strum(serialize_all = "PascalCase")]
+#[derive(Component, Reflect, Debug, Clone)]
 pub enum DefaultLayout {
     BSP,
     Columns,
@@ -168,7 +167,7 @@ pub struct Workspace {
     pub monocle_container_restore_idx: Option<usize>,
     pub maximized_window_restore_idx: Option<usize>,
     pub floating_windows: Vec<Entity>,
-    pub layout_rules: Vec<(usize, LayoutType)>,
+    pub layout_rules: Vec<(usize, Layout)>,
     pub layout_flip: Option<Axis>,
     pub workspace_padding: Option<i32>,
     pub container_padding: Option<i32>,
