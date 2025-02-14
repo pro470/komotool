@@ -1,10 +1,7 @@
 use bevy::asset::{LoadedFolder, RecursiveDependencyLoadState};
 use bevy::prelude::*;
 use bevy_mod_scripting::core::{
-    asset::Language,
-    event::*,
-    handler::event_handler,
-    script::ScriptComponent,
+    asset::Language, event::*, handler::event_handler, script::ScriptComponent,
 };
 use bevy_mod_scripting::rhai::RhaiScriptingPlugin;
 use komotool_utils::prelude::*;
@@ -29,8 +26,14 @@ pub struct KomoToolRhaiPlugin;
 impl Plugin for KomoToolRhaiPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(RhaiScriptingPlugin::default())
-            .add_systems(OnEnter(RhaiScriptLoadState::Loading), increment_loading_counter)
-            .add_systems(OnExit(RhaiScriptLoadState::Loading), decrement_loading_counter)
+            .add_systems(
+                OnEnter(RhaiScriptLoadState::Loading),
+                increment_loading_counter,
+            )
+            .add_systems(
+                OnExit(RhaiScriptLoadState::Loading),
+                decrement_loading_counter,
+            )
             .init_state::<RhaiScriptLoadState>()
             .add_systems(PreStartup, load_rhai_scripts)
             // Phased initialization systems

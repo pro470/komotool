@@ -1,10 +1,7 @@
 use bevy::asset::{LoadedFolder, RecursiveDependencyLoadState};
 use bevy::prelude::*;
 use bevy_mod_scripting::core::{
-    asset::Language,
-    event::*,
-    handler::event_handler,
-    script::ScriptComponent,
+    asset::Language, event::*, handler::event_handler, script::ScriptComponent,
 };
 use bevy_mod_scripting::lua::LuaScriptingPlugin;
 use komotool_utils::prelude::*;
@@ -29,8 +26,14 @@ pub struct KomoToolLuaPlugin;
 impl Plugin for KomoToolLuaPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(LuaScriptingPlugin::default())
-            .add_systems(OnEnter(LuaScriptLoadState::Loading), increment_loading_counter)
-            .add_systems(OnExit(LuaScriptLoadState::Loading), decrement_loading_counter)
+            .add_systems(
+                OnEnter(LuaScriptLoadState::Loading),
+                increment_loading_counter,
+            )
+            .add_systems(
+                OnExit(LuaScriptLoadState::Loading),
+                decrement_loading_counter,
+            )
             .init_state::<LuaScriptLoadState>()
             .add_systems(PreStartup, load_lua_scripts)
             // Phased initialization systems
