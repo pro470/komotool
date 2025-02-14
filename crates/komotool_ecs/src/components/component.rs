@@ -42,7 +42,7 @@ impl From<&komorebi_client::DefaultLayout> for DefaultLayout {
 impl From<&komorebi_client::CustomLayout> for CustomLayout {
     fn from(cl: &komorebi_client::CustomLayout) -> Self {
         CustomLayout(
-            cl.0.iter()
+            cl.iter()
                 .map(|c| c.into())
                 .collect()
         )
