@@ -1,15 +1,15 @@
 use crate::components::*;
 use crate::resources::*;
-use bevy::prelude::*;
+use bevy::prelude::{Commands, Query, Res, ResMut, Entity};
 use komorebi_client::{send_query, SocketMessage, State};
 
 pub fn import_komorebi_workspace_state(
     mut commands: Commands,
-    mut existing_workspaces: Query<Entity, With<Workspace>>,
+    mut existing_workspaces: Query<(Entity, &mut Workspace)>,
     komorebi_state: Res<KomorebiState>,
 ) {
     // Clear existing workspaces
-    for entity in existing_workspaces.iter_mut() {
+    for (entity,_) in existing_workspaces.iter_mut() {
         commands.entity(entity).despawn();
     }
 
@@ -20,7 +20,7 @@ pub fn import_komorebi_workspace_state(
     // Spawn new workspace entities
     for komo_mon in state.monitors.elements() {
         let workspaces = komo_mon.workspaces();
-        for (idx, komo_ws) in workspaces.elements().iter().enumerate() {
+        for (idx, komo_ws) in workspaces.iter().enumerate() {
             let mut entity = commands.spawn(Workspace {
                 name: komo_ws.name().clone(),
                 layout: komo_ws.layout()
@@ -66,13 +66,13 @@ pub fn import_komorebi_workspace_state(
                         bottom: ri.bottom,
                     }))
                     .collect(),
-                tile: komo_ws.tile(),
+                tile: *komo_ws.tile(),
                 apply_window_based_work_area_offset: komo_ws.apply_window_based_work_area_offset(),
-                float_override: komo_ws.float_override(),
+                float_override: *komo_ws.float_override(),
             });
 
             // Set focus if this is the monitor's focused workspace
-            if idx == workspaces.focused() {
+            if idx == komo_mon.focused_workspace_idx() {
                 entity.insert(Focused(1));
             }
         }
