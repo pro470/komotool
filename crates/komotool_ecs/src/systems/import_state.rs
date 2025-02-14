@@ -3,6 +3,82 @@ use crate::resources::*;
 use bevy::prelude::*;
 use komorebi_client::{send_query, SocketMessage, State};
 
+pub fn import_komorebi_workspace_state(
+    mut commands: Commands,
+    mut existing_workspaces: Query<Entity, With<Workspace>>,
+    komorebi_state: Res<KomorebiState>,
+) {
+    // Clear existing workspaces
+    for entity in existing_workspaces.iter_mut() {
+        commands.entity(entity).despawn();
+    }
+
+    let Some(state) = &komorebi_state.current else {
+        return;
+    };
+
+    // Spawn new workspace entities
+    for komo_mon in state.monitors.elements() {
+        let workspaces = komo_mon.workspaces();
+        for (idx, komo_ws) in workspaces.elements().iter().enumerate() {
+            let mut entity = commands.spawn(Workspace {
+                name: komo_ws.name().clone(),
+                layout: komo_ws.layout()
+                    .as_ref()
+                    .map(|l| match l.as_str() {
+                        "RightMainVerticalStack" => LayoutType::RightMainVerticalStack,
+                        "VerticalStack" => LayoutType::VerticalStack,
+                        "HorizontalStack" => LayoutType::HorizontalStack,
+                        "UltrawideVerticalStack" => LayoutType::UltrawideVerticalStack,
+                        "Rows" => LayoutType::Rows,
+                        _ => LayoutType::BSP,
+                    })
+                    .unwrap_or(LayoutType::BSP),
+                monocle_container_restore_idx: komo_ws.monocle_container_restore_idx(),
+                maximized_window_restore_idx: komo_ws.maximized_window_restore_idx(),
+                floating_windows: Vec::new(),
+                layout_rules: komo_ws.layout_rules()
+                    .iter()
+                    .map(|(size, rule)| (*size, LayoutType::from_str(rule.as_str())))
+                    .collect(),
+                layout_flip: komo_ws.layout_flip().map(|a| match a {
+                    komorebi_client::Axis::Horizontal => Axis::Horizontal,
+                    komorebi_client::Axis::Vertical => Axis::Vertical,
+                    komorebi_client::Axis::HorizontalAndVertical => Axis::HorizontalAndVertical,
+                }),
+                workspace_padding: komo_ws.workspace_padding(),
+                container_padding: komo_ws.container_padding(),
+                latest_layout: komo_ws.latest_layout()
+                    .iter()
+                    .map(|r| Rect {
+                        left: r.left,
+                        top: r.top,
+                        right: r.right,
+                        bottom: r.bottom,
+                    })
+                    .collect(),
+                resize_dimensions: komo_ws.resize_dimensions()
+                    .iter()
+                    .map(|r| r.as_ref().map(|ri| Rect {
+                        left: ri.left,
+                        top: ri.top,
+                        right: ri.right,
+                        bottom: ri.bottom,
+                    }))
+                    .collect(),
+                tile: komo_ws.tile(),
+                apply_window_based_work_area_offset: komo_ws.apply_window_based_work_area_offset(),
+                float_override: komo_ws.float_override(),
+            });
+
+            // Set focus if this is the monitor's focused workspace
+            if idx == workspaces.focused() {
+                entity.insert(Focused(1));
+            }
+        }
+    }
+}
+
 pub fn import_komorebi_monitor_state(
     mut commands: Commands,
     mut existing_monitors: Query<(Entity, &mut Monitor)>,
