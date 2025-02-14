@@ -3,10 +3,9 @@ use crate::resources::*;
 use bevy::prelude::*;
 use komorebi_client::{send_query, SocketMessage, State};
 
-pub fn import_komorebi_monitor_appstate_state(
+pub fn import_komorebi_monitor_state(
     mut commands: Commands,
     mut existing_monitors: Query<(Entity, &mut Monitor)>,
-    mut app_state: ResMut<AppState>,
     komorebi_state: Res<KomorebiState>,
 ) {
     // Clear existing monitors
@@ -28,7 +27,9 @@ pub fn import_komorebi_monitor_appstate_state(
             physical_size: komo_mon.size().into(),
             work_area_size: komo_mon.work_area_size().into(),
             work_area_offset: komo_mon.work_area_offset().map(|r| (&r).into()),
-            window_based_work_area_offset: komo_mon.window_based_work_area_offset().map(|r| (&r).into()),
+            window_based_work_area_offset: komo_mon
+                .window_based_work_area_offset()
+                .map(|r| (&r).into()),
             window_based_work_area_offset_limit: komo_mon.window_based_work_area_offset_limit(),
         });
 
@@ -36,17 +37,26 @@ pub fn import_komorebi_monitor_appstate_state(
             entity.insert(Focused(1));
         }
     }
+}
 
-    // Update AppState
-    *app_state = AppState {
-        is_paused: state.is_paused,
-        resize_delta: state.resize_delta,
-        float_override: state.float_override,
-        cross_monitor_move_behaviour: state.cross_monitor_move_behaviour.clone(),
-        unmanaged_window_operation_behaviour: state.unmanaged_window_operation_behaviour.clone(),
-        work_area_offset: state.work_area_offset.map(|r| (&r).into()),
-        focus_follows_mouse: state.focus_follows_mouse.clone(),
-        mouse_follows_focus: state.mouse_follows_focus,
-        has_pending_raise_op: state.has_pending_raise_op,
-    };
+pub fn import_komorebi_appstate_state(
+    mut app_state: ResMut<AppState>,
+    komorebi_state: Res<KomorebiState>,
+) {
+    if let Some(state) = &komorebi_state.current {
+        // Update AppState
+        *app_state = AppState {
+            is_paused: state.is_paused,
+            resize_delta: state.resize_delta,
+            float_override: state.float_override,
+            cross_monitor_move_behaviour: state.cross_monitor_move_behaviour.clone(),
+            unmanaged_window_operation_behaviour: state
+                .unmanaged_window_operation_behaviour
+                .clone(),
+            work_area_offset: state.work_area_offset.map(|r| (&r).into()),
+            focus_follows_mouse: state.focus_follows_mouse.clone(),
+            mouse_follows_focus: state.mouse_follows_focus,
+            has_pending_raise_op: state.has_pending_raise_op,
+        };
+    }
 }
