@@ -23,17 +23,7 @@ pub fn import_komorebi_workspace_state(
         for (idx, komo_ws) in workspaces.iter().enumerate() {
             let mut entity = commands.spawn(Workspace {
                 name: komo_ws.name().clone(),
-                layout: komo_ws.layout()
-                    .as_ref()
-                    .map(|l| match l.as_str() {
-                        "RightMainVerticalStack" => LayoutType::RightMainVerticalStack,
-                        "VerticalStack" => LayoutType::VerticalStack,
-                        "HorizontalStack" => LayoutType::HorizontalStack,
-                        "UltrawideVerticalStack" => LayoutType::UltrawideVerticalStack,
-                        "Rows" => LayoutType::Rows,
-                        _ => LayoutType::BSP,
-                    })
-                    .unwrap_or(LayoutType::BSP),
+                layout: komo_ws.layout().into(),
                 monocle_container_restore_idx: komo_ws.monocle_container_restore_idx(),
                 maximized_window_restore_idx: komo_ws.maximized_window_restore_idx(),
                 floating_windows: Vec::new(),
