@@ -1,7 +1,6 @@
+use bevy::prelude::{Commands, Query, Res, ResMut, Entity};
 use crate::components::*;
 use crate::resources::*;
-use bevy::prelude::{Commands, Query, Res, ResMut, Entity};
-use komorebi_client::{send_query, SocketMessage, State};
 
 pub fn import_komorebi_workspace_state(
     mut commands: Commands,
@@ -29,7 +28,7 @@ pub fn import_komorebi_workspace_state(
                 floating_windows: Vec::new(),
                 layout_rules: komo_ws.layout_rules()
                     .iter()
-                    .map(|(size, rule)| (*size, LayoutType::from_str(rule.as_str())))
+                    .map(|(size, rule)| (*size, rule.into()))
                     .collect(),
                 layout_flip: komo_ws.layout_flip().map(|a| match a {
                     komorebi_client::Axis::Horizontal => Axis::Horizontal,
