@@ -181,7 +181,6 @@ pub struct Workspace {
 #[derive(Component, Reflect)]
 pub struct Container {
     pub id: String,
-    pub focused: i32,
 }
 
 #[derive(Component, Reflect)]

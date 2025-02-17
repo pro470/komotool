@@ -104,6 +104,40 @@ pub fn import_komorebi_monitor_state(
     }
 }
 
+pub fn import_komorebi_container_state(
+    mut commands: Commands,
+    mut existing_containers: Query<(Entity, &mut Container)>,
+    komorebi_state: Res<KomorebiState>,
+) {
+    // Clear existing containers
+    for (entity, _) in existing_containers.iter_mut() {
+        commands.entity(entity).despawn();
+    }
+
+    let Some(state) = &komorebi_state.current else {
+        return;
+    };
+
+    // Spawn new container entities
+    for komo_mon in state.monitors.elements() {
+        let workspaces = komo_mon.workspaces();
+        for komo_ws in workspaces.iter() {
+            for komo_cont in komo_ws.containers().elements() {
+                let mut entity = commands.spawn(Container {
+                    id: komo_cont.id().to_string(),
+                });
+
+                // Set focus if this is the workspace's focused container
+                if let Some(focused_idx) = komo_ws.containers().focused_idx() {
+                    if komo_cont.id() == komo_ws.containers().elements()[focused_idx].id() {
+                        entity.insert(Focused(1));
+                    }
+                }
+            }
+        }
+    }
+}
+
 pub fn import_komorebi_appstate_state(
     mut app_state: ResMut<AppState>,
     komorebi_state: Res<KomorebiState>,
