@@ -25,7 +25,7 @@ impl Plugin for KomoToolPipePlugin {
 
         // Add system to process received messages
         app.insert_non_send_resource(receiver)
-            .add_systems(Update, handle_pipe_notifications);
+            .add_systems(First, handle_pipe_notifications);
     }
 }
 
@@ -53,7 +53,7 @@ fn run_pipe_listener(sender: Sender<Notification>) -> Result<()> {
     Ok(())
 }
 
-fn handle_pipe_notifications(
+pub fn handle_pipe_notifications(
     receiver: NonSend<Receiver<Notification>>,
     mut events: EventWriter<PipeNotificationEvent>,
 ) {
