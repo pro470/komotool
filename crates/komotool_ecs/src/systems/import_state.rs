@@ -122,16 +122,15 @@ pub fn import_komorebi_container_state(
     for komo_mon in state.monitors.elements() {
         let workspaces = komo_mon.workspaces();
         for komo_ws in workspaces.iter() {
-            for komo_cont in komo_ws.containers().elements() {
+            for komo_cont in komo_ws.containers() {
                 let mut entity = commands.spawn(Container {
                     id: komo_cont.id().to_string(),
                 });
 
                 // Set focus if this is the workspace's focused container
-                if let Some(focused_idx) = komo_ws.containers().focused_idx() {
-                    if komo_cont.id() == komo_ws.containers().elements()[focused_idx].id() {
-                        entity.insert(Focused(1));
-                    }
+                let focused_idx = komo_ws.focused_container_idx();
+                if komo_cont.id() == komo_ws.containers()[focused_idx].id() {
+                    entity.insert(Focused(1));
                 }
             }
         }
