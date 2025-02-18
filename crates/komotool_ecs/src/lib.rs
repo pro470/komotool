@@ -42,6 +42,7 @@ impl Plugin for KomoToolEcsPlugin {
                     import_komorebi_monitor_state.after(fetch_komorebi_state),
                     import_komorebi_workspace_state.after(import_komorebi_monitor_state),
                     import_komorebi_appstate_state.after(fetch_komorebi_state),
+                    import_komorebi_window_state.after(import_komorebi_workspace_state),
                 ),
             );
     }

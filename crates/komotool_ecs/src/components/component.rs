@@ -183,13 +183,9 @@ pub struct Container {
     pub id: String,
 }
 
-#[derive(Component, Reflect)]
+#[derive(Component, Reflect, Debug, Default, Clone, Copy, PartialEq)]
 pub struct Window {
-    pub hwnd: i32,
-    pub title: String,
-    pub exe: String,
-    pub class: String,
-    pub rect: Rect,
+    pub hwnd: isize,
 }
 
 #[derive(Component, Reflect)]

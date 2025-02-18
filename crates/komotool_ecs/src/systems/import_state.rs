@@ -104,6 +104,35 @@ pub fn import_komorebi_monitor_state(
     }
 }
 
+pub fn import_komorebi_window_state(
+    mut commands: Commands,
+    mut existing_windows: Query<(Entity, &mut Window)>,
+    komorebi_state: Res<KomorebiState>,
+) {
+    // Clear existing windows
+    for (entity, _) in existing_windows.iter_mut() {
+        commands.entity(entity).despawn();
+    }
+
+    let Some(state) = &komorebi_state.current else {
+        return;
+    };
+
+    // Spawn new window entities
+    for komo_mon in state.monitors.elements() {
+        let workspaces = komo_mon.workspaces();
+        for komo_ws in workspaces.iter() {
+            for komo_cont in komo_ws.containers() {
+                for komo_win in komo_cont.windows() {
+                    commands.spawn(Window {
+                        hwnd: komo_win.hwnd() as isize,
+                    });
+                }
+            }
+        }
+    }
+}
+
 pub fn import_komorebi_container_state(
     mut commands: Commands,
     mut existing_containers: Query<(Entity, &mut Container)>,
