@@ -3,7 +3,7 @@ mod relations;
 mod resources;
 mod systems;
 
-use bevy::{app::First, prelude::*};
+use bevy::prelude::*;
 pub use components::*;
 pub use relations::*;
 pub use resources::*;
@@ -40,9 +40,9 @@ impl Plugin for KomoToolEcsPlugin {
                 (
                     fetch_komorebi_state,
                     import_komorebi_monitor_state.after(fetch_komorebi_state),
-                    import_komorebi_workspace_state.after(import_komorebi_monitor_state),
+                    import_komorebi_workspace_state.after(fetch_komorebi_state),
                     import_komorebi_appstate_state.after(fetch_komorebi_state),
-                    import_komorebi_window_state.after(import_komorebi_workspace_state),
+                    import_komorebi_window_state.after(fetch_komorebi_state),
                 ),
             );
     }

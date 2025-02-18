@@ -1,6 +1,6 @@
 use anyhow::Result;
 use bevy::prelude::*;
-use komorebi_client::{subscribe, Notification};
+use komorebi_client::{subscribe_with_options, Notification, SubscribeOptions};
 use std::io::{BufRead, BufReader};
 use std::sync::mpsc::{Receiver, Sender};
 
@@ -31,7 +31,9 @@ impl Plugin for KomoToolPipePlugin {
 
 fn run_pipe_listener(sender: Sender<Notification>) -> Result<()> {
     const NAME: &str = "komotool";
-    let socket = subscribe(NAME)?;
+    let socket = subscribe_with_options(NAME, SubscribeOptions {
+        filter_state_changes: true
+    })?;
 
     for incoming in socket.incoming() {
         match incoming {
