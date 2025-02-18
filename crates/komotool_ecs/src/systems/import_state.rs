@@ -125,7 +125,7 @@ pub fn import_komorebi_window_state(
             for komo_cont in komo_ws.containers() {
                 for komo_win in komo_cont.windows() {
                     commands.spawn(Window {
-                        hwnd: komo_win.hwnd() as isize,
+                        hwnd: komo_win.hwnd,
                     });
                 }
             }
