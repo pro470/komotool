@@ -35,15 +35,18 @@ impl Plugin for KomoToolEcsPlugin {
             .register_type::<FocusedWorkspace>()
             .register_type::<LastFocusedContainer>()
             .register_type::<MaximizedWindow>()
-            .add_systems(
-                First,
-                (
-                    fetch_komorebi_state,
-                    import_komorebi_monitor_state.after(fetch_komorebi_state),
-                    import_komorebi_workspace_state.after(fetch_komorebi_state),
-                    import_komorebi_appstate_state.after(fetch_komorebi_state),
-                    import_komorebi_window_state.after(fetch_komorebi_state),
-                ),
-            );
+             .add_systems(First, (
+                 // Process notifications first
+                 update_komorebi_state_from_notifications.after(komotool_pipe::handle_pipe_notifications),
+                 // Then run all imports in parallel
+                 (
+                     import_komorebi_monitor_state,
+                     import_komorebi_workspace_state,
+                     import_komorebi_container_state,
+                     import_komorebi_window_state,
+                     import_komorebi_appstate_state,
+                 )
+                     .after(update_komorebi_state_from_notifications)
+             ));
     }
 }
