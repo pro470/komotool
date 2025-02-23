@@ -47,6 +47,7 @@ impl Plugin for KomoToolEcsPlugin {
                      import_komorebi_appstate_state,
                  )
                      .after(update_komorebi_state_from_notifications)
+                     .run_if(resource_changed::<KomorebiState>)
              ));
     }
 }
