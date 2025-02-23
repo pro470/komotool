@@ -1,4 +1,5 @@
 use bevy::{prelude::*, state::app::StatesPlugin};
+use bevy_mod_scripting::core::bindings::AllocatorDiagnosticPlugin;
 use komotool_assets::KomotoolAssetsPlugin;
 use komotool_ecs::KomoToolEcsPlugin;
 use komotool_komorebic::KomoToolKomorebicPlugin;
@@ -6,13 +7,16 @@ use komotool_lua::KomoToolLuaPlugin;
 use komotool_pipe::KomoToolPipePlugin;
 use komotool_rhai::KomoToolRhaiPlugin;
 use komotool_utils::KomoToolUtilsPlugin;
-use komotool_windows::KomoToolWindowsPlugin;
+//use komotool_windows::KomoToolWindowsPlugin;
 use komotoolc_pipe::KomoToolcPipePlugin;
+use komotool_framepace::KomotoolFramepacePlugin;
 
 fn main() {
     App::new()
+        .add_plugins(KomotoolFramepacePlugin)
         .add_plugins(StatesPlugin)
         .add_plugins(MinimalPlugins)
+        .add_plugins(AllocatorDiagnosticPlugin)
         .add_plugins(KomoToolPipePlugin)
         //.add_plugins(KomoToolWindowsPlugin)
         .add_plugins(KomoToolcPipePlugin)
