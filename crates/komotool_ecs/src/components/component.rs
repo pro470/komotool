@@ -183,7 +183,7 @@ pub struct Container {
     pub id: String,
 }
 
-#[derive(Component, Reflect, Debug, Default, Clone, Copy, PartialEq)]
+#[derive(Component, Reflect, Debug, Clone, Copy, PartialEq)]
 pub struct Window {
     pub hwnd: isize,
 }
