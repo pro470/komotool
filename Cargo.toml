@@ -10,22 +10,25 @@ komotool_lua = {path = "crates/komotool_lua"}
 komotool_komorebic = {path = "crates/komotool_komorebic"}
 komotool_rhai = {path = "crates/komotool_rhai"}
 komotool_utils = {path = "crates/komotool_utils"}
-komotool_windows = {path = "crates/komotool_windows"}
+#komotool_windows = {path = "crates/komotool_windows"}
 komotoolc_pipe = {path = "crates/komotoolc_pipe"}
 komotool_ecs = {path = "crates/komotool_ecs"}
 komotool_assets = {path = "crates/komotool_assets"}
+komotool_framepace = {path = "crates/komotool_framepace"}
+bevy_mod_scripting = {workspace = true}
 
 [workspace]
 members = ["crates/*"]
+exclude = ["crates/komotool_windows"]
 resolver = "2"
 
 [workspace.dependencies]
 bevy = { version = "0.15.2", default-features = false, features = ["bevy_state"]}
 anyhow = "1.0"
 serde_json = "1.0"
-komorebi-client  = { git = "https://github.com/LGUG2Z/komorebi", branch = "master"}
+komorebi-client  = { git = "https://github.com/LGUG2Z/komorebi", tag = "v0.1.34"}
 log = "0.4"
-bevy_mod_scripting = {version = "0.9.3", features = ["lua54", "rhai"], default-features = false}
+bevy_mod_scripting = {version = "0.9.7", features = ["lua54", "rhai"], default-features = false}
 
 [profile.release]
 lto = true
