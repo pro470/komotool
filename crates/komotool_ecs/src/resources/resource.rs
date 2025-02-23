@@ -37,31 +37,31 @@ impl Default for AppState {
     }
 }
 
-#[derive(Resource, Default)]
+#[derive(Resource, Default, Reflect)]
 pub struct FocusedMonitor(pub Option<Entity>);
 
-#[derive(Resource, Default)]
+#[derive(Resource, Default, Reflect)]
 pub struct LastFocusedMonitor(pub Option<Entity>);
 
-#[derive(Resource, Default)]
+#[derive(Resource, Default, Reflect)]
 pub struct FocusedWorkspaceGlobal(pub Option<Entity>);
 
-#[derive(Resource, Default)]
+#[derive(Resource, Default, Reflect)]
 pub struct FocusedContainerGlobal(pub Option<Entity>);
 
-#[derive(Resource, Default)]
+#[derive(Resource, Default, Reflect)]
 pub struct FocusedWindowGlobal(pub Option<Entity>);
 
-#[derive(Resource, Default)]
+#[derive(Resource, Default, Reflect)]
 pub struct MonitorReg(pub RelationRegistry);
 
-#[derive(Resource, Default)]
+#[derive(Resource, Default, Reflect)]
 pub struct WorkspaceReg(pub RelationRegistry);
 
-#[derive(Resource, Default)]
+#[derive(Resource, Default, Reflect)]
 pub struct ContainerReg(pub RelationRegistry);
 
-#[derive(Resource, Default)]
+#[derive(Resource, Default, Reflect)]
 pub struct WindowReg(pub RelationRegistry);
 
 #[derive(Resource, Default)]
