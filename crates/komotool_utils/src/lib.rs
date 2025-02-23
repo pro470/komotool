@@ -3,7 +3,6 @@ mod loading_systems;
 pub mod prelude;
 
 use bevy::prelude::*;
-pub use callbacklabels::*;
 pub use loading_systems::*;
 pub use prelude::*;
 
