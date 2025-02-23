@@ -1,7 +1,9 @@
 use super::registry::*;
 use bevy::prelude::*;
 use std::ops::Range;
+use bevy::reflect::Reflect;
 
+#[derive(Debug, Clone, Reflect)]
 pub struct RelationQueryBuilder<'a> {
     registry: &'a RelationRegistry,
     /// Instead of storing a HashSet of indices, we maintain a list of ranges.

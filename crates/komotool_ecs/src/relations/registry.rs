@@ -2,6 +2,7 @@ use bevy::prelude::Entity;
 use std::cmp::{max, min};
 use std::collections::HashMap;
 use std::ops::Range;
+use bevy::reflect::Reflect;
 
 pub trait RangeExt {
     /// Returns the intersection of two ranges, or None if they do not overlap.
@@ -30,7 +31,7 @@ impl RangeExt for Range<usize> {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Reflect)]
 pub struct EntityRecord {
     pub entity: Entity,
     pub monitor: u32,
@@ -46,7 +47,7 @@ impl EntityRecord {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Debug, Clone, Reflect)]
 pub struct RelationRegistry {
     /// Our master list of records, maintained in sorted order.
     pub records: Vec<EntityRecord>,
