@@ -9,9 +9,8 @@ pub struct KomoToolKomorebicPlugin;
 
 impl Plugin for KomoToolKomorebicPlugin {
     fn build(&self, app: &mut App) {
-        let mut world = app.world_mut();
 
-        NamespaceBuilder::<Komorebic>::new(world)
+        NamespaceBuilder::<Komorebic>::new(app.world_mut())
             .register("focus_window", |operation_direction: String| {
                 let operation_direction: OperationDirection = match operation_direction.to_lowercase().as_str() {
                     "left" => OperationDirection::Left,
