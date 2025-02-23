@@ -1,6 +1,8 @@
 use crate::components::Rect;
 use crate::relations::RelationRegistry;
-use bevy::prelude::{Entity, Reflect, Resource};
+use bevy_reflect::Reflect;
+use bevy_ecs::entity::Entity;
+use bevy_ecs::system::Resource;
 use komorebi_client::{
     FocusFollowsMouseImplementation, /*WindowContainerBehaviour,*/ MoveBehaviour,
     OperationBehaviour,

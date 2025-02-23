@@ -3,7 +3,7 @@ mod monitor_info;
 mod window_change;
 mod window_info;
 
-use bevy::prelude::*;
+use bevy_app::{App, Update, Plugin};
 use monitor_change::{handle_monitor_changes, update_monitor_list, MonitorChangeEvent};
 use monitor_info::MonitorList;
 use window_change::{handle_window_changes, update_window_list, WindowChangeEvent};

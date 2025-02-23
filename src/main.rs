@@ -1,4 +1,7 @@
-use bevy::{prelude::*, state::app::StatesPlugin};
+use bevy_app::{App, ScheduleRunnerPlugin};
+use bevy_state::app::StatesPlugin;
+use bevy_core::{TaskPoolPlugin, TypeRegistrationPlugin, FrameCountPlugin};
+use bevy_time::TimePlugin;
 use bevy_mod_scripting::core::bindings::AllocatorDiagnosticPlugin;
 use komotool_assets::KomotoolAssetsPlugin;
 use komotool_ecs::KomoToolEcsPlugin;
@@ -15,7 +18,11 @@ fn main() {
     App::new()
         .add_plugins(KomotoolFramepacePlugin)
         .add_plugins(StatesPlugin)
-        .add_plugins(MinimalPlugins)
+        .add_plugins(TaskPoolPlugin::default())
+        .add_plugins(TypeRegistrationPlugin)
+        .add_plugins(FrameCountPlugin)
+        .add_plugins(TimePlugin)
+        .add_plugins(ScheduleRunnerPlugin::default())
         .add_plugins(AllocatorDiagnosticPlugin)
         .add_plugins(KomoToolPipePlugin)
         //.add_plugins(KomoToolWindowsPlugin)

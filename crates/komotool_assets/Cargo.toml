@@ -4,4 +4,5 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-bevy = { workspace = true, default-features = false, features = ["bevy_asset", "file_watcher"]}
+bevy_asset = { workspace = true, features = ["file_watcher"]}
+bevy_app = {workspace = true}

@@ -4,8 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-bevy_ecs = "0.15.2"
-bevy_app = "0.15.2"
-bevy_reflect = "0.15.2"
+bevy_ecs = {workspace = true}
+bevy_app = {workspace = true}
+bevy_reflect = {workspace = true}
 bevy_utils = "0.15.2"
 spin_sleep = "1.3.0"

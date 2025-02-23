@@ -1,6 +1,8 @@
 use crate::{monitor_info::*, window_info::WindowList};
-use bevy::prelude::*;
 use std::collections::HashSet;
+use bevy_ecs::event::{Event, EventReader, EventWriter};
+use bevy_ecs::system::{ResMut, Resource};
+use tracing::{error, info};
 
 #[derive(Event)]
 pub struct MonitorChangeEvent {

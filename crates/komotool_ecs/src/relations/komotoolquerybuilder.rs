@@ -1,7 +1,7 @@
 use super::registry::*;
-use bevy::prelude::*;
+use bevy_ecs::entity::Entity;
 use std::ops::Range;
-use bevy::reflect::Reflect;
+use bevy_reflect::Reflect;
 
 #[derive(Debug, Clone, Reflect)]
 pub struct RelationQueryBuilder<'a> {

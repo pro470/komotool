@@ -3,7 +3,9 @@ mod relations;
 mod resources;
 mod systems;
 
-use bevy::prelude::*;
+use bevy_app::{App, Plugin, First};
+use bevy_ecs::prelude::resource_changed;
+use bevy_ecs::schedule::IntoSystemConfigs;
 pub use components::*;
 pub use relations::*;
 pub use resources::*;

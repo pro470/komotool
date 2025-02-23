@@ -1,4 +1,6 @@
-use bevy::prelude::*;
+use bevy_reflect::Reflect;
+use bevy_ecs::component::Component;
+use bevy_ecs::entity::Entity;
 
 #[derive(Debug, Clone, Reflect)]
 pub struct Rect {

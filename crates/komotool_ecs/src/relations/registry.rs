@@ -1,8 +1,8 @@
-use bevy::prelude::Entity;
+use bevy_ecs::entity::Entity;
 use std::cmp::{max, min};
 use std::collections::HashMap;
 use std::ops::Range;
-use bevy::reflect::Reflect;
+use bevy_reflect::Reflect;
 
 pub trait RangeExt {
     /// Returns the intersection of two ranges, or None if they do not overlap.

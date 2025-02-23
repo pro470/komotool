@@ -1,7 +1,9 @@
-use bevy::prelude::*;
 use std::ffi::OsString;
 use std::os::windows::ffi::OsStringExt;
+use bevy_ecs::component::Component;
+use bevy_ecs::system::Resource;
 use thiserror::Error;
+use tracing::error;
 use windows::{
     core::*,
     Win32::{Foundation::*, System::Threading::*, UI::WindowsAndMessaging::*},

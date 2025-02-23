@@ -1,4 +1,5 @@
-use bevy::prelude::{Commands, Query, Res, ResMut, Entity};
+use bevy_ecs::system::{Res, Commands, Query, ResMut};
+use bevy_ecs::entity::Entity;
 use crate::components::*;
 use crate::resources::*;
 
@@ -176,12 +177,11 @@ pub fn import_komorebi_appstate_state(
             is_paused: state.is_paused,
             resize_delta: state.resize_delta,
             float_override: state.float_override,
-            cross_monitor_move_behaviour: state.cross_monitor_move_behaviour.clone(),
+            cross_monitor_move_behaviour: state.cross_monitor_move_behaviour,
             unmanaged_window_operation_behaviour: state
-                .unmanaged_window_operation_behaviour
-                .clone(),
+                .unmanaged_window_operation_behaviour,
             work_area_offset: state.work_area_offset.map(|r| (&r).into()),
-            focus_follows_mouse: state.focus_follows_mouse.clone(),
+            focus_follows_mouse: state.focus_follows_mouse,
             mouse_follows_focus: state.mouse_follows_focus,
             has_pending_raise_op: state.has_pending_raise_op,
         };

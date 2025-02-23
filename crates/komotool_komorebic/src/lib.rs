@@ -1,4 +1,5 @@
-use bevy::prelude::{App, Plugin, Reflect};
+use bevy_reflect::Reflect;
+use bevy_app::{App, Plugin};
 use bevy_mod_scripting::core::bindings::function::namespace::NamespaceBuilder;
 use komorebi_client::*;
 

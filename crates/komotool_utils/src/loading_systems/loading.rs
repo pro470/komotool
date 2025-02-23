@@ -1,4 +1,5 @@
-use bevy::prelude::*;
+use bevy_ecs::system::{Res, ResMut, Resource};
+use bevy_state::state::{NextState, State, States};
 
 #[derive(Resource, Default)]
 pub struct LoadingCounter(pub usize);

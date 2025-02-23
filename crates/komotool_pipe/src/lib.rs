@@ -1,8 +1,10 @@
 use anyhow::Result;
-use bevy::prelude::*;
 use komorebi_client::{subscribe_with_options, Notification, SubscribeOptions};
 use std::io::{BufRead, BufReader};
 use std::sync::mpsc::{Receiver, Sender};
+use bevy_app::{App, First, Plugin};
+use bevy_ecs::event::{Event, EventWriter};
+use bevy_ecs::system::NonSend;
 
 pub struct KomoToolPipePlugin;
 

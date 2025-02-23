@@ -1,6 +1,8 @@
 use crate::window_info::{list_windows, WindowInfo, WindowList};
-use bevy::prelude::*;
 use std::collections::HashSet;
+use bevy_ecs::event::{Event, EventReader, EventWriter};
+use bevy_ecs::system::{ResMut, Resource};
+use tracing::{error, info};
 
 #[derive(Event)]
 pub struct WindowChangeEvent {

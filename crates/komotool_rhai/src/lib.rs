@@ -1,9 +1,15 @@
-use bevy::asset::{LoadedFolder, RecursiveDependencyLoadState};
-use bevy::prelude::*;
+use bevy_app::{App, Last, Plugin, PostUpdate, PreStartup, PreUpdate, Update};
+use bevy_asset::{AssetServer, Assets, Handle, LoadedFolder, RecursiveDependencyLoadState};
+use bevy_ecs::event::EventWriter;
+use bevy_ecs::schedule::IntoSystemConfigs;
+use bevy_ecs::system::{Commands, Res, ResMut, Resource};
 use bevy_mod_scripting::core::{
     asset::Language, event::*, handler::event_handler, script::ScriptComponent,
 };
 use bevy_mod_scripting::rhai::RhaiScriptingPlugin;
+use bevy_state::app::AppExtStates;
+use bevy_state::condition::in_state;
+use bevy_state::state::{NextState, OnEnter, OnExit, States};
 use komotool_utils::prelude::*;
 
 #[derive(States, Default, Debug, Clone, Eq, PartialEq, Hash)]
@@ -110,8 +116,8 @@ impl Plugin for KomoToolRhaiPlugin {
 
 fn load_rhai_scripts(asset_server: Res<AssetServer>, mut commands: Commands) {
     let path = std::path::Path::new("rhai");
-    let source = bevy::asset::io::AssetSourceId::from("komotool_config");
-    let asset_path = bevy::asset::AssetPath::from_path(path).with_source(source);
+    let source = bevy_asset::io::AssetSourceId::from("komotool_config");
+    let asset_path = bevy_asset::AssetPath::from_path(path).with_source(source);
     let handle = asset_server.load_folder(asset_path);
     commands.insert_resource(RhaiScriptLoadTracker { handle });
 }

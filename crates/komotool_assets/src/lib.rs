@@ -1,7 +1,5 @@
-use bevy::{
-    asset::{io::AssetSourceBuilder, AssetPlugin},
-    prelude::*,
-};
+use bevy_asset::{AssetApp, {io::AssetSourceBuilder, AssetPlugin}};
+use bevy_app::{Plugin, App};
 use std::{
     env, fs,
     path::{Path, PathBuf},

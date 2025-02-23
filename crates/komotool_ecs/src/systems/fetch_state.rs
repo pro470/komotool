@@ -1,5 +1,6 @@
 use crate::resources::KomorebiState;
-use bevy::prelude::*;
+use bevy_ecs::system::ResMut;
+use bevy_ecs::event::EventReader;
 use komotool_pipe::PipeNotificationEvent;
 use serde_json::{from_value, to_value};
 

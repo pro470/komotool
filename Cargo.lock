@@ -937,7 +937,6 @@ dependencies = [
  "bevy_render",
  "bevy_scene",
  "bevy_sprite",
- "bevy_state",
  "bevy_tasks",
  "bevy_text",
  "bevy_time",
@@ -3591,8 +3590,11 @@ dependencies = [
 name = "komotool"
 version = "0.1.0"
 dependencies = [
- "bevy",
+ "bevy_app",
+ "bevy_core",
  "bevy_mod_scripting",
+ "bevy_state",
+ "bevy_time",
  "komotool_assets",
  "komotool_ecs",
  "komotool_framepace",
@@ -3608,7 +3610,8 @@ dependencies = [
 name = "komotool_assets"
 version = "0.1.0"
 dependencies = [
- "bevy",
+ "bevy_app",
+ "bevy_asset",
 ]
 
 [[package]]
@@ -3619,7 +3622,9 @@ version = "0.1.0"
 name = "komotool_ecs"
 version = "0.1.0"
 dependencies = [
- "bevy",
+ "bevy_app",
+ "bevy_ecs",
+ "bevy_reflect",
  "indexmap",
  "komorebi-client",
  "komotool_pipe",
@@ -3641,8 +3646,9 @@ dependencies = [
 name = "komotool_komorebic"
 version = "0.1.0"
 dependencies = [
- "bevy",
+ "bevy_app",
  "bevy_mod_scripting",
+ "bevy_reflect",
  "komorebi-client",
  "log",
 ]
@@ -3655,8 +3661,11 @@ version = "0.1.0"
 name = "komotool_lua"
 version = "0.1.0"
 dependencies = [
- "bevy",
+ "bevy_app",
+ "bevy_asset",
+ "bevy_ecs",
  "bevy_mod_scripting",
+ "bevy_state",
  "komotool_utils",
 ]
 
@@ -3665,7 +3674,8 @@ name = "komotool_pipe"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "bevy",
+ "bevy_app",
+ "bevy_ecs",
  "komorebi-client",
  "log",
  "serde_json",
@@ -3675,8 +3685,11 @@ dependencies = [
 name = "komotool_rhai"
 version = "0.1.0"
 dependencies = [
- "bevy",
+ "bevy_app",
+ "bevy_asset",
+ "bevy_ecs",
  "bevy_mod_scripting",
+ "bevy_state",
  "komotool_utils",
 ]
 
@@ -3684,22 +3697,21 @@ dependencies = [
 name = "komotool_utils"
 version = "0.1.0"
 dependencies = [
- "bevy",
+ "bevy_app",
+ "bevy_ecs",
  "bevy_mod_scripting",
+ "bevy_state",
 ]
 
 [[package]]
 name = "komotoolc"
 version = "0.1.0"
-dependencies = [
- "bevy",
-]
 
 [[package]]
 name = "komotoolc_pipe"
 version = "0.1.0"
 dependencies = [
- "bevy",
+ "bevy_app",
 ]
 
 [[package]]

@@ -4,7 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-bevy = { workspace = true, default-features = false }
+bevy_app = {workspace = true}
+bevy_reflect = {workspace = true}
 komorebi-client = {workspace = true}
 bevy_mod_scripting = {workspace = true}
 log = {workspace = true}

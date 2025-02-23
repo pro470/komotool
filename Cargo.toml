@@ -4,7 +4,10 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-bevy = { workspace = true }
+bevy_app = {workspace = true}
+bevy_state = {workspace = true}
+bevy_core = {workspace = true}
+bevy_time = {workspace = true}
 komotool_pipe = {path = "crates/komotool_pipe"}
 komotool_lua = {path = "crates/komotool_lua"}
 komotool_komorebic = {path = "crates/komotool_komorebic"}
@@ -23,7 +26,14 @@ exclude = ["crates/komotool_windows"]
 resolver = "2"
 
 [workspace.dependencies]
-bevy = { version = "0.15.2", default-features = false, features = ["bevy_state"]}
+bevy_ecs = "0.15.2"
+bevy_app = "0.15.2"
+bevy_reflect = "0.15.2"
+bevy_utils = "0.15.2"
+bevy_state = "0.15.2"
+bevy_core = "0.15.2"
+bevy_time = "0.15.2"
+bevy_asset = { version = "0.15.2", features = ["file_watcher"]}
 anyhow = "1.0"
 serde_json = "1.0"
 komorebi-client  = { git = "https://github.com/LGUG2Z/komorebi", tag = "v0.1.34"}
