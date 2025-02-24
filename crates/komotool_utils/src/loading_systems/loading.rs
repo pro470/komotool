@@ -9,6 +9,10 @@ pub enum GlobalLoadingState {
     #[default]
     Loading,
     Loaded,
+    PreStartupDone,
+    StartupDone,
+    PostStartupDone,
+    AllDone,
 }
 
 pub fn update_global_state(
