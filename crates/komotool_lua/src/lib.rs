@@ -1,25 +1,21 @@
-use bevy_app::{App, Last, Plugin, PostUpdate, PreStartup, PreUpdate, Update};
+use bevy_app::{App, Plugin, PostUpdate, PreStartup, PreUpdate, Update};
 use bevy_asset::{AssetServer, Assets, Handle, LoadedFolder, RecursiveDependencyLoadState};
-use bevy_ecs::event::EventWriter;
 use bevy_ecs::schedule::IntoSystemConfigs;
 use bevy_ecs::system::{Commands, Res, ResMut, Resource};
 use bevy_mod_scripting::core::{
-    asset::Language, event::*, handler::event_handler, script::ScriptComponent,
+    handler::event_handler, script::ScriptComponent,
 };
 use bevy_mod_scripting::lua::LuaScriptingPlugin;
 use bevy_state::app::AppExtStates;
 use bevy_state::condition::in_state;
 use bevy_state::state::{NextState, OnEnter, OnExit, States};
-use komotool_utils::prelude::*;
+use komotool_utils::{prelude::*, send_event_systems::*};
 
 #[derive(States, Default, Debug, Clone, Eq, PartialEq, Hash)]
 enum LuaScriptLoadState {
     #[default]
     Loading,
-    PreStartupDone,
-    StartupDone,
-    PostStartupDone,
-    AllDone,
+    Loaded,
 }
 
 #[derive(Resource)]
@@ -50,66 +46,38 @@ impl Plugin for KomoToolLuaPlugin {
                     .before(event_handler::<OnPreStartUp, LuaScriptingPlugin>),
             )
             .add_systems(
-                Update,
-                lua_check_startup
-                    .run_if(in_state(LuaScriptLoadState::PreStartupDone))
-                    .run_if(in_state(GlobalLoadingState::Loaded))
-                    .before(event_handler::<OnStartUp, LuaScriptingPlugin>),
-            )
-            .add_systems(
-                PostUpdate,
-                lua_check_post_startup
-                    .run_if(in_state(LuaScriptLoadState::StartupDone))
-                    .before(event_handler::<OnPostStartUp, LuaScriptingPlugin>),
-            )
-            .add_systems(
                 PreUpdate,
                 event_handler::<OnPreStartUp, LuaScriptingPlugin>
-                    .run_if(in_state(LuaScriptLoadState::PreStartupDone)),
+                    .run_if(in_state(GlobalLoadingState::PreStartupDone))
+                    .after(send_pre_startup_events),
             )
             .add_systems(
                 Update,
                 event_handler::<OnStartUp, LuaScriptingPlugin>
-                    .run_if(in_state(LuaScriptLoadState::StartupDone)),
+                    .run_if(in_state(GlobalLoadingState::StartupDone))
+                    .after(send_startup_events),
             )
             .add_systems(
                 PostUpdate,
                 event_handler::<OnPostStartUp, LuaScriptingPlugin>
-                    .run_if(in_state(LuaScriptLoadState::PostStartupDone)),
-            )
-            .add_systems(
-                PostUpdate,
-                lua_advance_to_all_done
-                    .run_if(in_state(LuaScriptLoadState::PostStartupDone))
-                    .after(event_handler::<OnPostStartUp, LuaScriptingPlugin>),
+                    .run_if(in_state(GlobalLoadingState::PostStartupDone))
+                    .after(send_post_startup_events),
             )
             // Add systems for the main loop phases
             .add_systems(
-                Last,
-                lua_send_pre_update_events.run_if(in_state(LuaScriptLoadState::AllDone)),
-            )
-            .add_systems(
-                PreUpdate,
-                lua_send_update_events.run_if(in_state(LuaScriptLoadState::AllDone)),
-            )
-            .add_systems(
-                Update,
-                lua_send_post_update_events.run_if(in_state(LuaScriptLoadState::AllDone)),
-            )
-            .add_systems(
                 PreUpdate,
                 event_handler::<OnPreUpdate, LuaScriptingPlugin>
-                    .run_if(in_state(LuaScriptLoadState::AllDone)),
+                    .run_if(in_state(GlobalLoadingState::AllDone)),
             )
             .add_systems(
                 Update,
                 event_handler::<OnUpdate, LuaScriptingPlugin>
-                    .run_if(in_state(LuaScriptLoadState::AllDone)),
+                    .run_if(in_state(GlobalLoadingState::AllDone)),
             )
             .add_systems(
                 PostUpdate,
                 event_handler::<OnPostUpdate, LuaScriptingPlugin>
-                    .run_if(in_state(LuaScriptLoadState::AllDone)),
+                    .run_if(in_state(GlobalLoadingState::AllDone)),
             );
     }
 }
@@ -127,7 +95,6 @@ fn lua_check_pre_startup(
     tracker: Res<LuaScriptLoadTracker>,
     loaded_folders: Res<Assets<LoadedFolder>>,
     mut commands: Commands,
-    mut writer: EventWriter<ScriptCallbackEvent>,
     mut next_state: ResMut<NextState<LuaScriptLoadState>>,
 ) {
     if let Some(RecursiveDependencyLoadState::Loaded) =
@@ -144,68 +111,11 @@ fn lua_check_pre_startup(
             }
         }
 
-        writer.send(ScriptCallbackEvent::new(
-            OnPreStartUp,
-            vec![],
-            Recipients::Language(Language::Lua),
-        ));
-        next_state.set(LuaScriptLoadState::PreStartupDone);
+        next_state.set(LuaScriptLoadState::Loaded);
     }
     if let Some(RecursiveDependencyLoadState::Failed(e)) =
         asset_server.get_recursive_dependency_load_state(&tracker.handle)
     {
         println!("{}", e);
     }
-}
-
-fn lua_check_startup(
-    mut writer: EventWriter<ScriptCallbackEvent>,
-    mut next_state: ResMut<NextState<LuaScriptLoadState>>,
-) {
-    writer.send(ScriptCallbackEvent::new(
-        OnStartUp,
-        vec![],
-        Recipients::Language(Language::Lua),
-    ));
-    next_state.set(LuaScriptLoadState::StartupDone);
-}
-
-fn lua_check_post_startup(
-    mut writer: EventWriter<ScriptCallbackEvent>,
-    mut next_state: ResMut<NextState<LuaScriptLoadState>>,
-) {
-    writer.send(ScriptCallbackEvent::new(
-        OnPostStartUp,
-        vec![],
-        Recipients::Language(Language::Lua),
-    ));
-    next_state.set(LuaScriptLoadState::PostStartupDone);
-}
-
-fn lua_advance_to_all_done(mut next_state: ResMut<NextState<LuaScriptLoadState>>) {
-    next_state.set(LuaScriptLoadState::AllDone);
-}
-
-fn lua_send_pre_update_events(mut writer: EventWriter<ScriptCallbackEvent>) {
-    writer.send(ScriptCallbackEvent::new(
-        OnPreUpdate,
-        vec![],
-        Recipients::Language(Language::Lua),
-    ));
-}
-
-fn lua_send_update_events(mut writer: EventWriter<ScriptCallbackEvent>) {
-    writer.send(ScriptCallbackEvent::new(
-        OnUpdate,
-        vec![],
-        Recipients::Language(Language::Lua),
-    ));
-}
-
-fn lua_send_post_update_events(mut writer: EventWriter<ScriptCallbackEvent>) {
-    writer.send(ScriptCallbackEvent::new(
-        OnPostUpdate,
-        vec![],
-        Recipients::Language(Language::Lua),
-    ));
 }

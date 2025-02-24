@@ -1,25 +1,22 @@
-use bevy_app::{App, Last, Plugin, PostUpdate, PreStartup, PreUpdate, Update};
+use bevy_app::{App, Plugin, PostUpdate, PreStartup, PreUpdate, Update};
 use bevy_asset::{AssetServer, Assets, Handle, LoadedFolder, RecursiveDependencyLoadState};
-use bevy_ecs::event::EventWriter;
 use bevy_ecs::schedule::IntoSystemConfigs;
 use bevy_ecs::system::{Commands, Res, ResMut, Resource};
 use bevy_mod_scripting::core::{
-    asset::Language, event::*, handler::event_handler, script::ScriptComponent,
+    handler::event_handler, script::ScriptComponent,
 };
 use bevy_mod_scripting::rhai::RhaiScriptingPlugin;
 use bevy_state::app::AppExtStates;
 use bevy_state::condition::in_state;
 use bevy_state::state::{NextState, OnEnter, OnExit, States};
 use komotool_utils::prelude::*;
+use komotool_utils::send_event_systems::{send_post_startup_events, send_pre_startup_events, send_startup_events};
 
 #[derive(States, Default, Debug, Clone, Eq, PartialEq, Hash)]
 enum RhaiScriptLoadState {
     #[default]
     Loading,
-    PreStartupDone,
-    StartupDone,
-    PostStartupDone,
-    AllDone,
+    Loaded,
 }
 
 #[derive(Resource)]
@@ -50,66 +47,38 @@ impl Plugin for KomoToolRhaiPlugin {
                     .before(event_handler::<OnPreStartUp, RhaiScriptingPlugin>),
             )
             .add_systems(
-                Update,
-                rhai_check_startup
-                    .run_if(in_state(RhaiScriptLoadState::PreStartupDone))
-                    .run_if(in_state(GlobalLoadingState::Loaded))
-                    .before(event_handler::<OnStartUp, RhaiScriptingPlugin>),
-            )
-            .add_systems(
-                PostUpdate,
-                rhai_check_post_startup
-                    .run_if(in_state(RhaiScriptLoadState::StartupDone))
-                    .before(event_handler::<OnPostStartUp, RhaiScriptingPlugin>),
-            )
-            .add_systems(
                 PreUpdate,
                 event_handler::<OnPreStartUp, RhaiScriptingPlugin>
-                    .run_if(in_state(RhaiScriptLoadState::PreStartupDone)),
+                    .run_if(in_state(GlobalLoadingState::PreStartupDone))
+                    .after(send_pre_startup_events),
             )
             .add_systems(
                 Update,
                 event_handler::<OnStartUp, RhaiScriptingPlugin>
-                    .run_if(in_state(RhaiScriptLoadState::StartupDone)),
+                    .run_if(in_state(GlobalLoadingState::StartupDone))
+                    .after(send_startup_events),
             )
             .add_systems(
                 PostUpdate,
                 event_handler::<OnPostStartUp, RhaiScriptingPlugin>
-                    .run_if(in_state(RhaiScriptLoadState::PostStartupDone)),
-            )
-            .add_systems(
-                PostUpdate,
-                rhai_advance_to_all_done
-                    .run_if(in_state(RhaiScriptLoadState::PostStartupDone))
-                    .after(event_handler::<OnPostStartUp, RhaiScriptingPlugin>),
+                    .run_if(in_state(GlobalLoadingState::PostStartupDone))
+                    .after(send_post_startup_events),
             )
             // Add systems for the main loop phases
             .add_systems(
-                Last,
-                rhai_send_pre_update_events.run_if(in_state(RhaiScriptLoadState::AllDone)),
-            )
-            .add_systems(
-                PreUpdate,
-                rhai_send_update_events.run_if(in_state(RhaiScriptLoadState::AllDone)),
-            )
-            .add_systems(
-                PostUpdate,
-                rhai_send_post_update_events.run_if(in_state(RhaiScriptLoadState::AllDone)),
-            )
-            .add_systems(
                 PreUpdate,
                 event_handler::<OnPreUpdate, RhaiScriptingPlugin>
-                    .run_if(in_state(RhaiScriptLoadState::AllDone)),
+                    .run_if(in_state(GlobalLoadingState::AllDone)),
             )
             .add_systems(
                 Update,
                 event_handler::<OnUpdate, RhaiScriptingPlugin>
-                    .run_if(in_state(RhaiScriptLoadState::AllDone)),
+                    .run_if(in_state(GlobalLoadingState::AllDone)),
             )
             .add_systems(
                 PostUpdate,
                 event_handler::<OnPostUpdate, RhaiScriptingPlugin>
-                    .run_if(in_state(RhaiScriptLoadState::AllDone)),
+                    .run_if(in_state(GlobalLoadingState::AllDone)),
             );
     }
 }
@@ -127,7 +96,6 @@ fn rhai_check_pre_startup(
     tracker: Res<RhaiScriptLoadTracker>,
     loaded_folders: Res<Assets<LoadedFolder>>,
     mut commands: Commands,
-    mut writer: EventWriter<ScriptCallbackEvent>,
     mut next_state: ResMut<NextState<RhaiScriptLoadState>>,
 ) {
     if let Some(RecursiveDependencyLoadState::Loaded) =
@@ -144,68 +112,11 @@ fn rhai_check_pre_startup(
             }
         }
 
-        writer.send(ScriptCallbackEvent::new(
-            OnPreStartUp,
-            vec![],
-            Recipients::Language(Language::Rhai),
-        ));
-        next_state.set(RhaiScriptLoadState::PreStartupDone);
+        next_state.set(RhaiScriptLoadState::Loaded);
     }
     if let Some(RecursiveDependencyLoadState::Failed(e)) =
         asset_server.get_recursive_dependency_load_state(&tracker.handle)
     {
         println!("{}", e);
     }
-}
-
-fn rhai_check_startup(
-    mut writer: EventWriter<ScriptCallbackEvent>,
-    mut next_state: ResMut<NextState<RhaiScriptLoadState>>,
-) {
-    writer.send(ScriptCallbackEvent::new(
-        OnStartUp,
-        vec![],
-        Recipients::Language(Language::Rhai),
-    ));
-    next_state.set(RhaiScriptLoadState::StartupDone);
-}
-
-fn rhai_check_post_startup(
-    mut writer: EventWriter<ScriptCallbackEvent>,
-    mut next_state: ResMut<NextState<RhaiScriptLoadState>>,
-) {
-    writer.send(ScriptCallbackEvent::new(
-        OnPostStartUp,
-        vec![],
-        Recipients::Language(Language::Rhai),
-    ));
-    next_state.set(RhaiScriptLoadState::PostStartupDone);
-}
-
-fn rhai_advance_to_all_done(mut next_state: ResMut<NextState<RhaiScriptLoadState>>) {
-    next_state.set(RhaiScriptLoadState::AllDone);
-}
-
-fn rhai_send_pre_update_events(mut writer: EventWriter<ScriptCallbackEvent>) {
-    writer.send(ScriptCallbackEvent::new(
-        OnPreUpdate,
-        vec![],
-        Recipients::Language(Language::Rhai),
-    ));
-}
-
-fn rhai_send_update_events(mut writer: EventWriter<ScriptCallbackEvent>) {
-    writer.send(ScriptCallbackEvent::new(
-        OnUpdate,
-        vec![],
-        Recipients::Language(Language::Rhai),
-    ));
-}
-
-fn rhai_send_post_update_events(mut writer: EventWriter<ScriptCallbackEvent>) {
-    writer.send(ScriptCallbackEvent::new(
-        OnPostUpdate,
-        vec![],
-        Recipients::Language(Language::Rhai),
-    ));
 }
