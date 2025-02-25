@@ -74,20 +74,20 @@ fn framerate_limiter(
     mut stats: ResMut<FramePaceStats>,
 ) {
     let now = Instant::now();
-    
+
     if let Some(last_frame) = timer.last_frame {
         let frame_time = now - last_frame;
-        
+
         if let Limiter::Manual(target_duration) = &settings.limiter {
             if let Some(sleep_duration) = target_duration.checked_sub(frame_time) {
                 spin_sleep::sleep(sleep_duration);
             }
         }
-        
+
         stats.frametime = frame_time;
         stats.oversleep = now.elapsed().saturating_sub(frame_time);
     }
-    
+
     timer.last_frame = Some(Instant::now());
 }
 

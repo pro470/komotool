@@ -1,10 +1,10 @@
 use anyhow::Result;
-use komorebi_client::{subscribe_with_options, Notification, SubscribeOptions};
-use std::io::{BufRead, BufReader};
-use std::sync::mpsc::{Receiver, Sender};
 use bevy_app::{App, First, Plugin};
 use bevy_ecs::event::{Event, EventWriter};
 use bevy_ecs::system::NonSend;
+use komorebi_client::{subscribe_with_options, Notification, SubscribeOptions};
+use std::io::{BufRead, BufReader};
+use std::sync::mpsc::{Receiver, Sender};
 
 pub struct KomoToolPipePlugin;
 
@@ -33,9 +33,12 @@ impl Plugin for KomoToolPipePlugin {
 
 fn run_pipe_listener(sender: Sender<Notification>) -> Result<()> {
     const NAME: &str = "komotool";
-    let socket = subscribe_with_options(NAME, SubscribeOptions {
-        filter_state_changes: true
-    })?;
+    let socket = subscribe_with_options(
+        NAME,
+        SubscribeOptions {
+            filter_state_changes: true,
+        },
+    )?;
 
     for incoming in socket.incoming() {
         match incoming {

@@ -8,9 +8,9 @@ use bevy_ecs::prelude::{not, resource_added, resource_changed};
 use bevy_ecs::schedule::{Condition, IntoSystemConfigs};
 use bevy_state::app::AppExtStates;
 use bevy_state::condition::in_state;
-use send_event_systems::*;
 pub use loading_systems::*;
 pub use prelude::*;
+use send_event_systems::*;
 
 pub struct KomoToolUtilsPlugin;
 
@@ -39,8 +39,10 @@ impl Plugin for KomoToolUtilsPlugin {
             )
             .add_systems(
                 PostUpdate,
-                advance_to_all_done.run_if(in_state(GlobalLoadingState::PostStartupDone))
-                    .after(send_post_startup_events))
+                advance_to_all_done
+                    .run_if(in_state(GlobalLoadingState::PostStartupDone))
+                    .after(send_post_startup_events),
+            )
             .add_systems(
                 Last,
                 send_pre_update_events.run_if(in_state(GlobalLoadingState::AllDone)),

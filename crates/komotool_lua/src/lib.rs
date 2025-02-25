@@ -2,9 +2,7 @@ use bevy_app::{App, Plugin, PostUpdate, PreStartup, PreUpdate, Update};
 use bevy_asset::{AssetServer, Assets, Handle, LoadedFolder, RecursiveDependencyLoadState};
 use bevy_ecs::schedule::IntoSystemConfigs;
 use bevy_ecs::system::{Commands, Res, ResMut, Resource};
-use bevy_mod_scripting::core::{
-    handler::event_handler, script::ScriptComponent,
-};
+use bevy_mod_scripting::core::{handler::event_handler, script::ScriptComponent};
 use bevy_mod_scripting::lua::LuaScriptingPlugin;
 use bevy_state::app::AppExtStates;
 use bevy_state::condition::in_state;

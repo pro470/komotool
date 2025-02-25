@@ -1,8 +1,8 @@
 use bevy_app::{App, ScheduleRunnerPlugin};
-use bevy_state::app::StatesPlugin;
-use bevy_core::{TaskPoolPlugin, TypeRegistrationPlugin, FrameCountPlugin};
-use bevy_time::TimePlugin;
+use bevy_core::{FrameCountPlugin, TaskPoolPlugin, TypeRegistrationPlugin};
 use bevy_mod_scripting::core::bindings::AllocatorDiagnosticPlugin;
+use bevy_state::app::StatesPlugin;
+use bevy_time::TimePlugin;
 use komotool_assets::KomotoolAssetsPlugin;
 use komotool_ecs::KomoToolEcsPlugin;
 use komotool_komorebic::KomoToolKomorebicPlugin;
@@ -11,8 +11,8 @@ use komotool_pipe::KomoToolPipePlugin;
 use komotool_rhai::KomoToolRhaiPlugin;
 use komotool_utils::KomoToolUtilsPlugin;
 //use komotool_windows::KomoToolWindowsPlugin;
-use komotoolc_pipe::KomoToolcPipePlugin;
 use komotool_framepace::KomotoolFramepacePlugin;
+use komotoolc_pipe::KomoToolcPipePlugin;
 
 fn main() {
     App::new()

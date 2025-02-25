@@ -1,6 +1,6 @@
-use bevy_reflect::Reflect;
 use bevy_ecs::component::Component;
 use bevy_ecs::entity::Entity;
+use bevy_reflect::Reflect;
 
 #[derive(Debug, Clone, Reflect)]
 pub struct Rect {
@@ -43,23 +43,18 @@ impl From<&komorebi_client::DefaultLayout> for DefaultLayout {
 
 impl From<&komorebi_client::CustomLayout> for CustomLayout {
     fn from(cl: &komorebi_client::CustomLayout) -> Self {
-        CustomLayout(
-            cl.iter()
-                .map(|c| c.into())
-                .collect()
-        )
+        CustomLayout(cl.iter().map(|c| c.into()).collect())
     }
 }
 
 impl From<&komorebi_client::Column> for Column {
     fn from(col: &komorebi_client::Column) -> Self {
         match col {
-            komorebi_client::Column::Primary(cw) => 
-                Column::Primary(cw.as_ref().map(|w| w.into())),
-            komorebi_client::Column::Secondary(csc) => 
-                Column::Secondary(csc.as_ref().map(|sc| sc.into())),
-            komorebi_client::Column::Tertiary(cs) => 
-                Column::Tertiary(cs.into()),
+            komorebi_client::Column::Primary(cw) => Column::Primary(cw.as_ref().map(|w| w.into())),
+            komorebi_client::Column::Secondary(csc) => {
+                Column::Secondary(csc.as_ref().map(|sc| sc.into()))
+            }
+            komorebi_client::Column::Tertiary(cs) => Column::Tertiary(cs.into()),
         }
     }
 }
@@ -67,8 +62,7 @@ impl From<&komorebi_client::Column> for Column {
 impl From<&komorebi_client::ColumnWidth> for ColumnWidth {
     fn from(cw: &komorebi_client::ColumnWidth) -> Self {
         match cw {
-            komorebi_client::ColumnWidth::WidthPercentage(p) => 
-                ColumnWidth::WidthPercentage(*p),
+            komorebi_client::ColumnWidth::WidthPercentage(p) => ColumnWidth::WidthPercentage(*p),
         }
     }
 }
@@ -85,10 +79,12 @@ impl From<&komorebi_client::ColumnSplit> for ColumnSplit {
 impl From<&komorebi_client::ColumnSplitWithCapacity> for ColumnSplitWithCapacity {
     fn from(csc: &komorebi_client::ColumnSplitWithCapacity) -> Self {
         match csc {
-            komorebi_client::ColumnSplitWithCapacity::Horizontal(cap) => 
-                ColumnSplitWithCapacity::Horizontal(*cap),
-            komorebi_client::ColumnSplitWithCapacity::Vertical(cap) => 
-                ColumnSplitWithCapacity::Vertical(*cap),
+            komorebi_client::ColumnSplitWithCapacity::Horizontal(cap) => {
+                ColumnSplitWithCapacity::Horizontal(*cap)
+            }
+            komorebi_client::ColumnSplitWithCapacity::Vertical(cap) => {
+                ColumnSplitWithCapacity::Vertical(*cap)
+            }
         }
     }
 }

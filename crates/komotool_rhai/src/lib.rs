@@ -2,15 +2,15 @@ use bevy_app::{App, Plugin, PostUpdate, PreStartup, PreUpdate, Update};
 use bevy_asset::{AssetServer, Assets, Handle, LoadedFolder, RecursiveDependencyLoadState};
 use bevy_ecs::schedule::IntoSystemConfigs;
 use bevy_ecs::system::{Commands, Res, ResMut, Resource};
-use bevy_mod_scripting::core::{
-    handler::event_handler, script::ScriptComponent,
-};
+use bevy_mod_scripting::core::{handler::event_handler, script::ScriptComponent};
 use bevy_mod_scripting::rhai::RhaiScriptingPlugin;
 use bevy_state::app::AppExtStates;
 use bevy_state::condition::in_state;
 use bevy_state::state::{NextState, OnEnter, OnExit, States};
 use komotool_utils::prelude::*;
-use komotool_utils::send_event_systems::{send_post_startup_events, send_pre_startup_events, send_startup_events};
+use komotool_utils::send_event_systems::{
+    send_post_startup_events, send_pre_startup_events, send_startup_events,
+};
 
 #[derive(States, Default, Debug, Clone, Eq, PartialEq, Hash)]
 enum RhaiScriptLoadState {

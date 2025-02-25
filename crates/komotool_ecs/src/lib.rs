@@ -3,7 +3,7 @@ mod relations;
 mod resources;
 mod systems;
 
-use bevy_app::{App, Plugin, First};
+use bevy_app::{App, First, Plugin};
 use bevy_ecs::prelude::resource_changed;
 use bevy_ecs::schedule::IntoSystemConfigs;
 pub use components::*;
@@ -37,19 +37,23 @@ impl Plugin for KomoToolEcsPlugin {
             .register_type::<FocusedWorkspace>()
             .register_type::<LastFocusedContainer>()
             .register_type::<MaximizedWindow>()
-             .add_systems(First, (
-                 // Process notifications first
-                 update_komorebi_state_from_notifications.after(komotool_pipe::handle_pipe_notifications),
-                 // Then run all imports in parallel
-                 (
-                     import_komorebi_monitor_state,
-                     import_komorebi_workspace_state,
-                     import_komorebi_container_state,
-                     import_komorebi_window_state,
-                     import_komorebi_appstate_state,
-                 )
-                     .after(update_komorebi_state_from_notifications)
-                     .run_if(resource_changed::<KomorebiState>)
-             ));
+            .add_systems(
+                First,
+                (
+                    // Process notifications first
+                    update_komorebi_state_from_notifications
+                        .after(komotool_pipe::handle_pipe_notifications),
+                    // Then run all imports in parallel
+                    (
+                        import_komorebi_monitor_state,
+                        import_komorebi_workspace_state,
+                        import_komorebi_container_state,
+                        import_komorebi_window_state,
+                        import_komorebi_appstate_state,
+                    )
+                        .after(update_komorebi_state_from_notifications)
+                        .run_if(resource_changed::<KomorebiState>),
+                ),
+            );
     }
 }

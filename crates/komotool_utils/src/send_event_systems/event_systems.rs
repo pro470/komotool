@@ -1,26 +1,32 @@
+use crate::{
+    GlobalLoadingState, OnPostStartUp, OnPostUpdate, OnPreStartUp, OnPreUpdate, OnStartUp, OnUpdate,
+};
 use bevy_ecs::event::EventWriter;
 use bevy_ecs::system::ResMut;
 use bevy_mod_scripting::core::event::ScriptCallbackEvent;
 use bevy_state::state::NextState;
-use crate::{GlobalLoadingState, OnPostStartUp, OnPostUpdate, OnPreStartUp, OnPreUpdate, OnStartUp, OnUpdate};
 
 // Startup events
-pub fn send_pre_startup_events(mut writer: EventWriter<ScriptCallbackEvent>,mut next_state: ResMut<NextState<GlobalLoadingState>>) {
+pub fn send_pre_startup_events(
+    mut writer: EventWriter<ScriptCallbackEvent>,
+    mut next_state: ResMut<NextState<GlobalLoadingState>>,
+) {
     writer.send(ScriptCallbackEvent::new_for_all(OnPreStartUp, vec![]));
     next_state.set(GlobalLoadingState::PreStartupDone);
 }
 
 pub fn send_startup_events(
     mut writer: EventWriter<ScriptCallbackEvent>,
-    mut next_state: ResMut<NextState<GlobalLoadingState>>
+    mut next_state: ResMut<NextState<GlobalLoadingState>>,
 ) {
-        writer.send(ScriptCallbackEvent::new_for_all(OnStartUp, vec![]));
-        next_state.set(GlobalLoadingState::StartupDone);
+    writer.send(ScriptCallbackEvent::new_for_all(OnStartUp, vec![]));
+    next_state.set(GlobalLoadingState::StartupDone);
 }
 
 pub fn send_post_startup_events(
     mut writer: EventWriter<ScriptCallbackEvent>,
-    mut next_state: ResMut<NextState<GlobalLoadingState>>) {
+    mut next_state: ResMut<NextState<GlobalLoadingState>>,
+) {
     writer.send(ScriptCallbackEvent::new_for_all(OnPostStartUp, vec![]));
     next_state.set(GlobalLoadingState::PostStartupDone);
 }

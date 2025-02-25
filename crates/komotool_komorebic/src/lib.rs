@@ -1,6 +1,6 @@
-use bevy_reflect::Reflect;
 use bevy_app::{App, Plugin};
 use bevy_mod_scripting::core::bindings::function::namespace::NamespaceBuilder;
+use bevy_reflect::Reflect;
 use komorebi_client::*;
 
 #[derive(Reflect)]
@@ -10,7 +10,6 @@ pub struct KomoToolKomorebicPlugin;
 
 impl Plugin for KomoToolKomorebicPlugin {
     fn build(&self, app: &mut App) {
-
         NamespaceBuilder::<Komorebic>::new(app.world_mut())
             .register("focus_window", |operation_direction: String| {
                 let operation_direction: OperationDirection = match operation_direction.to_lowercase().as_str() {

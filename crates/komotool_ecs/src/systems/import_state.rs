@@ -1,7 +1,7 @@
-use bevy_ecs::system::{Res, Commands, Query, ResMut};
-use bevy_ecs::entity::Entity;
 use crate::components::*;
 use crate::resources::*;
+use bevy_ecs::entity::Entity;
+use bevy_ecs::system::{Commands, Query, Res, ResMut};
 
 pub fn import_komorebi_workspace_state(
     mut commands: Commands,
@@ -9,7 +9,7 @@ pub fn import_komorebi_workspace_state(
     komorebi_state: Res<KomorebiState>,
 ) {
     // Clear existing workspaces
-    for (entity,_) in existing_workspaces.iter_mut() {
+    for (entity, _) in existing_workspaces.iter_mut() {
         commands.entity(entity).despawn();
     }
 
@@ -27,7 +27,8 @@ pub fn import_komorebi_workspace_state(
                 monocle_container_restore_idx: komo_ws.monocle_container_restore_idx(),
                 maximized_window_restore_idx: komo_ws.maximized_window_restore_idx(),
                 floating_windows: Vec::new(),
-                layout_rules: komo_ws.layout_rules()
+                layout_rules: komo_ws
+                    .layout_rules()
                     .iter()
                     .map(|(size, rule)| (*size, rule.into()))
                     .collect(),
@@ -38,7 +39,8 @@ pub fn import_komorebi_workspace_state(
                 }),
                 workspace_padding: komo_ws.workspace_padding(),
                 container_padding: komo_ws.container_padding(),
-                latest_layout: komo_ws.latest_layout()
+                latest_layout: komo_ws
+                    .latest_layout()
                     .iter()
                     .map(|r| Rect {
                         left: r.left,
@@ -47,14 +49,17 @@ pub fn import_komorebi_workspace_state(
                         bottom: r.bottom,
                     })
                     .collect(),
-                resize_dimensions: komo_ws.resize_dimensions()
+                resize_dimensions: komo_ws
+                    .resize_dimensions()
                     .iter()
-                    .map(|r| r.as_ref().map(|ri| Rect {
-                        left: ri.left,
-                        top: ri.top,
-                        right: ri.right,
-                        bottom: ri.bottom,
-                    }))
+                    .map(|r| {
+                        r.as_ref().map(|ri| Rect {
+                            left: ri.left,
+                            top: ri.top,
+                            right: ri.right,
+                            bottom: ri.bottom,
+                        })
+                    })
                     .collect(),
                 tile: *komo_ws.tile(),
                 apply_window_based_work_area_offset: komo_ws.apply_window_based_work_area_offset(),
@@ -178,8 +183,7 @@ pub fn import_komorebi_appstate_state(
             resize_delta: state.resize_delta,
             float_override: state.float_override,
             cross_monitor_move_behaviour: state.cross_monitor_move_behaviour,
-            unmanaged_window_operation_behaviour: state
-                .unmanaged_window_operation_behaviour,
+            unmanaged_window_operation_behaviour: state.unmanaged_window_operation_behaviour,
             work_area_offset: state.work_area_offset.map(|r| (&r).into()),
             focus_follows_mouse: state.focus_follows_mouse,
             mouse_follows_focus: state.mouse_follows_focus,
