@@ -12,6 +12,7 @@ use bevy_mod_scripting::core::script::ScriptComponent;
 use bevy_state::app::AppExtStates;
 use bevy_state::condition::in_state;
 use bevy_state::state::{NextState, OnEnter, OnExit, States};
+use komotool_utils::loading_systems::loading::GlobalLoadingState;
 use komotool_utils::prelude::*;
 use std::{
     collections::HashMap,
@@ -66,7 +67,10 @@ impl Plugin for KomotoolAssetsPlugin {
                 check_scripts_loaded.run_if(in_state(ScriptLoadState::Loading)),
             )
             .init_resource::<ScriptEntityMapping>()
-            .add_systems(Update, handle_script_asset_events);
+            .add_systems(
+                Update,
+                handle_script_asset_events.run_if(in_state(GlobalLoadingState::AllDone))
+            );
     }
 }
 
