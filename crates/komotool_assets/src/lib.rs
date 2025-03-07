@@ -3,6 +3,7 @@ use bevy_asset::{
     AssetApp, AssetServer, Assets, Handle, LoadedFolder, RecursiveDependencyLoadState,
     {io::AssetSourceBuilder, AssetPlugin},
 };
+use bevy_ecs::schedule::IntoSystemConfigs;
 use bevy_ecs::system::{Commands, Res, ResMut, Resource};
 use bevy_mod_scripting::core::script::ScriptComponent;
 use bevy_state::app::AppExtStates;
@@ -44,7 +45,7 @@ impl Plugin for KomotoolAssetsPlugin {
             watch_for_changes_override: Some(true),
             ..Default::default()
         });
-        
+
         // Add general script loading functionality
         app.init_state::<ScriptLoadState>()
             .add_systems(OnEnter(ScriptLoadState::Loading), increment_loading_counter)

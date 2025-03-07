@@ -1,6 +1,7 @@
 use bevy_app::{App, Last, Plugin, PreUpdate};
-use bevy_ecs::prelude::*;
-use bevy_reflect::prelude::*;
+use bevy_ecs::reflect::ReflectResource;
+use bevy_ecs::system::{Res, ResMut, Resource};
+use bevy_reflect::Reflect;
 use bevy_utils::{Duration, Instant};
 
 /// Adds framepacing and framelimiting functionality to your [`App`]
