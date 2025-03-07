@@ -12,7 +12,7 @@ use bevy_mod_scripting::core::script::ScriptComponent;
 use bevy_state::app::AppExtStates;
 use bevy_state::condition::in_state;
 use bevy_state::state::{NextState, OnEnter, OnExit, States};
-use komotool_utils::loading_systems::loading::GlobalLoadingState;
+use komotool_utils::GlobalLoadingState;
 use komotool_utils::prelude::*;
 use std::{
     collections::HashMap,
