@@ -112,10 +112,9 @@ fn check_scripts_loaded(
                     let script_path = path.path().to_string_lossy().to_string();
                     let entity = commands.spawn(ScriptComponent::new(vec![script_path])).id();
                     
-                    // Store the mapping if this is a script asset
-                    if let Some(asset_id) = handle.id().typed::<ScriptAsset>() {
-                        script_mapping.handle_to_entity.insert(asset_id, entity);
-                    }
+                    // Store the mapping - typed() returns AssetId directly, not an Option
+                    let asset_id = handle.id().typed::<ScriptAsset>();
+                    script_mapping.handle_to_entity.insert(asset_id, entity);
                 }
             }
         }
