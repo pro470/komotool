@@ -1,16 +1,20 @@
-use bevy_app::{App, Plugin, PreStartup, PreUpdate};
+use bevy_app::{App, Plugin, PreStartup, PreUpdate, Update};
 use bevy_asset::{
-    AssetApp, AssetServer, Assets, Handle, LoadedFolder, RecursiveDependencyLoadState,
+    AssetApp, AssetEvent, AssetId, AssetServer, Assets, Handle, LoadedFolder, RecursiveDependencyLoadState,
     {io::AssetSourceBuilder, AssetPlugin},
 };
 use bevy_ecs::schedule::IntoSystemConfigs;
 use bevy_ecs::system::{Commands, Res, ResMut, Resource};
+use bevy_ecs::event::EventReader;
+use bevy_ecs::entity::Entity;
+use bevy_mod_scripting::core::asset::ScriptAsset;
 use bevy_mod_scripting::core::script::ScriptComponent;
 use bevy_state::app::AppExtStates;
 use bevy_state::condition::in_state;
 use bevy_state::state::{NextState, OnEnter, OnExit, States};
 use komotool_utils::prelude::*;
 use std::{
+    collections::HashMap,
     env, fs,
     path::{Path, PathBuf},
 };
@@ -25,6 +29,12 @@ enum ScriptLoadState {
 #[derive(Resource)]
 struct ScriptLoadTracker {
     handle: Handle<LoadedFolder>,
+}
+
+/// Resource to keep track of which entity corresponds to which script asset
+#[derive(Resource, Default)]
+pub struct ScriptEntityMapping {
+    pub handle_to_entity: HashMap<AssetId<ScriptAsset>, Entity>,
 }
 
 /// The KomotoolAssetsPlugin, which registers `.config\Komotool`
@@ -54,7 +64,9 @@ impl Plugin for KomotoolAssetsPlugin {
             .add_systems(
                 PreUpdate,
                 check_scripts_loaded.run_if(in_state(ScriptLoadState::Loading)),
-            );
+            )
+            .init_resource::<ScriptEntityMapping>()
+            .add_systems(Update, handle_script_asset_events);
     }
 }
 
@@ -88,6 +100,7 @@ fn check_scripts_loaded(
     tracker: Res<ScriptLoadTracker>,
     loaded_folders: Res<Assets<LoadedFolder>>,
     mut commands: Commands,
+    mut script_mapping: ResMut<ScriptEntityMapping>,
     mut next_state: ResMut<NextState<ScriptLoadState>>,
 ) {
     if let Some(RecursiveDependencyLoadState::Loaded) =
@@ -96,10 +109,13 @@ fn check_scripts_loaded(
         if let Some(folder) = loaded_folders.get(&tracker.handle) {
             for handle in &folder.handles {
                 if let Some(path) = handle.path() {
-                    commands.spawn(ScriptComponent::new(vec![path
-                        .path()
-                        .to_string_lossy()
-                        .to_string()]));
+                    let script_path = path.path().to_string_lossy().to_string();
+                    let entity = commands.spawn(ScriptComponent::new(vec![script_path])).id();
+                    
+                    // Store the mapping if this is a script asset
+                    if let Some(asset_id) = handle.id().typed::<ScriptAsset>() {
+                        script_mapping.handle_to_entity.insert(asset_id, entity);
+                    }
                 }
             }
         }
@@ -110,5 +126,52 @@ fn check_scripts_loaded(
         asset_server.get_recursive_dependency_load_state(&tracker.handle)
     {
         println!("Failed to load scripts: {}", e);
+    }
+}
+
+/// System to handle hot-reloading of script assets
+fn handle_script_asset_events(
+    mut events: EventReader<AssetEvent<ScriptAsset>>,
+    asset_server: Res<AssetServer>,
+    mut commands: Commands,
+    mut script_mapping: ResMut<ScriptEntityMapping>,
+) {
+    for event in events.read() {
+        match event {
+            AssetEvent::Added { id } => {
+                // Since we're using ScriptAsset events, we know this is already a script file
+                if let Some(path) = asset_server.get_path(*id) {
+                    // Create a new entity with the script component
+                    let script_path = path.path().to_string_lossy().to_string();
+                    println!("Adding script: {}", script_path);
+                    
+                    // Avoid duplication - remove existing entity if present
+                    if let Some(existing_entity) = script_mapping.handle_to_entity.get(id) {
+                        commands.entity(*existing_entity).despawn();
+                    }
+                    
+                    let entity = commands.spawn(ScriptComponent::new(vec![script_path])).id();
+                    
+                    // Store the mapping between handle ID and entity
+                    script_mapping.handle_to_entity.insert(*id, entity);
+                }
+            },
+            AssetEvent::Modified { id } => {
+                // Handle script modification if needed
+                if script_mapping.handle_to_entity.contains_key(id) {
+                    println!("Script modified: {:?}", asset_server.get_path(*id));
+                    // For modified scripts, we don't need to do anything as bevy_mod_scripting
+                    // will reload the script content automatically
+                }
+            },
+            AssetEvent::Removed { id } => {
+                // Remove the entity if the script is removed
+                if let Some(entity) = script_mapping.handle_to_entity.remove(id) {
+                    println!("Removing script entity: {:?}", entity);
+                    commands.entity(entity).despawn();
+                }
+            },
+            _ => {}
+        }
     }
 }
