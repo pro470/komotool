@@ -91,7 +91,7 @@ fn get_or_create_komotool_config_path() -> std::io::Result<PathBuf> {
 
 /// Function to load all scripts from the "scripts" folder
 fn load_scripts(asset_server: Res<AssetServer>, mut commands: Commands) {
-    let path = std::path::Path::new("scripts");
+    let path = Path::new("scripts");
     let source = bevy_asset::io::AssetSourceId::from("komotool_config");
     let asset_path = bevy_asset::AssetPath::from_path(path).with_source(source);
     let handle = asset_server.load_folder(asset_path);
@@ -176,5 +176,53 @@ fn handle_script_asset_events(
             },
             _ => {}
         }
+    }
+
+    let mut to_remove = Vec::new();
+
+    // Get the base path for the komotool config directory
+    let komotool_path = get_or_create_komotool_config_path().expect("Failed to get Komotool path");
+
+    // Check each script in our mapping
+    for (asset_id, entity) in script_mapping.handle_to_entity.iter() {
+        if let Some(path) = asset_server.get_path(*asset_id) {
+            let path_str = path.to_string();
+
+            // Check if this is a komotool_config source
+            let file_path = if path_str.starts_with("komotool_config://") {
+                // Extract just the path portion (remove "komotool_config://")
+                let relative_path_str = path_str.strip_prefix("komotool_config://").unwrap();
+                // Convert backslashes to forward slashes if needed
+                let relative_path_str = relative_path_str.replace('\\', "/");
+
+                // Join with the base komotool path
+                komotool_path.join(relative_path_str)
+            } else {
+                // For other sources, convert the path to a filesystem path
+                // This is a bit of a guess and may need adjustment for your setup
+                Path::new(path.path().to_string_lossy().as_ref()).to_path_buf()
+            };
+
+
+            // Store the asset path for display - this is the relative path we want to show
+            let display_path = path.path().to_string_lossy();
+
+            // Check if the file still exists
+            if !file_path.exists() {
+                println!("Script file no longer exists: {:?}", display_path);
+                commands.entity(*entity).despawn();
+                to_remove.push(*asset_id);
+            }
+        } else {
+            // If we can't get a path, the asset might have been removed
+            println!("Script asset has no path, removing: {:?}", asset_id);
+            commands.entity(*entity).despawn();
+            to_remove.push(*asset_id);
+        }
+    }
+
+    // Remove entries from our mapping
+    for id in to_remove {
+        script_mapping.handle_to_entity.remove(&id);
     }
 }
