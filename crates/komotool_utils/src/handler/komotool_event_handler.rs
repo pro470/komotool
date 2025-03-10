@@ -1,11 +1,10 @@
 use bevy_ecs::{
-    query::{QueryState, Ref},
+    query::QueryState,
     system::{Local, SystemState},
 };
 use bevy_mod_scripting::core::{
-    event::{IntoCallbackLabel, ScriptCallbackEvent},
+    event::ScriptCallbackEvent,
     extractors::{EventReaderScope, HandlerContext, WithWorldGuard},
-    IntoScriptPluginParams,
 };
 
 use crate::handler::KomoToolScriptStore;
@@ -19,7 +18,4 @@ pub type KomoToolEventHandlerSystemState<'w, 's, P, L> = SystemState<(
     Local<'s, QueryState<Ref<'w, KomoToolScriptStore<P, L>>>>,
     EventReaderScope<'s, ScriptCallbackEvent>,
     WithWorldGuard<'w, 's, HandlerContext<'s, P>>,
-)>
-where
-    P: IntoScriptPluginParams,
-    L: IntoCallbackLabel;
+)>;
