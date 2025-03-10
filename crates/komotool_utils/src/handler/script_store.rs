@@ -8,7 +8,7 @@ use bevy_mod_scripting::core::script::ScriptId;
 /// Type-parameterized script storage for tracking active scripts
 #[derive(Resource, Default, Reflect)]
 #[reflect(Resource)]
-pub struct KomutuScriptStore<P, L>
+pub struct KomoToolScriptStore<P, L>
 where
     P: IntoScriptPluginParams,
     L: IntoCallbackLabel,
