@@ -79,7 +79,7 @@ impl RelationRegistry {
 
     /// Resort the Vec and rebuild the auxiliary indexes.
     pub fn resort_and_rebuild(&mut self) {
-        self.records.sort_unstable_by(|a, b| a.key().cmp(&b.key()));
+        self.records.sort_unstable_by_key(|a| a.key());
 
         self.entity_to_index.clear();
         for (i, record) in self.records.iter().enumerate() {
