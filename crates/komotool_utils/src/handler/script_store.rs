@@ -1,20 +1,19 @@
-use std::{collections::HashSet, marker::PhantomData};
 use bevy_ecs::system::Resource;
-use bevy_reflect::Reflect;
 use bevy_mod_scripting::core::event::IntoCallbackLabel;
-use bevy_mod_scripting::core::IntoScriptPluginParams;
 use bevy_mod_scripting::core::script::ScriptId;
+use bevy_mod_scripting::core::IntoScriptPluginParams;
+use indexmap::IndexSet;
+use std::marker::PhantomData;
 
 /// Type-parameterized script storage for tracking active scripts
-#[derive(Resource, Default, Reflect)]
-#[reflect(Resource)]
+#[derive(Resource, Default)]
 pub struct KomoToolScriptStore<P, L>
 where
-    P: IntoScriptPluginParams,
-    L: IntoCallbackLabel,
+    P: IntoScriptPluginParams + Send + Sync + 'static,
+    L: IntoCallbackLabel + Send + Sync + 'static,
 {
     /// Set of active script identifiers
-    pub scripts: HashSet<ScriptId>,
-    #[reflect(ignore)]
+    pub scripts: IndexSet<ScriptId>,
     _phantom: PhantomData<(L, P)>,
 }
+

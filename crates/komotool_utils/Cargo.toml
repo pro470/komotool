@@ -6,5 +6,9 @@ edition = "2021"
 [dependencies]
 bevy_mod_scripting = {workspace = true}
 bevy_app = {workspace = true}
+bevy_asset = {workspace = true}
 bevy_ecs = {workspace = true}
 bevy_state = {workspace = true}
+bevy_reflect = {workspace = true}
+bevy_log = "0.15.3"
+indexmap = {workspace = true}
