@@ -1,8 +1,12 @@
 use bevy_app::{App, Last, Plugin, PreUpdate};
 use bevy_ecs::reflect::ReflectResource;
+use bevy_ecs::schedule::{IntoSystemConfigs, Schedules};
 use bevy_ecs::system::{Res, ResMut, Resource};
 use bevy_reflect::Reflect;
+use bevy_state::condition::in_state;
 use bevy_utils::{Duration, Instant};
+use komotool_utils::startup_schedule::UpdateStartup;
+use komotool_utils::GlobalLoadingState;
 
 /// Adds framepacing and framelimiting functionality to your [`App`]
 #[derive(Default)]
@@ -14,8 +18,12 @@ impl Plugin for KomotoolFramepacePlugin {
             .init_resource::<FramepaceSettings>()
             .init_resource::<FrameTimer>()
             .init_resource::<FramePaceStats>()
-            .add_systems(PreUpdate, update_frame_timer)
-            .add_systems(Last, framerate_limiter);
+            //.add_systems(PreUpdate, update_frame_timer)
+            //.add_systems(Last, framerate_limiter);
+            .add_systems(
+                UpdateStartup,
+                insert_komotool_framepace_systems.run_if(in_state(GlobalLoadingState::CleanupDone)),
+            );
     }
 }
 
@@ -104,4 +112,11 @@ fn update_frame_timer(mut timer: ResMut<FrameTimer>) {
 pub struct FramePaceStats {
     pub frametime: Duration,
     pub oversleep: Duration,
+}
+
+pub fn insert_komotool_framepace_systems(mut schedules: ResMut<Schedules>) {
+    println!("Adding framepace systems");
+    schedules.add_systems(Last, framerate_limiter);
+    schedules.add_systems(PreUpdate, update_frame_timer);
+    println!("Framepace systems added");
 }
