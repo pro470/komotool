@@ -16,7 +16,6 @@ use komotoolc_pipe::KomoToolcPipePlugin;
 
 fn main() {
     App::new()
-        .add_plugins(KomotoolFramepacePlugin)
         .add_plugins(StatesPlugin)
         .add_plugins(TaskPoolPlugin::default())
         .add_plugins(TypeRegistrationPlugin)
@@ -28,6 +27,7 @@ fn main() {
         //.add_plugins(KomoToolWindowsPlugin)
         .add_plugins(KomoToolcPipePlugin)
         .add_plugins(KomoToolUtilsPlugin)
+        .add_plugins(KomotoolFramepacePlugin)
         .add_plugins(KomoToolEcsPlugin)
         .add_plugins(KomotoolAssetsPlugin)
         .add_plugins(KomoToolLuaPlugin)
