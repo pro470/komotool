@@ -1,9 +1,13 @@
-use bevy_app::{App, Plugin, PreStartup, PreUpdate, Update};
+mod remove_watcher;
+
+use bevy_app::{App, Plugin, PreStartup, PreUpdate, Startup, Update};
 use bevy_asset::{
-    AssetApp, AssetEvent, AssetId, AssetServer, Assets, Handle, LoadedFolder, RecursiveDependencyLoadState,
+    AssetApp, AssetEvent, AssetId, AssetPath, AssetServer, Assets, Handle, LoadedFolder,
+    RecursiveDependencyLoadState,
     {io::AssetSourceBuilder, AssetPlugin},
 };
 use bevy_ecs::schedule::IntoSystemConfigs;
+use bevy_ecs::event::EventReader;
 use bevy_ecs::system::{Commands, Res, ResMut, Resource};
 use bevy_ecs::event::EventReader;
 use bevy_ecs::entity::Entity;
@@ -12,8 +16,9 @@ use bevy_mod_scripting::core::script::ScriptComponent;
 use bevy_state::app::AppExtStates;
 use bevy_state::condition::in_state;
 use bevy_state::state::{NextState, OnEnter, OnExit, States};
-use komotool_utils::GlobalLoadingState;
 use komotool_utils::prelude::*;
+use komotool_utils::GlobalLoadingState;
+use remove_watcher::{check_file_events, setup_file_watcher, FileRemovedEvent};
 use std::{
     collections::HashMap,
     env, fs,
@@ -59,14 +64,17 @@ impl Plugin for KomotoolAssetsPlugin {
 
         // Add general script loading functionality
         app.init_state::<ScriptLoadState>()
+            .add_event::<FileRemovedEvent>()
+            .init_resource::<ScriptEntityMapping>()
             .add_systems(OnEnter(ScriptLoadState::Loading), increment_loading_counter)
             .add_systems(OnExit(ScriptLoadState::Loading), decrement_loading_counter)
+            .add_systems(Startup, setup_file_watcher)
+            .add_systems(PreUpdate, check_file_events)
             .add_systems(PreStartup, load_scripts)
             .add_systems(
                 PreUpdate,
                 check_scripts_loaded.run_if(in_state(ScriptLoadState::Loading)),
             )
-            .init_resource::<ScriptEntityMapping>()
             .add_systems(
                 Update,
                 handle_script_asset_events.run_if(in_state(GlobalLoadingState::AllDone))
@@ -75,7 +83,7 @@ impl Plugin for KomotoolAssetsPlugin {
 }
 
 /// Function that retrieves the `.config\Komotool` path and ensures the directory exists.
-fn get_or_create_komotool_config_path() -> std::io::Result<PathBuf> {
+pub fn get_or_create_komotool_config_path() -> std::io::Result<PathBuf> {
     let user_profile =
         env::var("USERPROFILE").expect("Failed to fetch USERPROFILE environment variable");
 
@@ -135,6 +143,7 @@ fn check_scripts_loaded(
 /// System to handle hot-reloading of script assets
 fn handle_script_asset_events(
     mut events: EventReader<AssetEvent<ScriptAsset>>,
+    mut remove_event: EventReader<FileRemovedEvent>,
     asset_server: Res<AssetServer>,
     mut commands: Commands,
     mut script_mapping: ResMut<ScriptEntityMapping>,
@@ -178,51 +187,66 @@ fn handle_script_asset_events(
         }
     }
 
-    let mut to_remove = Vec::new();
+    let komotool_path = get_or_create_komotool_config_path().unwrap();
 
-    // Get the base path for the komotool config directory
-    let komotool_path = get_or_create_komotool_config_path().expect("Failed to get Komotool path");
+    for event in remove_event.read() {
+        if !is_in_script_folder(&event.path, &komotool_path) {
+            continue;
+        }
+        let event_path = create_komotool_asset_path(&event.path);
+        let assetid = asset_server
+            .get_path_id(&event_path)
+            .unwrap_or_else(|| {
+                println!("Failed to get path ID for file: {}", &event.path);
+                AssetId::<ScriptAsset>::default().into()
+            })
+            .typed::<ScriptAsset>();
+        // Remove the entity if the script is removed
+        if let Some(entity) = script_mapping.handle_to_entity.remove(&assetid) {
+            println!("Removing script entity: {:?}", entity);
+            commands.entity(entity).despawn();
+            println!("File removed: {}", event_path.path().to_string_lossy());
+        }
+    }
+}
 
-    // Check each script in our mapping
-    for (asset_id, entity) in script_mapping.handle_to_entity.iter() {
-        if let Some(path) = asset_server.get_path(*asset_id) {
-            let path_str = path.to_string();
+fn is_in_script_folder(file_path: &str, komotool_path: &Path) -> bool {
+    // Get the absolute path of the file
+    let file_path = Path::new(file_path)
+        .canonicalize()
+        .unwrap_or_else(|_| PathBuf::from(file_path)); // Avoid errors if file doesn't exist
 
-            // Check if this is a komotool_config source
-            let file_path = if path_str.starts_with("komotool_config://") {
-                // Extract just the path portion (remove "komotool_config://")
-                let relative_path_str = path_str.strip_prefix("komotool_config://").unwrap();
-                // Convert backslashes to forward slashes if needed
-                let relative_path_str = relative_path_str.replace('\\', "/");
+    // Create the scripts directory path by joining "scripts" to the Komotool path
+    let scripts_path = komotool_path.join("scripts");
 
-                // Join with the base komotool path
-                komotool_path.join(relative_path_str)
-            } else {
-                // For other sources, convert the path to a filesystem path
-                // This is a bit of a guess and may need adjustment for your setup
-                Path::new(path.path().to_string_lossy().as_ref()).to_path_buf()
-            };
+    // Check if the file path starts with the script directory path
+    file_path.starts_with(&scripts_path)
+}
 
+fn create_komotool_asset_path(file_path: &str) -> AssetPath<'static> {
+    let path = Path::new(file_path);
 
-            // Store the asset path for display - this is the relative path we want to show
-            let display_path = path.path().to_string_lossy();
+    // Find the Komotool directory in the path (case insensitive)
+    let mut components = Vec::new();
+    let mut found_komotool = false;
 
-            // Check if the file still exists
-            if !file_path.exists() {
-                println!("Script file no longer exists: {:?}", display_path);
-                commands.entity(*entity).despawn();
-                to_remove.push(*asset_id);
-            }
-        } else {
-            // If we can't get a path, the asset might have been removed
-            println!("Script asset has no path, removing: {:?}", asset_id);
-            commands.entity(*entity).despawn();
-            to_remove.push(*asset_id);
+    for component in path.components() {
+        let component_str = component.as_os_str().to_string_lossy();
+
+        if found_komotool {
+            // After finding Komotool, collect all remaining components
+            components.push(component_str.to_string());
+        } else if component_str.to_lowercase() == "komotool" {
+            // Found the Komotool directory (case insensitive)
+            found_komotool = true;
         }
     }
 
-    // Remove entries from our mapping
-    for id in to_remove {
-        script_mapping.handle_to_entity.remove(&id);
-    }
+    // Join the components with forward slashes for the asset path
+    let relative_path = components.join("/");
+
+    let source = bevy_asset::io::AssetSourceId::from("komotool_config");
+    AssetPath::from(relative_path).with_source(source)
+}
+
 }

@@ -10,3 +10,5 @@ bevy_ecs = {workspace = true}
 bevy_state = {workspace = true}
 bevy_mod_scripting = {workspace = true}
 komotool_utils = {path = "../komotool_utils"}
+crossbeam-channel = "0.5.14"
+notify = "8.0.0"
