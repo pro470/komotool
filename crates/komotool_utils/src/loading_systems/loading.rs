@@ -1,3 +1,5 @@
+use crate::{PostUpdateStartup, PreUpdateStartup, UpdateStartup};
+use bevy_ecs::schedule::Schedules;
 use bevy_ecs::system::{Res, ResMut, Resource};
 use bevy_state::state::{NextState, State, States};
 
@@ -12,7 +14,9 @@ pub enum GlobalLoadingState {
     PreStartupDone,
     StartupDone,
     PostStartupDone,
+    CleanupDone,
     AllDone,
+    Finished,
 }
 
 pub fn update_global_state(
@@ -37,4 +41,14 @@ pub fn increment_loading_counter(mut counter: ResMut<LoadingCounter>) {
 
 pub fn decrement_loading_counter(mut counter: ResMut<LoadingCounter>) {
     counter.0 = counter.0.saturating_sub(1);
+}
+
+pub fn remove_startup_schedules(
+    mut schedules: ResMut<Schedules>,
+    mut state: ResMut<NextState<GlobalLoadingState>>,
+) {
+    schedules.remove_entry(PreUpdateStartup);
+    schedules.remove_entry(UpdateStartup);
+    schedules.remove_entry(PostUpdateStartup);
+    state.set(GlobalLoadingState::Finished);
 }
