@@ -9,7 +9,7 @@ use std::marker::PhantomData;
 #[derive(Resource, Default)]
 pub struct KomoToolScriptStore<P, L>
 where
-    P: IntoScriptPluginParams + Send + Sync + 'static,
+    P: IntoScriptPluginParams + ScriptFunctionChecker + Send + Sync + 'static,
     L: IntoCallbackLabel + Send + Sync + 'static,
 {
     /// Set of active script identifiers

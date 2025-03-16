@@ -43,7 +43,7 @@ macro_rules! push_err_and_continue {
 /// If any of the resources required for the handler are missing, the system will log this issue and do nothing.
 #[allow(deprecated)]
 pub fn komotool_event_handler<
-    P: IntoScriptPluginParams + Send + Sync + 'static,
+    P: IntoScriptPluginParams + ScriptFunctionChecker + Send + Sync + 'static,
     L: IntoCallbackLabel + Send + Sync + 'static,
 >(
     world: &mut World,
@@ -65,7 +65,7 @@ pub fn komotool_event_handler<
 
 #[allow(deprecated)]
 fn komotool_event_handler_inner<
-    P: IntoScriptPluginParams + Send + Sync + 'static,
+    P: IntoScriptPluginParams + ScriptFunctionChecker + Send + Sync + 'static,
     L: IntoCallbackLabel + Send + Sync + 'static,
 >(
     callback_label: CallbackLabel,
