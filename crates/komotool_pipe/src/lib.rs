@@ -2,7 +2,9 @@ use anyhow::Result;
 use bevy_app::{App, First, Plugin};
 use bevy_ecs::event::{Event, EventWriter};
 use bevy_ecs::system::NonSend;
-use komorebi_client::{send_query, subscribe_with_options, Notification, SocketMessage, SubscribeOptions};
+use komorebi_client::{
+    send_query, subscribe_with_options, Notification, SocketMessage, SubscribeOptions,
+};
 use std::io::{BufRead, BufReader};
 use std::sync::mpsc::{Receiver, Sender};
 use std::thread;
@@ -36,7 +38,6 @@ impl Plugin for KomoToolPipePlugin {
             .add_systems(First, handle_pipe_notifications);
     }
 }
-
 
 // Helper function to check if the komorebi service is alive
 fn check_connection_alive() -> bool {
@@ -74,7 +75,7 @@ fn run_pipe_listener(sender: &Sender<Notification>) -> Result<()> {
         if last_heartbeat.elapsed() >= HEARTBEAT_INTERVAL {
             if !check_connection_alive() {
                 log::warn!("Heartbeat failed - komorebi appears to be restarted. Reconnecting...");
-                return Ok(());  // Exit to reconnect
+                return Ok(()); // Exit to reconnect
             }
             last_heartbeat = Instant::now();
             log::debug!("Heartbeat successful - connection is alive");
@@ -97,7 +98,7 @@ fn run_pipe_listener(sender: &Sender<Notification>) -> Result<()> {
             }
             Err(e) => {
                 log::warn!("Socket error: {}. Reconnecting...", e);
-                return Ok(());  // Exit to trigger reconnection
+                return Ok(()); // Exit to trigger reconnection
             }
         }
     }
