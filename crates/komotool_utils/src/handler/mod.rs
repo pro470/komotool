@@ -1,7 +1,7 @@
 mod komotool_event_handler;
 mod script_store;
-mod asset_event_updater;
+mod script_function_checker;
 
-pub use asset_event_updater::{ScriptFunctionChecker, handle_script_store_updates};
+pub use script_function_checker::{ScriptFunctionChecker};
 pub use komotool_event_handler::{komotool_event_handler, KomoToolEventHandlerSystemState};
 pub use script_store::*;

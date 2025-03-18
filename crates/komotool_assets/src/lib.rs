@@ -1,39 +1,41 @@
 mod remove_watcher;
 
-use bevy_app::{App, Plugin, PreStartup, PreUpdate, Startup, Update};
+use bevy_app::{App, Plugin, PreStartup, PreUpdate, Startup};
 use bevy_asset::{
     AssetApp, AssetEvent, AssetId, AssetPath, AssetServer, Assets, Handle, LoadedFolder,
     RecursiveDependencyLoadState,
     {io::AssetSourceBuilder, AssetPlugin},
 };
-use bevy_ecs::schedule::IntoSystemConfigs;
-use bevy_ecs::event::EventReader;
-use bevy_ecs::system::{Commands, Res, ResMut, Resource};
-use bevy_ecs::event::EventReader;
 use bevy_ecs::entity::Entity;
-use bevy_mod_scripting::core::asset::ScriptAsset;
-use bevy_mod_scripting::core::script::ScriptComponent;
+use bevy_ecs::event::EventReader;
+use bevy_ecs::schedule::IntoSystemConfigs;
+use bevy_ecs::system::{Commands, Res, ResMut, Resource};
+use bevy_mod_scripting::core::asset::{ScriptAsset, ScriptMetadataStore};
+use bevy_mod_scripting::core::script::{ScriptComponent, ScriptId};
+use bevy_mod_scripting::core::IntoScriptPluginParams;
 use bevy_state::app::AppExtStates;
 use bevy_state::condition::in_state;
 use bevy_state::state::{NextState, OnEnter, OnExit, States};
 use komotool_utils::prelude::*;
-use komotool_utils::GlobalLoadingState;
-use remove_watcher::{check_file_events, setup_file_watcher, FileRemovedEvent};
+use komotool_utils::startup_schedule::PreUpdateStartup;
+pub use remove_watcher::{check_file_events, setup_file_watcher, FileRemovedEvent};
 use std::{
     collections::HashMap,
     env, fs,
     path::{Path, PathBuf},
 };
+use bevy_mod_scripting::core::event::IntoCallbackLabel;
+use komotool_utils::handler::{KomoToolScriptStore, ScriptFunctionChecker};
 
 #[derive(States, Default, Debug, Clone, Eq, PartialEq, Hash)]
-enum ScriptLoadState {
+pub enum ScriptLoadState {
     #[default]
     Loading,
     Loaded,
 }
 
 #[derive(Resource)]
-struct ScriptLoadTracker {
+pub struct ScriptLoadTracker {
     handle: Handle<LoadedFolder>,
 }
 
@@ -72,12 +74,8 @@ impl Plugin for KomotoolAssetsPlugin {
             .add_systems(PreUpdate, check_file_events)
             .add_systems(PreStartup, load_scripts)
             .add_systems(
-                PreUpdate,
+                PreUpdateStartup,
                 check_scripts_loaded.run_if(in_state(ScriptLoadState::Loading)),
-            )
-            .add_systems(
-                Update,
-                handle_script_asset_events.run_if(in_state(GlobalLoadingState::AllDone))
             );
     }
 }
@@ -107,30 +105,15 @@ fn load_scripts(asset_server: Res<AssetServer>, mut commands: Commands) {
 }
 
 /// System to check if scripts are loaded and register them
-fn check_scripts_loaded(
+pub fn check_scripts_loaded(
     asset_server: Res<AssetServer>,
     tracker: Res<ScriptLoadTracker>,
-    loaded_folders: Res<Assets<LoadedFolder>>,
-    mut commands: Commands,
-    mut script_mapping: ResMut<ScriptEntityMapping>,
     mut next_state: ResMut<NextState<ScriptLoadState>>,
 ) {
     if let Some(RecursiveDependencyLoadState::Loaded) =
         asset_server.get_recursive_dependency_load_state(&tracker.handle)
     {
-        if let Some(folder) = loaded_folders.get(&tracker.handle) {
-            for handle in &folder.handles {
-                if let Some(path) = handle.path() {
-                    let script_path = path.path().to_string_lossy().to_string();
-                    let entity = commands.spawn(ScriptComponent::new(vec![script_path])).id();
-                    
-                    // Store the mapping - typed() returns AssetId directly, not an Option
-                    let asset_id = handle.id().typed::<ScriptAsset>();
-                    script_mapping.handle_to_entity.insert(asset_id, entity);
-                }
-            }
-        }
-
+        println!("Scripts loaded");
         next_state.set(ScriptLoadState::Loaded);
     }
     if let Some(RecursiveDependencyLoadState::Failed(e)) =
@@ -141,7 +124,7 @@ fn check_scripts_loaded(
 }
 
 /// System to handle hot-reloading of script assets
-fn handle_script_asset_events(
+pub fn handle_script_asset_events(
     mut events: EventReader<AssetEvent<ScriptAsset>>,
     mut remove_event: EventReader<FileRemovedEvent>,
     asset_server: Res<AssetServer>,
@@ -150,24 +133,27 @@ fn handle_script_asset_events(
 ) {
     for event in events.read() {
         match event {
-            AssetEvent::Added { id } => {
+            AssetEvent::Added { id } | AssetEvent::LoadedWithDependencies { id } => {
                 // Since we're using ScriptAsset events, we know this is already a script file
+                if script_mapping.handle_to_entity.contains_key(id) {
+                    continue;
+                }
                 if let Some(path) = asset_server.get_path(*id) {
                     // Create a new entity with the script component
                     let script_path = path.path().to_string_lossy().to_string();
                     println!("Adding script: {}", script_path);
-                    
+
                     // Avoid duplication - remove existing entity if present
                     if let Some(existing_entity) = script_mapping.handle_to_entity.get(id) {
                         commands.entity(*existing_entity).despawn();
                     }
-                    
+
                     let entity = commands.spawn(ScriptComponent::new(vec![script_path])).id();
-                    
+
                     // Store the mapping between handle ID and entity
                     script_mapping.handle_to_entity.insert(*id, entity);
                 }
-            },
+            }
             AssetEvent::Modified { id } => {
                 // Handle script modification if needed
                 if script_mapping.handle_to_entity.contains_key(id) {
@@ -175,14 +161,14 @@ fn handle_script_asset_events(
                     // For modified scripts, we don't need to do anything as bevy_mod_scripting
                     // will reload the script content automatically
                 }
-            },
+            }
             AssetEvent::Removed { id } => {
                 // Remove the entity if the script is removed
                 if let Some(entity) = script_mapping.handle_to_entity.remove(id) {
                     println!("Removing script entity: {:?}", entity);
                     commands.entity(entity).despawn();
                 }
-            },
+            }
             _ => {}
         }
     }
@@ -210,7 +196,224 @@ fn handle_script_asset_events(
     }
 }
 
-fn is_in_script_folder(file_path: &str, komotool_path: &Path) -> bool {
+
+pub fn handle_script_store_updates<P, L>(
+    mut events: EventReader<AssetEvent<ScriptAsset>>,
+    mut remove_events: EventReader<FileRemovedEvent>,
+    asset_server: Res<AssetServer>,
+    assets: Res<Assets<ScriptAsset>>,
+    metadata_store: Res<ScriptMetadataStore>,
+    mut script_store: ResMut<KomoToolScriptStore<P, L>>,
+)
+where
+    P: IntoScriptPluginParams + ScriptFunctionChecker + Send + Sync + 'static + std::default::Default,
+    L: IntoCallbackLabel + Send + Sync + 'static + std::default::Default,
+{
+    // Process asset events
+    for event in events.read() {
+        match event {
+            AssetEvent::Added { id } | AssetEvent::LoadedWithDependencies { id } => {
+                if let Some(script_metadata) = metadata_store.get(*id) {
+                    if P::LANGUAGE != script_metadata.language {
+                        continue;
+                    }
+                } else {
+                    continue;
+                }
+
+                if let Some(path) = asset_server.get_path(*id) {
+                    if let Some(script_bytes) = assets.get(*id) {
+                        if P::has_function(&script_bytes.content, L::into_callback_label().as_ref()) {
+                            // Convert to ScriptId format (path without source)
+                            let script_id = ScriptId::from(path.path().to_string_lossy().to_string());
+                            script_store.scripts.insert(script_id);
+                            println!("Adding script: {}", path.path().to_string_lossy().to_string());
+                        }
+                    }
+                }
+            }
+            AssetEvent::Modified { id } => {
+
+                if let Some(script_metadata) = metadata_store.get(*id) {
+                    if P::LANGUAGE != script_metadata.language {
+                        continue;
+                    }
+                } else {
+                    continue;
+                }
+
+                if let Some(path) = asset_server.get_path(*id) {
+                    let script_id = ScriptId::from(path.path().to_string_lossy().to_string());
+
+                    // Check if script still has required functions
+                   if let Some(script_bytes) = assets.get(*id) {
+                       println!("Script modified: {:?}", asset_server.get_path(*id));
+                        if P::has_function(&script_bytes.content, L::into_callback_label().as_ref()) {
+                            script_store.scripts.insert(script_id);
+                        } else {
+                            script_store.scripts.shift_remove(&script_id);
+                        }
+                   }
+                }
+            }
+            AssetEvent::Removed { id } => {
+                if let Some(path) = asset_server.get_path(*id) {
+                    let script_id = ScriptId::from(path.path().to_string_lossy().to_string());
+                    script_store.scripts.shift_remove(&script_id);
+                    println!("File removed: {}", path.path().to_string_lossy());
+                }
+            }
+            _ => {}
+        }
+    }
+
+    // Process file removal events
+    let komotool_path = get_or_create_komotool_config_path().unwrap();
+    for event in remove_events.read() {
+        if !is_in_script_folder(&event.path, &komotool_path) {
+            continue;
+        }
+
+        let asset_path = create_komotool_asset_path(&event.path);
+        let script_id = ScriptId::from(
+            asset_path.path().to_string_lossy().to_string()
+        );
+        script_store.scripts.shift_remove(&script_id);
+    }
+}
+
+
+pub fn handle_script_store_updates_all<P>(
+    mut events: EventReader<AssetEvent<ScriptAsset>>,
+    mut remove_events: EventReader<FileRemovedEvent>,
+    asset_server: Res<AssetServer>,
+    assets: Res<Assets<ScriptAsset>>,
+    metadata_store: Res<ScriptMetadataStore>,
+    mut update: ResMut<KomoToolScriptStore<P, OnUpdate>>,
+    mut preupdate: ResMut<KomoToolScriptStore<P, OnPreUpdate>>,
+    mut postupdate: ResMut<KomoToolScriptStore<P, OnPostUpdate>>,
+)
+where
+    P: IntoScriptPluginParams + ScriptFunctionChecker + Send + Sync + 'static + std::default::Default,
+{
+    // Process asset events
+    for event in events.read() {
+        match event {
+            AssetEvent::Added { id } | AssetEvent::LoadedWithDependencies { id } => {
+                // Skip if script is not for this plugin language
+                if let Some(script_metadata) = metadata_store.get(*id) {
+                    if P::LANGUAGE != script_metadata.language {
+                        continue;
+                    }
+                } else {
+                    continue;
+                }
+
+                if let Some(path) = asset_server.get_path(*id) {
+                    if let Some(script_bytes) = assets.get(*id) {
+                        // Get all functions in the script once
+                        let script_functions = P::get_functions(&script_bytes.content);
+
+                        // Convert to ScriptId format (path without source)
+                        let script_id = ScriptId::from(path.path().to_string_lossy().to_string());
+
+                        // Check and update each store
+                        if script_functions.contains(OnUpdate::into_callback_label().as_ref()) {
+                            update.scripts.insert(script_id.clone());
+                            println!("Added to OnUpdate: {}", script_id);
+                        }
+
+                        if script_functions.contains(OnPreUpdate::into_callback_label().as_ref()) {
+                            preupdate.scripts.insert(script_id.clone());
+                            println!("Added to OnPreUpdate: {}", script_id);
+                        }
+
+                        if script_functions.contains(OnPostUpdate::into_callback_label().as_ref()) {
+                            postupdate.scripts.insert(script_id.clone());
+                            println!("Added to OnPostUpdate: {}", script_id);
+                        }
+
+                        println!("Processed new script: {}", path.path().to_string_lossy().to_string());
+                    }
+                }
+            },
+            AssetEvent::Modified { id } => {
+                // Skip if script is not for this plugin language
+                if let Some(script_metadata) = metadata_store.get(*id) {
+                    if P::LANGUAGE != script_metadata.language {
+                        continue;
+                    }
+                } else {
+                    continue;
+                }
+
+                if let Some(path) = asset_server.get_path(*id) {
+                    let script_id = ScriptId::from(path.path().to_string_lossy().to_string());
+
+                    // Check if script still has required functions
+                    if let Some(script_bytes) = assets.get(*id) {
+                        println!("Script modified: {:?}", path);
+
+                        // Get all functions in the script once
+                        let script_functions = P::get_functions(&script_bytes.content);
+
+                        // Update each store based on function presence
+                        if script_functions.contains(OnUpdate::into_callback_label().as_ref()) {
+                            update.scripts.insert(script_id.clone());
+                        } else {
+                            update.scripts.shift_remove(&script_id);
+                        }
+
+                        if script_functions.contains(OnPreUpdate::into_callback_label().as_ref()) {
+                            preupdate.scripts.insert(script_id.clone());
+                        } else {
+                            preupdate.scripts.shift_remove(&script_id);
+                        }
+
+                        if script_functions.contains(OnPostUpdate::into_callback_label().as_ref()) {
+                            postupdate.scripts.insert(script_id.clone());
+                        } else {
+                            postupdate.scripts.shift_remove(&script_id);
+                        }
+                    }
+                }
+            },
+            AssetEvent::Removed { id } => {
+                if let Some(path) = asset_server.get_path(*id) {
+                    let script_id = ScriptId::from(path.path().to_string_lossy().to_string());
+
+                    // Remove from all stores
+                    update.scripts.shift_remove(&script_id);
+                    preupdate.scripts.shift_remove(&script_id);
+                    postupdate.scripts.shift_remove(&script_id);
+
+                    println!("File removed: {}", path.path().to_string_lossy());
+                }
+            },
+            _ => {}
+        }
+    }
+
+    // Process file removal events
+    let komotool_path = get_or_create_komotool_config_path().unwrap();
+    for event in remove_events.read() {
+        if !is_in_script_folder(&event.path, &komotool_path) {
+            continue;
+        }
+
+        let asset_path = create_komotool_asset_path(&event.path);
+        let script_id = ScriptId::from(asset_path.path().to_string_lossy().to_string());
+
+        // Remove from all stores
+        update.scripts.shift_remove(&script_id);
+        preupdate.scripts.shift_remove(&script_id);
+        postupdate.scripts.shift_remove(&script_id);
+
+        println!("File removed: {}", asset_path.path().to_string_lossy());
+    }
+}
+
+pub fn is_in_script_folder(file_path: &str, komotool_path: &Path) -> bool {
     // Get the absolute path of the file
     let file_path = Path::new(file_path)
         .canonicalize()
@@ -223,7 +426,7 @@ fn is_in_script_folder(file_path: &str, komotool_path: &Path) -> bool {
     file_path.starts_with(&scripts_path)
 }
 
-fn create_komotool_asset_path(file_path: &str) -> AssetPath<'static> {
+pub fn create_komotool_asset_path(file_path: &str) -> AssetPath<'static> {
     let path = Path::new(file_path);
 
     // Find the Komotool directory in the path (case insensitive)
@@ -247,6 +450,4 @@ fn create_komotool_asset_path(file_path: &str) -> AssetPath<'static> {
 
     let source = bevy_asset::io::AssetSourceId::from("komotool_config");
     AssetPath::from(relative_path).with_source(source)
-}
-
 }

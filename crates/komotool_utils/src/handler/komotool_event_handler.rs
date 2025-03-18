@@ -1,16 +1,21 @@
+use std::marker::PhantomData;
 use super::KomoToolScriptStore;
+use super::ScriptFunctionChecker;
 use bevy_ecs::entity::Entity;
-use bevy_ecs::system::Res;
+use bevy_ecs::system::{Resource, SystemMeta, SystemParam};
 use bevy_ecs::{system::SystemState, world::World};
+use bevy_ecs::component::Tick;
+use bevy_ecs::world::unsafe_world_cell::UnsafeWorldCell;
 use bevy_log::trace_once;
 use bevy_mod_scripting::core::error::InteropErrorInner;
 use bevy_mod_scripting::core::event::{CallbackLabel, Recipients};
-use bevy_mod_scripting::core::handler::handle_script_errors;
+use bevy_mod_scripting::core::handler::{handle_script_errors};
 use bevy_mod_scripting::core::{
     event::{IntoCallbackLabel, ScriptCallbackEvent},
-    extractors::{HandlerContext, WithWorldGuard},
+    extractors::{WithWorldGuard},
     IntoScriptPluginParams,
 };
+use bevy_mod_scripting::core::extractors::HandlerContext;
 use indexmap::IndexSet;
 
 /// A system state for handling script callbacks in KomoTool
@@ -20,10 +25,62 @@ use indexmap::IndexSet;
 /// - Queries KomoToolScriptStore instead of individual entity script components
 #[allow(deprecated)]
 pub type KomoToolEventHandlerSystemState<'w, 's, P, L> = SystemState<(
-    Res<'w, KomoToolScriptStore<P, L>>,
+    SystemResScope<'w, P, L>,
     bevy_mod_scripting::core::extractors::EventReaderScope<'s, ScriptCallbackEvent>,
     WithWorldGuard<'w, 's, HandlerContext<'s, P>>,
 )>;
+
+pub(crate) struct ResScope<'w, T: Resource + Default>(pub &'w mut T);
+
+pub struct ResourceState<T: Resource + Default> {
+    marker: PhantomData<T>,
+}
+
+unsafe impl<T: Resource + Default + 'static> SystemParam for ResScope<'_ , T> {
+    type State = ResourceState<T>;
+    type Item<'world, 'state> = ResScope<'world, T>;
+
+    fn init_state(world: &mut World, _system_meta: &mut SystemMeta) -> Self::State {
+        world.init_resource::<T>();
+        ResourceState {
+            marker: PhantomData,
+        }
+    }
+
+    unsafe fn get_param<'world, 'state>(
+        _state: &'state mut Self::State,
+        _system_meta: &SystemMeta,
+        world: UnsafeWorldCell<'world>,
+        _change_tick: Tick,
+    ) -> Self::Item<'world, 'state> {
+        // Get the resource pointer
+        let mut ptr = world
+            .get_resource_mut::<T>()
+            .unwrap_or_else(|| {
+                panic!(
+                    "Resource requested by ResScope does not exist: {}",
+                    std::any::type_name::<T>()
+                )
+            });
+
+        // IMPORTANT: Use the correct approach to get a reference with 'world lifetime
+        // This uses unsafe to extend the lifetime, but is safe because we know
+        // the resource lives for the 'world lifetime
+        let raw_ptr = ptr.as_mut() as *mut T;
+        let resource_ref = &mut *raw_ptr;
+
+        ResScope(resource_ref)
+    }
+}
+
+#[derive(SystemParam)]
+pub struct SystemResScope<
+    'w,
+    P: IntoScriptPluginParams + ScriptFunctionChecker + Send + Sync + 'static + std::default::Default,
+    L: IntoCallbackLabel + Send + Sync + 'static + std::default::Default,
+> {
+    pub(crate) store: ResScope<'w, KomoToolScriptStore<P, L>>,
+}
 
 macro_rules! push_err_and_continue {
     ($errors:ident, $expr:expr) => {
@@ -43,8 +100,8 @@ macro_rules! push_err_and_continue {
 /// If any of the resources required for the handler are missing, the system will log this issue and do nothing.
 #[allow(deprecated)]
 pub fn komotool_event_handler<
-    P: IntoScriptPluginParams + ScriptFunctionChecker + Send + Sync + 'static,
-    L: IntoCallbackLabel + Send + Sync + 'static,
+    P: IntoScriptPluginParams + ScriptFunctionChecker + Send + Sync + 'static + std::default::Default,
+    L: IntoCallbackLabel + Send + Sync + 'static + std::default::Default,
 >(
     world: &mut World,
     state: &mut KomoToolEventHandlerSystemState<P, L>,
@@ -63,21 +120,27 @@ pub fn komotool_event_handler<
     state.apply(world);
 }
 
+#[profiling::function]
 #[allow(deprecated)]
 fn komotool_event_handler_inner<
-    P: IntoScriptPluginParams + ScriptFunctionChecker + Send + Sync + 'static,
-    L: IntoCallbackLabel + Send + Sync + 'static,
+    P: IntoScriptPluginParams + ScriptFunctionChecker + Send + Sync + 'static + std::default::Default,
+    L: IntoCallbackLabel + Send + Sync + 'static + std::default::Default,
 >(
     callback_label: CallbackLabel,
-    script_store_query: Res<KomoToolScriptStore<P, L>>,
+    script_store_query: SystemResScope<P, L>,
     mut script_events: bevy_mod_scripting::core::extractors::EventReaderScope<ScriptCallbackEvent>,
     mut handler_ctxt: WithWorldGuard<HandlerContext<P>>,
 ) {
+
+    if script_store_query.store.0.scripts.is_empty() {
+        return;
+    }
+
     let (guard, handler_ctxt) = handler_ctxt.get_mut();
     let mut errors = Vec::default();
 
     // Get the script store
-    let script_store = script_store_query;
+    let script_store = script_store_query.store.0;
 
     // Process each event
     for event in script_events
@@ -103,7 +166,7 @@ fn komotool_event_handler_inner<
             let entity = Entity::from_raw(0);
             let call_result = handler_ctxt.call_dynamic_label(
                 &callback_label,
-                script_id.clone(),
+                &script_id,
                 entity,
                 event.args.clone(),
                 guard.clone(),
