@@ -1,22 +1,22 @@
-use std::marker::PhantomData;
 use super::KomoToolScriptStore;
 use super::ScriptFunctionChecker;
+use bevy_ecs::component::Tick;
 use bevy_ecs::entity::Entity;
 use bevy_ecs::system::{Resource, SystemMeta, SystemParam};
-use bevy_ecs::{system::SystemState, world::World};
-use bevy_ecs::component::Tick;
 use bevy_ecs::world::unsafe_world_cell::UnsafeWorldCell;
+use bevy_ecs::{system::SystemState, world::World};
 use bevy_log::trace_once;
 use bevy_mod_scripting::core::error::InteropErrorInner;
 use bevy_mod_scripting::core::event::{CallbackLabel, Recipients};
-use bevy_mod_scripting::core::handler::{handle_script_errors};
+use bevy_mod_scripting::core::extractors::HandlerContext;
+use bevy_mod_scripting::core::handler::handle_script_errors;
 use bevy_mod_scripting::core::{
     event::{IntoCallbackLabel, ScriptCallbackEvent},
-    extractors::{WithWorldGuard},
+    extractors::WithWorldGuard,
     IntoScriptPluginParams,
 };
-use bevy_mod_scripting::core::extractors::HandlerContext;
 use indexmap::IndexSet;
+use std::marker::PhantomData;
 
 /// A system state for handling script callbacks in KomoTool
 ///
@@ -36,7 +36,7 @@ pub struct ResourceState<T: Resource + Default> {
     marker: PhantomData<T>,
 }
 
-unsafe impl<T: Resource + Default + 'static> SystemParam for ResScope<'_ , T> {
+unsafe impl<T: Resource + Default + 'static> SystemParam for ResScope<'_, T> {
     type State = ResourceState<T>;
     type Item<'world, 'state> = ResScope<'world, T>;
 
@@ -54,14 +54,12 @@ unsafe impl<T: Resource + Default + 'static> SystemParam for ResScope<'_ , T> {
         _change_tick: Tick,
     ) -> Self::Item<'world, 'state> {
         // Get the resource pointer
-        let mut ptr = world
-            .get_resource_mut::<T>()
-            .unwrap_or_else(|| {
-                panic!(
-                    "Resource requested by ResScope does not exist: {}",
-                    std::any::type_name::<T>()
-                )
-            });
+        let mut ptr = world.get_resource_mut::<T>().unwrap_or_else(|| {
+            panic!(
+                "Resource requested by ResScope does not exist: {}",
+                std::any::type_name::<T>()
+            )
+        });
 
         // IMPORTANT: Use the correct approach to get a reference with 'world lifetime
         // This uses unsafe to extend the lifetime, but is safe because we know
@@ -131,7 +129,6 @@ fn komotool_event_handler_inner<
     mut script_events: bevy_mod_scripting::core::extractors::EventReaderScope<ScriptCallbackEvent>,
     mut handler_ctxt: WithWorldGuard<HandlerContext<P>>,
 ) {
-
     if script_store_query.store.0.scripts.is_empty() {
         return;
     }

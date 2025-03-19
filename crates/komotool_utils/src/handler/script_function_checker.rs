@@ -1,4 +1,3 @@
-use std::collections::HashSet;
 use bevy_mod_scripting::lua::LuaScriptingPlugin;
 use bevy_mod_scripting::rhai::rhai::{Engine, AST};
 use bevy_mod_scripting::rhai::RhaiScriptingPlugin;
@@ -6,6 +5,7 @@ use full_moon::{
     ast::{self, Ast},
     parse,
 };
+use std::collections::HashSet;
 
 pub trait ScriptFunctionChecker {
     /// Check if a script implementation contains a specific function
@@ -17,7 +17,6 @@ impl ScriptFunctionChecker for RhaiScriptingPlugin {
     fn has_function(script_bytes: &[u8], function_name: &str) -> bool {
         has_rhai_function(script_bytes, function_name)
     }
-
 
     fn get_functions(script_bytes: &[u8]) -> HashSet<String> {
         extract_rhai_functions(script_bytes)
@@ -62,7 +61,10 @@ fn extract_rhai_functions(script_bytes: &[u8]) -> HashSet<String> {
     };
     let engine = Engine::new();
     match engine.compile(code_str) {
-        Ok(ast) => ast.iter_functions().map(|fn_def| fn_def.name.to_string()).collect(),
+        Ok(ast) => ast
+            .iter_functions()
+            .map(|fn_def| fn_def.name.to_string())
+            .collect(),
         Err(_) => HashSet::new(),
     }
 }
@@ -101,15 +103,14 @@ fn contains_global_function(ast: &Ast, function_name: &str) -> bool {
         if let ast::Stmt::FunctionDeclaration(func_decl) = stmt {
             // Check if this is a global function (not a method)
             let name_ref = func_decl.name().names().to_string();
-                // Extract the function name from the AST
-                //let name = name_ref.token().to_string();
+            // Extract the function name from the AST
+            //let name = name_ref.token().to_string();
 
-                // Compare with the target function name
-                if name_ref == function_name {
-                    println!("Function name: {}", name_ref);
-                    return true;
-                }
-
+            // Compare with the target function name
+            if name_ref == function_name {
+                println!("Function name: {}", name_ref);
+                return true;
+            }
         }
     }
 

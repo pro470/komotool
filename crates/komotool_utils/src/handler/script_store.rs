@@ -10,11 +10,15 @@ use std::marker::PhantomData;
 #[derive(Resource, Default)]
 pub struct KomoToolScriptStore<P, L>
 where
-    P: IntoScriptPluginParams + ScriptFunctionChecker + Send + Sync + 'static + std::default::Default,
+    P: IntoScriptPluginParams
+        + ScriptFunctionChecker
+        + Send
+        + Sync
+        + 'static
+        + std::default::Default,
     L: IntoCallbackLabel + Send + Sync + 'static + std::default::Default,
 {
     /// Set of active script identifiers
     pub scripts: IndexSet<ScriptId>,
     _phantom: PhantomData<(L, P)>,
 }
-

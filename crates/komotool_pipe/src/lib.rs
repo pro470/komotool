@@ -2,11 +2,11 @@ use anyhow::Result;
 use bevy_app::{App, First, Plugin};
 use bevy_ecs::event::{Event, EventWriter};
 use bevy_ecs::system::NonSend;
+use crossbeam_channel::{unbounded, Receiver, Sender};
 use komorebi_client::{
     send_query, subscribe_with_options, Notification, SocketMessage, SubscribeOptions,
 };
 use std::io::{BufReader, Read};
-use crossbeam_channel::{Receiver, Sender, unbounded};
 use std::thread;
 use std::time::Duration;
 

@@ -11,11 +11,13 @@ use bevy_ecs::event::EventReader;
 use bevy_ecs::schedule::IntoSystemConfigs;
 use bevy_ecs::system::{Commands, Res, ResMut, Resource};
 use bevy_mod_scripting::core::asset::{ScriptAsset, ScriptMetadataStore};
+use bevy_mod_scripting::core::event::IntoCallbackLabel;
 use bevy_mod_scripting::core::script::{ScriptComponent, ScriptId};
 use bevy_mod_scripting::core::IntoScriptPluginParams;
 use bevy_state::app::AppExtStates;
 use bevy_state::condition::in_state;
 use bevy_state::state::{NextState, OnEnter, OnExit, States};
+use komotool_utils::handler::{KomoToolScriptStore, ScriptFunctionChecker};
 use komotool_utils::prelude::*;
 use komotool_utils::startup_schedule::PreUpdateStartup;
 pub use remove_watcher::{check_file_events, setup_file_watcher, FileRemovedEvent};
@@ -24,8 +26,6 @@ use std::{
     env, fs,
     path::{Path, PathBuf},
 };
-use bevy_mod_scripting::core::event::IntoCallbackLabel;
-use komotool_utils::handler::{KomoToolScriptStore, ScriptFunctionChecker};
 
 #[derive(States, Default, Debug, Clone, Eq, PartialEq, Hash)]
 pub enum ScriptLoadState {
@@ -196,7 +196,6 @@ pub fn handle_script_asset_events(
     }
 }
 
-
 pub fn handle_script_store_updates<P, L>(
     mut events: EventReader<AssetEvent<ScriptAsset>>,
     mut remove_events: EventReader<FileRemovedEvent>,
@@ -204,9 +203,13 @@ pub fn handle_script_store_updates<P, L>(
     assets: Res<Assets<ScriptAsset>>,
     metadata_store: Res<ScriptMetadataStore>,
     mut script_store: ResMut<KomoToolScriptStore<P, L>>,
-)
-where
-    P: IntoScriptPluginParams + ScriptFunctionChecker + Send + Sync + 'static + std::default::Default,
+) where
+    P: IntoScriptPluginParams
+        + ScriptFunctionChecker
+        + Send
+        + Sync
+        + 'static
+        + std::default::Default,
     L: IntoCallbackLabel + Send + Sync + 'static + std::default::Default,
 {
     // Process asset events
@@ -223,17 +226,21 @@ where
 
                 if let Some(path) = asset_server.get_path(*id) {
                     if let Some(script_bytes) = assets.get(*id) {
-                        if P::has_function(&script_bytes.content, L::into_callback_label().as_ref()) {
+                        if P::has_function(&script_bytes.content, L::into_callback_label().as_ref())
+                        {
                             // Convert to ScriptId format (path without source)
-                            let script_id = ScriptId::from(path.path().to_string_lossy().to_string());
+                            let script_id =
+                                ScriptId::from(path.path().to_string_lossy().to_string());
                             script_store.scripts.insert(script_id);
-                            println!("Adding script: {}", path.path().to_string_lossy().to_string());
+                            println!(
+                                "Adding script: {}",
+                                path.path().to_string_lossy().to_string()
+                            );
                         }
                     }
                 }
             }
             AssetEvent::Modified { id } => {
-
                 if let Some(script_metadata) = metadata_store.get(*id) {
                     if P::LANGUAGE != script_metadata.language {
                         continue;
@@ -246,14 +253,15 @@ where
                     let script_id = ScriptId::from(path.path().to_string_lossy().to_string());
 
                     // Check if script still has required functions
-                   if let Some(script_bytes) = assets.get(*id) {
-                       println!("Script modified: {:?}", asset_server.get_path(*id));
-                        if P::has_function(&script_bytes.content, L::into_callback_label().as_ref()) {
+                    if let Some(script_bytes) = assets.get(*id) {
+                        println!("Script modified: {:?}", asset_server.get_path(*id));
+                        if P::has_function(&script_bytes.content, L::into_callback_label().as_ref())
+                        {
                             script_store.scripts.insert(script_id);
                         } else {
                             script_store.scripts.shift_remove(&script_id);
                         }
-                   }
+                    }
                 }
             }
             AssetEvent::Removed { id } => {
@@ -275,13 +283,10 @@ where
         }
 
         let asset_path = create_komotool_asset_path(&event.path);
-        let script_id = ScriptId::from(
-            asset_path.path().to_string_lossy().to_string()
-        );
+        let script_id = ScriptId::from(asset_path.path().to_string_lossy().to_string());
         script_store.scripts.shift_remove(&script_id);
     }
 }
-
 
 pub fn handle_script_store_updates_all<P>(
     mut events: EventReader<AssetEvent<ScriptAsset>>,
@@ -292,9 +297,13 @@ pub fn handle_script_store_updates_all<P>(
     mut update: ResMut<KomoToolScriptStore<P, OnUpdate>>,
     mut preupdate: ResMut<KomoToolScriptStore<P, OnPreUpdate>>,
     mut postupdate: ResMut<KomoToolScriptStore<P, OnPostUpdate>>,
-)
-where
-    P: IntoScriptPluginParams + ScriptFunctionChecker + Send + Sync + 'static + std::default::Default,
+) where
+    P: IntoScriptPluginParams
+        + ScriptFunctionChecker
+        + Send
+        + Sync
+        + 'static
+        + std::default::Default,
 {
     // Process asset events
     for event in events.read() {
@@ -333,10 +342,13 @@ where
                             println!("Added to OnPostUpdate: {}", script_id);
                         }
 
-                        println!("Processed new script: {}", path.path().to_string_lossy().to_string());
+                        println!(
+                            "Processed new script: {}",
+                            path.path().to_string_lossy().to_string()
+                        );
                     }
                 }
-            },
+            }
             AssetEvent::Modified { id } => {
                 // Skip if script is not for this plugin language
                 if let Some(script_metadata) = metadata_store.get(*id) {
@@ -377,7 +389,7 @@ where
                         }
                     }
                 }
-            },
+            }
             AssetEvent::Removed { id } => {
                 if let Some(path) = asset_server.get_path(*id) {
                     let script_id = ScriptId::from(path.path().to_string_lossy().to_string());
@@ -389,7 +401,7 @@ where
 
                     println!("File removed: {}", path.path().to_string_lossy());
                 }
-            },
+            }
             _ => {}
         }
     }

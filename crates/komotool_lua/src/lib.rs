@@ -4,10 +4,12 @@ use bevy_ecs::system::{Commands, ResMut};
 use bevy_mod_scripting::core::ScriptingSystemSet;
 use bevy_mod_scripting::lua::LuaScriptingPlugin;
 use bevy_state::condition::in_state;
-use komotool_assets::{check_scripts_loaded, handle_script_store_updates, handle_script_store_updates_all};
+use komotool_assets::{
+    check_scripts_loaded, handle_script_store_updates, handle_script_store_updates_all,
+};
+use komotool_utils::handler::{komotool_event_handler, KomoToolScriptStore};
 use komotool_utils::startup_schedule::{PostUpdateStartup, PreUpdateStartup, UpdateStartup};
 use komotool_utils::{prelude::*, send_event_systems::*};
-use komotool_utils::handler::{komotool_event_handler, KomoToolScriptStore};
 
 pub struct KomoToolLuaPlugin;
 
@@ -46,35 +48,43 @@ impl Plugin for KomoToolLuaPlugin {
             )
             .add_systems(
                 PostUpdateStartup,
-                lua_cleanup_script_stores.run_if(in_state(GlobalLoadingState::AllDone))
-                    .after(advance_to_all_done)
+                lua_cleanup_script_stores
+                    .run_if(in_state(GlobalLoadingState::AllDone))
+                    .after(advance_to_all_done),
             )
-            .add_systems(PreUpdate, handle_script_store_updates_all::<LuaScriptingPlugin>.in_set(ScriptingSystemSet::ScriptCommandDispatch))
+            .add_systems(
+                PreUpdate,
+                handle_script_store_updates_all::<LuaScriptingPlugin>
+                    .in_set(ScriptingSystemSet::ScriptCommandDispatch),
+            )
             .add_systems(
                 PreUpdateStartup,
                 (
                     handle_script_store_updates::<LuaScriptingPlugin, OnPreStartUp>,
                     handle_script_store_updates::<LuaScriptingPlugin, OnStartUp>,
                     handle_script_store_updates::<LuaScriptingPlugin, OnPostStartUp>,
-                    ).before(check_scripts_loaded)
-            )
-
-        ;
+                )
+                    .before(check_scripts_loaded),
+            );
     }
 }
 
 pub fn insert_komotool_lua_handlers(mut schedule: ResMut<Schedules>) {
-    schedule.add_systems(PreUpdate, komotool_event_handler::<LuaScriptingPlugin, OnPreUpdate>);
-    schedule.add_systems(Update, komotool_event_handler::<LuaScriptingPlugin, OnUpdate>);
+    schedule.add_systems(
+        PreUpdate,
+        komotool_event_handler::<LuaScriptingPlugin, OnPreUpdate>,
+    );
+    schedule.add_systems(
+        Update,
+        komotool_event_handler::<LuaScriptingPlugin, OnUpdate>,
+    );
     schedule.add_systems(
         PostUpdate,
         komotool_event_handler::<LuaScriptingPlugin, OnPostUpdate>,
     );
 }
 
-pub fn lua_cleanup_script_stores(
-    mut commands: Commands
-) {
+pub fn lua_cleanup_script_stores(mut commands: Commands) {
     commands.remove_resource::<KomoToolScriptStore<LuaScriptingPlugin, OnPreStartUp>>();
     commands.remove_resource::<KomoToolScriptStore<LuaScriptingPlugin, OnStartUp>>();
     commands.remove_resource::<KomoToolScriptStore<LuaScriptingPlugin, OnPostStartUp>>();
