@@ -1,6 +1,7 @@
 use bevy_app::{App, ScheduleRunnerPlugin};
 use bevy_core::{FrameCountPlugin, TaskPoolPlugin, TypeRegistrationPlugin};
 use bevy_mod_scripting::core::bindings::AllocatorDiagnosticPlugin;
+use bevy_mod_scripting::ScriptFunctionsPlugin;
 use bevy_state::app::StatesPlugin;
 use bevy_time::TimePlugin;
 use komotool_assets::KomotoolAssetsPlugin;
@@ -33,5 +34,6 @@ fn main() {
         .add_plugins(KomoToolLuaPlugin)
         .add_plugins(KomoToolRhaiPlugin)
         .add_plugins(KomoToolKomorebicPlugin)
+        .add_plugins(ScriptFunctionsPlugin)
         .run();
 }
