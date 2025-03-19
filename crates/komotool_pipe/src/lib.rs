@@ -5,10 +5,10 @@ use bevy_ecs::system::NonSend;
 use komorebi_client::{
     send_query, subscribe_with_options, Notification, SocketMessage, SubscribeOptions,
 };
-use std::io::{BufRead, BufReader};
-use std::sync::mpsc::{Receiver, Sender};
+use std::io::{BufReader, Read};
+use crossbeam_channel::{Receiver, Sender, unbounded};
 use std::thread;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 pub struct KomoToolPipePlugin;
 
@@ -20,7 +20,7 @@ pub struct PipeNotificationEvent {
 impl Plugin for KomoToolPipePlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<PipeNotificationEvent>();
-        let (sender, receiver) = std::sync::mpsc::channel();
+        let (sender, receiver) = unbounded();
 
         // Spawn listener in a separate thread
         thread::spawn(move || loop {
@@ -39,60 +39,66 @@ impl Plugin for KomoToolPipePlugin {
     }
 }
 
-// Helper function to check if the komorebi service is alive
-fn check_connection_alive() -> bool {
-    match send_query(&SocketMessage::State) {
-        Ok(_) => true,
-        Err(e) => {
-            log::warn!("Connection check failed: {}", e);
-            false
-        }
-    }
-}
-
 fn run_pipe_listener(sender: &Sender<Notification>) -> Result<()> {
     const NAME: &str = "komotool";
-    const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(1);
 
     log::info!("Connecting to named pipe: {}", NAME);
 
     // Attempt to subscribe
-    let socket = subscribe_with_options(
+    let socket = match subscribe_with_options(
         NAME,
         SubscribeOptions {
             filter_state_changes: true,
         },
-    )?;
-
-    log::info!("Connected to named pipe successfully");
-
-    // Keep track of when we last sent a heartbeat
-    let mut last_heartbeat = Instant::now();
-
-    // Process incoming data
-    for incoming in socket.incoming() {
-        // Periodically check if connection is still alive
-        if last_heartbeat.elapsed() >= HEARTBEAT_INTERVAL {
-            if !check_connection_alive() {
-                log::warn!("Heartbeat failed - komorebi appears to be restarted. Reconnecting...");
-                return Ok(()); // Exit to reconnect
-            }
-            last_heartbeat = Instant::now();
-            log::debug!("Heartbeat successful - connection is alive");
+    ) {
+        Ok(socket) => {
+            log::info!("Connected to named pipe successfully");
+            socket
         }
+        Err(e) => {
+            log::warn!(
+                "Failed to connect to the named pipe: {}. Retrying in 2s...",
+                e
+            );
+            return Ok(()); // Retry connecting
+        }
+    };
 
+    for incoming in socket.incoming() {
         match incoming {
-            Ok(data) => {
-                let reader = BufReader::new(data.try_clone()?);
-                for line in reader.lines().map_while(Result::ok) {
-                    match serde_json::from_str(&line) {
-                        Ok(notification) => {
-                            if sender.send(notification).is_err() {
-                                log::warn!("Failed to send notification to channel");
-                                return Ok(());
+            Ok(subscription) => {
+                let mut buffer = Vec::new();
+                let mut reader = BufReader::new(subscription);
+
+                // Detect disconnections
+                if matches!(reader.read_to_end(&mut buffer), Ok(0)) {
+                    log::warn!("Disconnected from komorebi. Attempting to reconnect...");
+
+                    // Keep retrying until it successfully reconnects
+                    while send_query(&SocketMessage::AddSubscriberSocket(NAME.to_string())).is_err()
+                    {
+                        log::warn!("Reconnection attempt failed. Retrying in 1s...");
+                        thread::sleep(Duration::from_secs(1));
+                    }
+
+                    log::info!("Reconnected to komorebi!");
+                    continue; // Restart pipe listening
+                }
+
+                // Process incoming notifications
+                match String::from_utf8(buffer) {
+                    Ok(notification_string) => {
+                        match serde_json::from_str::<Notification>(&notification_string) {
+                            Ok(notification) => {
+                                if sender.send(notification).is_err() {
+                                    log::warn!("Failed to send notification to channel");
+                                }
                             }
+                            Err(e) => log::debug!("Malformed notification: {}", e),
                         }
-                        Err(e) => log::debug!("Malformed notification: {}", e),
+                    }
+                    Err(e) => {
+                        log::error!("Notification string was invalid UTF-8: {}", e);
                     }
                 }
             }
