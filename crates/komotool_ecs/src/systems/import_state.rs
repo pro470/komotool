@@ -3,8 +3,7 @@ use crate::resources::*;
 use bevy_ecs::entity::Entity;
 use bevy_ecs::system::{Commands, Query, Res, ResMut};
 use komorebi_client::{Container, Monitor, Window, Workspace};
-use std::collections::{HashMap, HashSet};
-use std::collections::hash_map::Entry;
+use std::collections::HashSet;
 use std::collections::hash_map::Entry;
 
 pub fn import_komorebi_workspace_state(
