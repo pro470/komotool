@@ -1,18 +1,14 @@
-use crate::components::Rect;
 use crate::relations::RelationRegistry;
 use bevy_ecs::entity::Entity;
 use bevy_ecs::system::Resource;
 use bevy_reflect::Reflect;
-use komorebi_client::{
-    FocusFollowsMouseImplementation, /*WindowContainerBehaviour,*/ MoveBehaviour,
-    OperationBehaviour,
-};
+use komorebi_client::{FocusFollowsMouseImplementation, WindowContainerBehaviour, MoveBehaviour, OperationBehaviour, Rect};
 
-#[derive(Resource)]
+#[derive(Resource, Reflect)]
 pub struct AppState {
     pub is_paused: bool,
     pub resize_delta: i32,
-    //pub new_window_behaviour: WindowContainerBehaviour,
+    pub new_window_behaviour: WindowContainerBehaviour,
     pub float_override: bool,
     pub cross_monitor_move_behaviour: MoveBehaviour,
     pub unmanaged_window_operation_behaviour: OperationBehaviour,
@@ -27,7 +23,7 @@ impl Default for AppState {
         Self {
             is_paused: false,
             resize_delta: 50,
-            //new_window_behaviour: ff,
+            new_window_behaviour: WindowContainerBehaviour::Create,
             float_override: false,
             cross_monitor_move_behaviour: MoveBehaviour::Insert,
             unmanaged_window_operation_behaviour: OperationBehaviour::NoOp,
