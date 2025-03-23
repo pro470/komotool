@@ -3,6 +3,7 @@ use bevy_ecs::entity::Entity;
 use bevy_ecs::system::Resource;
 use bevy_reflect::Reflect;
 use komorebi_client::{FocusFollowsMouseImplementation, WindowContainerBehaviour, MoveBehaviour, OperationBehaviour, Rect};
+use std::collections::HashMap;
 
 #[derive(Resource, Reflect)]
 pub struct AppState {
@@ -61,6 +62,18 @@ pub struct ContainerReg(pub RelationRegistry);
 
 #[derive(Resource, Default, Reflect)]
 pub struct WindowReg(pub RelationRegistry);
+
+#[derive(Resource, Default, Reflect)]
+pub struct MonitorToEntityMap(pub HashMap<String, Entity>);
+
+#[derive(Resource, Default, Reflect)]
+pub struct WorkspaceToEntityMap(pub HashMap<String, Entity>);
+
+#[derive(Resource, Default, Reflect)]
+pub struct ContainerToEntityMap(pub HashMap<String, Entity>);
+
+#[derive(Resource, Default, Reflect)]
+pub struct WindowToEntityMap(pub HashMap<String, Entity>);
 
 #[derive(Resource, Default)]
 pub struct KomorebiState {
