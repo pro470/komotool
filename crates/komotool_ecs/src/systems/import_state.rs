@@ -3,7 +3,7 @@ use crate::resources::*;
 use bevy_ecs::entity::Entity;
 use bevy_ecs::system::{Commands, Query, Res, ResMut};
 use komorebi_client::{Container, Monitor, Window, Workspace};
-use std::collections::{HashSet, HashMap};
+use std::collections::HashSet;
 use std::collections::hash_map::Entry;
 
 pub fn import_komorebi_workspace_state(
@@ -63,21 +63,12 @@ pub fn import_komorebi_monitor_state(
                 if let Ok(mut monitor) = existing_monitors.get_mut(entity) {
                     *monitor = komo_mon.clone();
                 }
-
-                // Update focus state
-                let focused = idx == state.monitors.focused_idx();
-                commands.entity(entity)
-                    .remove::<Focused>()
-                    .insert(Focused(focused as i32));
             }
             Entry::Vacant(entry) => {
                 // Spawn new monitor
                 let entity = commands.spawn(komo_mon.clone()).id();
                 entry.insert(entity);
                 
-                if idx == state.monitors.focused_idx() {
-                    commands.entity(entity).insert(Focused(1));
-                }
             }
         }
     }
@@ -123,13 +114,6 @@ pub fn import_komorebi_window_state(
                             if let Ok(mut window) = existing_windows.get_mut(entity) {
                                 *window = *komo_win;
                             }
-
-                            // Update focus state (you'll need to implement focus tracking logic)
-                            // Example:
-                            // let is_focused = komo_win.hwnd == state.focused_window_hwnd;
-                            // commands.entity(entity)
-                            //     .remove::<Focused>()
-                            //     .insert(Focused(is_focused as i32));
                         }
                         Entry::Vacant(entry) => {
                             // Spawn new window
@@ -183,23 +167,12 @@ pub fn import_komorebi_container_state(
                             *container = komo_cont.clone();
                         }
 
-                        // Update focus state
-                        let focused_idx = komo_ws.focused_container_idx();
-                        let is_focused = komo_cont.id() == komo_ws.containers()[focused_idx].id();
-                        commands.entity(entity)
-                            .remove::<Focused>()
-                            .insert(Focused(is_focused as i32));
                     }
                     Entry::Vacant(entry) => {
                         // Spawn new container
                         let entity = commands.spawn(komo_cont.clone()).id();
                         entry.insert(entity);
                         
-                        // Set initial focus if needed
-                        let focused_idx = komo_ws.focused_container_idx();
-                        if komo_cont.id() == komo_ws.containers()[focused_idx].id() {
-                            commands.entity(entity).insert(Focused(1));
-                        }
                     }
                 }
             }
