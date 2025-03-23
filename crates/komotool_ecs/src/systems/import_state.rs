@@ -3,7 +3,7 @@ use crate::resources::*;
 use bevy_ecs::entity::Entity;
 use bevy_ecs::system::{Commands, Query, Res, ResMut};
 use komorebi_client::{Container, Monitor, Window, Workspace};
-use std::collections::HashSet;
+use std::collections::{HashSet, HashMap};
 use std::collections::hash_map::Entry;
 
 pub fn import_komorebi_workspace_state(
@@ -95,29 +95,62 @@ pub fn import_komorebi_monitor_state(
 
 pub fn import_komorebi_window_state(
     mut commands: Commands,
-    mut existing_windows: Query<(Entity, &mut Window)>,
+    mut existing_windows: Query<&mut Window>,
     komorebi_state: Res<KomorebiState>,
+    mut window_map: ResMut<WindowToEntityMap>,
 ) {
-    // Clear existing windows
-    for (entity, _) in existing_windows.iter_mut() {
-        commands.entity(entity).despawn();
-    }
-
     let Some(state) = &komorebi_state.current else {
         return;
     };
 
-    // Spawn new window entities
+    // Track windows that still exist in current state
+    let mut current_hwnds = HashSet::new();
+
+    // First pass: Update existing or spawn new windows
     for komo_mon in state.monitors.elements() {
         let workspaces = komo_mon.workspaces();
         for komo_ws in workspaces.iter() {
             for komo_cont in komo_ws.containers() {
                 for komo_win in komo_cont.windows() {
-                    commands.spawn(*komo_win);
+                    let hwnd = komo_win.hwnd.to_string();
+                    current_hwnds.insert(hwnd.clone());
+
+                    match window_map.0.entry(hwnd) {
+                        Entry::Occupied(entry) => {
+                            let entity = *entry.get();
+                            
+                            // Update existing window component
+                            if let Ok(mut window) = existing_windows.get_mut(entity) {
+                                *window = *komo_win;
+                            }
+
+                            // Update focus state (you'll need to implement focus tracking logic)
+                            // Example:
+                            // let is_focused = komo_win.hwnd == state.focused_window_hwnd;
+                            // commands.entity(entity)
+                            //     .remove::<Focused>()
+                            //     .insert(Focused(is_focused as i32));
+                        }
+                        Entry::Vacant(entry) => {
+                            // Spawn new window
+                            let entity = commands.spawn(*komo_win).id();
+                            entry.insert(entity);
+                        }
+                    }
                 }
             }
         }
     }
+
+    // Second pass: Remove windows that no longer exist
+    window_map.0.retain(|hwnd, entity| {
+        if current_hwnds.contains(hwnd) {
+            true
+        } else {
+            commands.entity(*entity).despawn();
+            false
+        }
+    });
 }
 
 pub fn import_komorebi_container_state(
