@@ -22,7 +22,7 @@ pub fn import_komorebi_workspace_state(
     for komo_mon in state.monitors.elements() {
         let workspaces = komo_mon.workspaces();
         for (idx, komo_ws) in workspaces.iter().enumerate() {
-            let mut entity = commands.spawn(komo_ws);
+            let mut entity = commands.spawn(komo_ws.clone());
 
             // Set focus if this is the monitor's focused workspace
             if idx == komo_mon.focused_workspace_idx() {
@@ -48,7 +48,7 @@ pub fn import_komorebi_monitor_state(
     };
 
     for (idx, komo_mon) in state.monitors.elements().iter().enumerate() {
-        let entity = commands.spawn(komo_mon).id();
+        let entity = commands.spawn(komo_mon.clone()).id();
         
         // Use serial_number_id as key with getter access
         if let Some(serial) = komo_mon.serial_number_id() {
@@ -81,7 +81,7 @@ pub fn import_komorebi_window_state(
         for komo_ws in workspaces.iter() {
             for komo_cont in komo_ws.containers() {
                 for komo_win in komo_cont.windows() {
-                    commands.spawn(komo_win);
+                    commands.spawn(*komo_win);
                 }
             }
         }
@@ -107,7 +107,7 @@ pub fn import_komorebi_container_state(
         let workspaces = komo_mon.workspaces();
         for komo_ws in workspaces.iter() {
             for komo_cont in komo_ws.containers() {
-                let mut entity = commands.spawn(komo_cont);
+                let mut entity = commands.spawn(komo_cont.clone());
 
                 // Set focus if this is the workspace's focused container
                 let focused_idx = komo_ws.focused_container_idx();
