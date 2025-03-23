@@ -5,6 +5,7 @@ use bevy_ecs::system::{Commands, Query, Res, ResMut};
 use komorebi_client::{Container, Monitor, Window, Workspace};
 use std::collections::{HashMap, HashSet};
 use std::collections::hash_map::Entry;
+use std::collections::hash_map::Entry;
 
 pub fn import_komorebi_workspace_state(
     mut commands: Commands,
@@ -122,33 +123,66 @@ pub fn import_komorebi_window_state(
 
 pub fn import_komorebi_container_state(
     mut commands: Commands,
-    mut existing_containers: Query<(Entity, &mut Container)>,
+    mut existing_containers: Query<&mut Container>,
     komorebi_state: Res<KomorebiState>,
+    mut container_map: ResMut<ContainerToEntityMap>,
 ) {
-    // Clear existing containers
-    for (entity, _) in existing_containers.iter_mut() {
-        commands.entity(entity).despawn();
-    }
-
     let Some(state) = &komorebi_state.current else {
         return;
     };
 
-    // Spawn new container entities
+    // Track containers that still exist in current state
+    let mut current_ids = HashSet::new();
+
+    // First pass: Update existing or spawn new containers
     for komo_mon in state.monitors.elements() {
         let workspaces = komo_mon.workspaces();
         for komo_ws in workspaces.iter() {
             for komo_cont in komo_ws.containers() {
-                let mut entity = commands.spawn(komo_cont.clone());
+                let id = komo_cont.id();
+                current_ids.insert(id.clone());
 
-                // Set focus if this is the workspace's focused container
-                let focused_idx = komo_ws.focused_container_idx();
-                if komo_cont.id() == komo_ws.containers()[focused_idx].id() {
-                    entity.insert(Focused(1));
+                match container_map.0.entry(id.clone()) {
+                    Entry::Occupied(entry) => {
+                        let entity = *entry.get();
+                        
+                        // Update existing container component
+                        if let Ok(mut container) = existing_containers.get_mut(entity) {
+                            *container = komo_cont.clone();
+                        }
+
+                        // Update focus state
+                        let focused_idx = komo_ws.focused_container_idx();
+                        let is_focused = komo_cont.id() == komo_ws.containers()[focused_idx].id();
+                        commands.entity(entity)
+                            .remove::<Focused>()
+                            .insert(Focused(is_focused as i32));
+                    }
+                    Entry::Vacant(entry) => {
+                        // Spawn new container
+                        let entity = commands.spawn(komo_cont.clone()).id();
+                        entry.insert(entity);
+                        
+                        // Set initial focus if needed
+                        let focused_idx = komo_ws.focused_container_idx();
+                        if komo_cont.id() == komo_ws.containers()[focused_idx].id() {
+                            commands.entity(entity).insert(Focused(1));
+                        }
+                    }
                 }
             }
         }
     }
+
+    // Second pass: Remove containers that no longer exist
+    container_map.0.retain(|id, entity| {
+        if current_ids.contains(id) {
+            true
+        } else {
+            commands.entity(*entity).despawn();
+            false
+        }
+    });
 }
 
 pub fn import_komorebi_appstate_state(
