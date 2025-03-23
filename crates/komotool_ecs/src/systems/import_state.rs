@@ -36,8 +36,9 @@ pub fn import_komorebi_monitor_state(
     mut commands: Commands,
     mut existing_monitors: Query<(Entity, &mut Monitor)>,
     komorebi_state: Res<KomorebiState>,
+    mut monitor_map: ResMut<MonitorToEntityMap>,
 ) {
-    // Clear existing monitors
+    monitor_map.0.clear();
     for (entity, _) in existing_monitors.iter_mut() {
         commands.entity(entity).despawn();
     }
@@ -46,12 +47,16 @@ pub fn import_komorebi_monitor_state(
         return;
     };
 
-    // Spawn new monitor entities with getter methods
     for (idx, komo_mon) in state.monitors.elements().iter().enumerate() {
-        let mut entity = commands.spawn(komo_mon);
+        let entity = commands.spawn(komo_mon).id();
+        
+        // Use serial_number_id as key with getter access
+        if let Some(serial) = komo_mon.serial_number_id() {
+            monitor_map.0.insert(serial.clone(), entity);
+        }
 
         if idx == state.monitors.focused_idx() {
-            entity.insert(Focused(1));
+            commands.entity(entity).insert(Focused(1));
         }
     }
 }
