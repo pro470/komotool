@@ -6,6 +6,7 @@ mod systems;
 use bevy_app::{App, First, Plugin};
 use bevy_ecs::prelude::resource_changed;
 use bevy_ecs::schedule::IntoSystemConfigs;
+use komorebi_client::{Container, Monitor, Window, Workspace};
 pub use components::*;
 pub use relations::*;
 pub use resources::*;
