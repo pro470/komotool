@@ -3,6 +3,8 @@ use crate::resources::*;
 use bevy_ecs::entity::Entity;
 use bevy_ecs::system::{Commands, Query, Res, ResMut};
 use komorebi_client::{Container, Monitor, Window, Workspace};
+use std::collections::{HashMap, HashSet};
+use std::collections::hash_map::Entry;
 
 pub fn import_komorebi_workspace_state(
     mut commands: Commands,
@@ -34,31 +36,61 @@ pub fn import_komorebi_workspace_state(
 
 pub fn import_komorebi_monitor_state(
     mut commands: Commands,
-    mut existing_monitors: Query<(Entity, &mut Monitor)>,
+    mut existing_monitors: Query<&mut Monitor>,
     komorebi_state: Res<KomorebiState>,
     mut monitor_map: ResMut<MonitorToEntityMap>,
 ) {
-    monitor_map.0.clear();
-    for (entity, _) in existing_monitors.iter_mut() {
-        commands.entity(entity).despawn();
-    }
-
     let Some(state) = &komorebi_state.current else {
         return;
     };
 
-    for (idx, komo_mon) in state.monitors.elements().iter().enumerate() {
-        let entity = commands.spawn(komo_mon.clone()).id();
-        
-        // Use serial_number_id as key with getter access
-        if let Some(serial) = komo_mon.serial_number_id() {
-            monitor_map.0.insert(serial.clone(), entity);
-        }
+    // Track monitors that still exist in current state
+    let mut current_serials = HashSet::new();
 
-        if idx == state.monitors.focused_idx() {
-            commands.entity(entity).insert(Focused(1));
+    // First pass: Update existing or spawn new monitors
+    for (idx, komo_mon) in state.monitors.elements().iter().enumerate() {
+        let Some(serial) = komo_mon.serial_number_id() else {
+            continue; // Skip monitors without serial
+        };
+
+        current_serials.insert(serial.clone());
+
+        match monitor_map.0.entry(serial.clone()) {
+            Entry::Occupied(entry) => {
+                let entity = *entry.get();
+                
+                // Update existing monitor component
+                if let Ok(mut monitor) = existing_monitors.get_mut(entity) {
+                    *monitor = komo_mon.clone();
+                }
+
+                // Update focus state
+                let focused = idx == state.monitors.focused_idx();
+                commands.entity(entity)
+                    .remove::<Focused>()
+                    .insert(Focused(focused as i32));
+            }
+            Entry::Vacant(entry) => {
+                // Spawn new monitor
+                let entity = commands.spawn(komo_mon.clone()).id();
+                entry.insert(entity);
+                
+                if idx == state.monitors.focused_idx() {
+                    commands.entity(entity).insert(Focused(1));
+                }
+            }
         }
     }
+
+    // Second pass: Remove monitors that no longer exist
+    monitor_map.0.retain(|serial, entity| {
+        if current_serials.contains(serial) {
+            true
+        } else {
+            commands.entity(*entity).despawn();
+            false
+        }
+    });
 }
 
 pub fn import_komorebi_window_state(
