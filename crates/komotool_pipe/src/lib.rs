@@ -2,9 +2,9 @@ use anyhow::Result;
 use bevy_app::{App, First, Plugin};
 use bevy_ecs::event::{Event, EventWriter};
 use bevy_ecs::system::NonSend;
-use crossbeam_channel::{unbounded, Receiver, Sender};
+use crossbeam_channel::{Receiver, Sender, unbounded};
 use komorebi_client::{
-    send_query, subscribe_with_options, Notification, SocketMessage, SubscribeOptions,
+    Notification, SocketMessage, SubscribeOptions, send_query, subscribe_with_options,
 };
 use std::io::{BufReader, Read};
 use std::thread;
@@ -23,14 +23,16 @@ impl Plugin for KomoToolPipePlugin {
         let (sender, receiver) = unbounded();
 
         // Spawn listener in a separate thread
-        thread::spawn(move || loop {
-            match run_pipe_listener(&sender) {
-                Ok(_) => log::info!("Pipe listener finished, attempting to reconnect..."),
-                Err(e) => log::warn!("Pipe listener error: {}. Retrying...", e),
-            }
+        thread::spawn(move || {
+            loop {
+                match run_pipe_listener(&sender) {
+                    Ok(_) => log::info!("Pipe listener finished, attempting to reconnect..."),
+                    Err(e) => log::warn!("Pipe listener error: {}. Retrying...", e),
+                }
 
-            // Wait before retrying to prevent overwhelming the system
-            thread::sleep(Duration::from_secs(2));
+                // Wait before retrying to prevent overwhelming the system
+                thread::sleep(Duration::from_secs(2));
+            }
         });
 
         // Add system to process received messages

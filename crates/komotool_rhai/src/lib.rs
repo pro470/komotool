@@ -9,7 +9,7 @@ use bevy_state::condition::in_state;
 use komotool_assets::{
     check_scripts_loaded, handle_script_store_updates, handle_script_store_updates_all,
 };
-use komotool_utils::handler::{komotool_event_handler, KomoToolScriptStore};
+use komotool_utils::handler::{KomoToolScriptStore, komotool_event_handler};
 use komotool_utils::prelude::*;
 use komotool_utils::send_event_systems::{
     advance_to_all_done, send_post_startup_events, send_pre_startup_events, send_startup_events,

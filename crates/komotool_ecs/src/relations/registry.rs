@@ -15,11 +15,7 @@ impl RangeExt for Range<usize> {
     fn intersect(&self, other: &Self) -> Option<Range<usize>> {
         let start = max(self.start, other.start);
         let end = min(self.end, other.end);
-        if start < end {
-            Some(start..end)
-        } else {
-            None
-        }
+        if start < end { Some(start..end) } else { None }
     }
 
     fn union(&self, other: &Self) -> Option<Range<usize>> {

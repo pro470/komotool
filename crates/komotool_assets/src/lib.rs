@@ -4,23 +4,23 @@ use bevy_app::{App, Plugin, PreStartup, PreUpdate, Startup};
 use bevy_asset::{
     AssetApp, AssetEvent, AssetId, AssetPath, AssetServer, Assets, Handle, LoadedFolder,
     RecursiveDependencyLoadState,
-    {io::AssetSourceBuilder, AssetPlugin},
+    {AssetPlugin, io::AssetSourceBuilder},
 };
 use bevy_ecs::entity::Entity;
 use bevy_ecs::event::EventReader;
 use bevy_ecs::schedule::IntoSystemConfigs;
 use bevy_ecs::system::{Commands, Res, ResMut, Resource};
+use bevy_mod_scripting::core::IntoScriptPluginParams;
 use bevy_mod_scripting::core::asset::{ScriptAsset, ScriptMetadataStore};
 use bevy_mod_scripting::core::event::IntoCallbackLabel;
 use bevy_mod_scripting::core::script::{ScriptComponent, ScriptId};
-use bevy_mod_scripting::core::IntoScriptPluginParams;
 use bevy_state::app::AppExtStates;
 use bevy_state::condition::in_state;
 use bevy_state::state::{NextState, OnEnter, OnExit, States};
 use komotool_utils::handler::{KomoToolScriptStore, ScriptFunctionChecker};
 use komotool_utils::prelude::*;
 use komotool_utils::startup_schedule::PreUpdateStartup;
-pub use remove_watcher::{check_file_events, setup_file_watcher, FileRemovedEvent};
+pub use remove_watcher::{FileRemovedEvent, check_file_events, setup_file_watcher};
 use std::{
     collections::HashMap,
     env, fs,
@@ -232,10 +232,7 @@ pub fn handle_script_store_updates<P, L>(
                             let script_id =
                                 ScriptId::from(path.path().to_string_lossy().to_string());
                             script_store.scripts.insert(script_id);
-                            println!(
-                                "Adding script: {}",
-                                path.path().to_string_lossy().to_string()
-                            );
+                            println!("Adding script: {}", path.path().to_string_lossy());
                         }
                     }
                 }
@@ -342,10 +339,7 @@ pub fn handle_script_store_updates_all<P>(
                             println!("Added to OnPostUpdate: {}", script_id);
                         }
 
-                        println!(
-                            "Processed new script: {}",
-                            path.path().to_string_lossy().to_string()
-                        );
+                        println!("Processed new script: {}", path.path().to_string_lossy());
                     }
                 }
             }

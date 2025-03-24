@@ -1,6 +1,6 @@
 use bevy_mod_scripting::lua::LuaScriptingPlugin;
-use bevy_mod_scripting::rhai::rhai::{Engine, AST};
 use bevy_mod_scripting::rhai::RhaiScriptingPlugin;
+use bevy_mod_scripting::rhai::rhai::{AST, Engine};
 use full_moon::{
     ast::{self, Ast},
     parse,
