@@ -2,6 +2,7 @@ use crate::components::*;
 use crate::resources::*;
 use bevy_ecs::entity::Entity;
 use bevy_ecs::system::{Commands, Query, Res, ResMut};
+use indexmap::IndexSet;
 use komorebi_client::{Container, Monitor, Window, Workspace};
 use std::collections::hash_map::Entry;
 use std::collections::HashSet;
@@ -159,7 +160,8 @@ pub fn import_komorebi_container_state(
                 current_ids.insert(id.clone());
 
                 // Get window entities for this container's windows
-                let window_entities = komo_cont.windows()
+                let window_entities = komo_cont
+                    .windows()
                     .iter()
                     .filter_map(|w| window_map.0.get(&w.hwnd.to_string()))
                     .copied()
@@ -175,15 +177,15 @@ pub fn import_komorebi_container_state(
                         }
 
                         // Insert/update WindowRing component
-                        commands.entity(entity)
-                            .insert(WindowRing(window_entities));
+                        commands
+                            .entity(entity)
+                            .insert(KomotoolRing(window_entities));
                     }
                     Entry::Vacant(entry) => {
                         // Spawn new container with WindowRing
-                        let entity = commands.spawn((
-                            komo_cont.clone(),
-                            WindowRing(window_entities)
-                        )).id();
+                        let entity = commands
+                            .spawn((komo_cont.clone(), KomotoolRing(window_entities)))
+                            .id();
                         entry.insert(entity);
                     }
                 }

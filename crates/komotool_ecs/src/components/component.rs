@@ -4,15 +4,6 @@ use bevy_reflect::Reflect;
 use indexmap::IndexSet;
 
 #[derive(Component, Reflect)]
-pub struct WorkspaceRing(#[reflect(ignore)] pub IndexSet<Entity>);
-
-#[derive(Component, Reflect)]
-pub struct ContainerRing(#[reflect(ignore)] pub IndexSet<Entity>);
-
-#[derive(Component, Reflect)]
-pub struct WindowRing(#[reflect(ignore)] pub IndexSet<Entity>);
-
-#[derive(Component, Reflect)]
 pub struct KomotoolRing(#[reflect(ignore)] pub IndexSet<Entity>);
 
 #[derive(Component, Reflect)]
