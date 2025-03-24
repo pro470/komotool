@@ -80,40 +80,56 @@ pub fn import_komorebi_monitor_state(
     mut existing_monitors: Query<&mut Monitor>,
     komorebi_state: Res<KomorebiState>,
     mut monitor_map: ResMut<MonitorToEntityMap>,
+    workspace_map: Res<WorkspaceToEntityMap>,
 ) {
     let Some(state) = &komorebi_state.current else {
         return;
     };
 
-    // Track monitors that still exist in current state
     let mut current_serials = HashSet::new();
 
-    // First pass: Update existing or spawn new monitors
-    for (idx, komo_mon) in state.monitors.elements().iter().enumerate() {
+    for komo_mon in state.monitors.elements() {
         let Some(serial) = komo_mon.serial_number_id() else {
-            continue; // Skip monitors without serial
+            continue;
         };
-
         current_serials.insert(serial.clone());
+
+        // Get workspace entities for this monitor's workspaces
+        let workspace_entities = komo_mon.workspaces()
+            .iter()
+            .filter_map(|ws| {
+                // Match workspace import's key logic
+                let key = ws.name().or_else(|| Some(ws.id().clone()))?;
+                workspace_map.0.get(&key).copied()
+            })
+            .collect::<IndexSet<Entity>>();
+
+        // Get focused workspace index directly from monitor
+        let focused_idx = komo_mon.focused_workspace_idx();
 
         match monitor_map.0.entry(serial.clone()) {
             Entry::Occupied(entry) => {
                 let entity = *entry.get();
 
-                // Update existing monitor component
                 if let Ok(mut monitor) = existing_monitors.get_mut(entity) {
                     *monitor = komo_mon.clone();
                 }
+
+                commands.entity(entity)
+                    .insert(KomotoolRing(workspace_entities))
+                    .insert(Focused(focused_idx));
             }
             Entry::Vacant(entry) => {
-                // Spawn new monitor
-                let entity = commands.spawn(komo_mon.clone()).id();
+                let entity = commands.spawn((
+                    komo_mon.clone(),
+                    KomotoolRing(workspace_entities),
+                    Focused(focused_idx)
+                )).id();
                 entry.insert(entity);
             }
         }
     }
 
-    // Second pass: Remove monitors that no longer exist
     monitor_map.0.retain(|serial, entity| {
         if current_serials.contains(serial) {
             true
