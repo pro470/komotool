@@ -167,6 +167,9 @@ pub fn import_komorebi_container_state(
                     .copied()
                     .collect::<IndexSet<Entity>>();
 
+                // Get focused index directly as usize
+                let focused_idx = komo_cont.focused_window_idx();
+
                 match container_map.0.entry(id.clone()) {
                     Entry::Occupied(entry) => {
                         let entity = *entry.get();
@@ -176,15 +179,20 @@ pub fn import_komorebi_container_state(
                             *container = komo_cont.clone();
                         }
 
-                        // Insert/update WindowRing component
+                        // Insert/update WindowRing component and Focused
                         commands
                             .entity(entity)
-                            .insert(KomotoolRing(window_entities));
+                            .insert(KomotoolRing(window_entities))
+                            .insert(Focused(focused_idx));
                     }
                     Entry::Vacant(entry) => {
-                        // Spawn new container with WindowRing
+                        // Spawn new container with WindowRing and Focused
                         let entity = commands
-                            .spawn((komo_cont.clone(), KomotoolRing(window_entities)))
+                            .spawn((
+                                komo_cont.clone(),
+                                KomotoolRing(window_entities),
+                                Focused(focused_idx)
+                            ))
                             .id();
                         entry.insert(entity);
                     }

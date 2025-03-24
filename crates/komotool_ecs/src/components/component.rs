@@ -31,4 +31,4 @@ pub struct LastFocusedWorkspace(pub Option<Entity>);
 pub struct MaximizedWindow(pub Option<Entity>);
 
 #[derive(Component, Reflect)]
-pub struct Focused(pub i32);
+pub struct Focused(pub usize);
