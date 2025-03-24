@@ -41,7 +41,7 @@ impl Default for AppState {
 }
 
 #[derive(Resource, Default, Reflect)]
-pub struct StateRing(#[reflect(ignore)] pub IndexSet<Entity>);
+pub struct MonitorRing(#[reflect(ignore)] pub IndexSet<Entity>);
 
 #[derive(Resource, Default, Reflect)]
 pub struct FocusedMonitor(pub Option<Entity>);
