@@ -4,8 +4,7 @@ use bevy_ecs::entity::Entity;
 use bevy_ecs::system::{Commands, Query, Res, ResMut};
 use indexmap::IndexSet;
 use komorebi_client::{Container, Monitor, Window, Workspace};
-use std::collections::hash_map::Entry;
-use std::collections::{HashSet, hash_map::Entry};
+use std::collections::{hash_map::Entry, HashSet};
 
 pub fn import_komorebi_workspace_state(
     mut commands: Commands,
@@ -26,15 +25,16 @@ pub fn import_komorebi_workspace_state(
             // Use name if available, otherwise fall back to ID
             let key = match komo_ws.name() {
                 Some(name) => name.clone(),
-                None => komo_ws.id().clone(),
+                None => continue,
             };
             current_keys.insert(key.clone());
 
             let focused_idx = komo_ws.focused_container_idx();
 
-            let container_entities = komo_ws.containers()
+            let container_entities = komo_ws
+                .containers()
                 .iter()
-                .filter_map(|c| container_map.0.get(&c.id()))
+                .filter_map(|c| container_map.0.get(c.id().as_str()))
                 .copied()
                 .collect::<IndexSet<Entity>>();
 
@@ -46,16 +46,19 @@ pub fn import_komorebi_workspace_state(
                         *workspace = komo_ws.clone();
                     }
 
-                    commands.entity(entity)
+                    commands
+                        .entity(entity)
                         .insert(KomotoolRing(container_entities))
                         .insert(Focused(focused_idx));
                 }
                 Entry::Vacant(entry) => {
-                    let entity = commands.spawn((
-                        komo_ws.clone(),
-                        KomotoolRing(container_entities),
-                        Focused(focused_idx)
-                    )).id();
+                    let entity = commands
+                        .spawn((
+                            komo_ws.clone(),
+                            KomotoolRing(container_entities),
+                            Focused(focused_idx),
+                        ))
+                        .id();
                     entry.insert(entity);
                 }
             }
@@ -228,7 +231,7 @@ pub fn import_komorebi_container_state(
                             .spawn((
                                 komo_cont.clone(),
                                 KomotoolRing(window_entities),
-                                Focused(focused_idx)
+                                Focused(focused_idx),
                             ))
                             .id();
                         entry.insert(entity);
