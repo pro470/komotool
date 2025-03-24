@@ -2,7 +2,11 @@ use crate::relations::RelationRegistry;
 use bevy_ecs::entity::Entity;
 use bevy_ecs::system::Resource;
 use bevy_reflect::Reflect;
-use komorebi_client::{FocusFollowsMouseImplementation, WindowContainerBehaviour, MoveBehaviour, OperationBehaviour, Rect};
+use indexmap::IndexSet;
+use komorebi_client::{
+    FocusFollowsMouseImplementation, MoveBehaviour, OperationBehaviour, Rect,
+    WindowContainerBehaviour,
+};
 use std::collections::HashMap;
 
 #[derive(Resource, Reflect)]
@@ -35,6 +39,9 @@ impl Default for AppState {
         }
     }
 }
+
+#[derive(Resource, Default, Reflect)]
+pub struct StateRing(#[reflect(ignore)] pub IndexSet<Entity>);
 
 #[derive(Resource, Default, Reflect)]
 pub struct FocusedMonitor(pub Option<Entity>);

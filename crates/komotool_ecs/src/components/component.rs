@@ -1,6 +1,19 @@
 use bevy_ecs::component::Component;
 use bevy_ecs::entity::Entity;
 use bevy_reflect::Reflect;
+use indexmap::IndexSet;
+
+#[derive(Component, Reflect)]
+pub struct MonitorRing(#[reflect(ignore)] pub IndexSet<Entity>);
+
+#[derive(Component, Reflect)]
+pub struct WorkspaceRing(#[reflect(ignore)] pub IndexSet<Entity>);
+
+#[derive(Component, Reflect)]
+pub struct ContainerRing(#[reflect(ignore)] pub IndexSet<Entity>);
+
+#[derive(Component, Reflect)]
+pub struct KomotoolRing(#[reflect(ignore)] pub IndexSet<Entity>);
 
 #[derive(Component, Reflect)]
 pub struct MonocleContainer(pub Option<Entity>);

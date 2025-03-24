@@ -6,8 +6,8 @@ mod systems;
 use bevy_app::{App, First, Plugin};
 use bevy_ecs::prelude::resource_changed;
 use bevy_ecs::schedule::IntoSystemConfigs;
-use komorebi_client::{Container, Monitor, Window, Workspace};
 pub use components::*;
+use komorebi_client::{Container, Monitor, Window, Workspace};
 pub use relations::*;
 pub use resources::*;
 pub use systems::*;
@@ -26,6 +26,10 @@ impl Plugin for KomoToolEcsPlugin {
             .init_resource::<WorkspaceReg>()
             .init_resource::<ContainerReg>()
             .init_resource::<WindowReg>()
+            .init_resource::<MonitorToEntityMap>()
+            .init_resource::<WorkspaceToEntityMap>()
+            .init_resource::<ContainerToEntityMap>()
+            .init_resource::<WindowToEntityMap>()
             .register_type::<Monitor>()
             .register_type::<Window>()
             .register_type::<Container>()
@@ -46,10 +50,13 @@ impl Plugin for KomoToolEcsPlugin {
                         .after(komotool_pipe::handle_pipe_notifications),
                     // Then run all imports in parallel
                     (
-                        import_komorebi_monitor_state,
-                        import_komorebi_workspace_state,
-                        import_komorebi_container_state,
-                        import_komorebi_window_state,
+                        (
+                            import_komorebi_window_state,
+                            import_komorebi_container_state,
+                            import_komorebi_workspace_state,
+                            import_komorebi_monitor_state,
+                        )
+                            .chain(),
                         import_komorebi_appstate_state,
                     )
                         .after(update_komorebi_state_from_notifications)
