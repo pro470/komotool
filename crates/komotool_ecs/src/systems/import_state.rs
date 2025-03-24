@@ -141,6 +141,7 @@ pub fn import_komorebi_container_state(
     mut existing_containers: Query<&mut Container>,
     komorebi_state: Res<KomorebiState>,
     mut container_map: ResMut<ContainerToEntityMap>,
+    window_map: Res<WindowToEntityMap>,
 ) {
     let Some(state) = &komorebi_state.current else {
         return;
@@ -157,6 +158,13 @@ pub fn import_komorebi_container_state(
                 let id = komo_cont.id();
                 current_ids.insert(id.clone());
 
+                // Get window entities for this container's windows
+                let window_entities = komo_cont.windows()
+                    .iter()
+                    .filter_map(|w| window_map.0.get(&w.hwnd.to_string()))
+                    .copied()
+                    .collect::<IndexSet<Entity>>();
+
                 match container_map.0.entry(id.clone()) {
                     Entry::Occupied(entry) => {
                         let entity = *entry.get();
@@ -165,10 +173,17 @@ pub fn import_komorebi_container_state(
                         if let Ok(mut container) = existing_containers.get_mut(entity) {
                             *container = komo_cont.clone();
                         }
+
+                        // Insert/update WindowRing component
+                        commands.entity(entity)
+                            .insert(WindowRing(window_entities));
                     }
                     Entry::Vacant(entry) => {
-                        // Spawn new container
-                        let entity = commands.spawn(komo_cont.clone()).id();
+                        // Spawn new container with WindowRing
+                        let entity = commands.spawn((
+                            komo_cont.clone(),
+                            WindowRing(window_entities)
+                        )).id();
                         entry.insert(entity);
                     }
                 }
