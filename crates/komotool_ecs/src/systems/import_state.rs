@@ -5,34 +5,71 @@ use bevy_ecs::system::{Commands, Query, Res, ResMut};
 use indexmap::IndexSet;
 use komorebi_client::{Container, Monitor, Window, Workspace};
 use std::collections::hash_map::Entry;
-use std::collections::HashSet;
+use std::collections::{HashSet, hash_map::Entry};
 
 pub fn import_komorebi_workspace_state(
     mut commands: Commands,
-    mut existing_workspaces: Query<(Entity, &mut Workspace)>,
+    mut existing_workspaces: Query<&mut Workspace>,
     komorebi_state: Res<KomorebiState>,
+    mut workspace_map: ResMut<WorkspaceToEntityMap>,
+    container_map: Res<ContainerToEntityMap>,
 ) {
-    // Clear existing workspaces
-    for (entity, _) in existing_workspaces.iter_mut() {
-        commands.entity(entity).despawn();
-    }
-
     let Some(state) = &komorebi_state.current else {
         return;
     };
 
-    // Spawn new workspace entities
+    let mut current_keys = HashSet::new();
+
     for komo_mon in state.monitors.elements() {
         let workspaces = komo_mon.workspaces();
-        for (idx, komo_ws) in workspaces.iter().enumerate() {
-            let mut entity = commands.spawn(komo_ws.clone());
+        for komo_ws in workspaces.iter() {
+            // Use name if available, otherwise fall back to ID
+            let key = match komo_ws.name() {
+                Some(name) => name.clone(),
+                None => komo_ws.id().clone(),
+            };
+            current_keys.insert(key.clone());
 
-            // Set focus if this is the monitor's focused workspace
-            if idx == komo_mon.focused_workspace_idx() {
-                entity.insert(Focused(1));
+            let focused_idx = komo_ws.focused_container_idx();
+
+            let container_entities = komo_ws.containers()
+                .iter()
+                .filter_map(|c| container_map.0.get(&c.id()))
+                .copied()
+                .collect::<IndexSet<Entity>>();
+
+            match workspace_map.0.entry(key) {
+                Entry::Occupied(entry) => {
+                    let entity = *entry.get();
+
+                    if let Ok(mut workspace) = existing_workspaces.get_mut(entity) {
+                        *workspace = komo_ws.clone();
+                    }
+
+                    commands.entity(entity)
+                        .insert(KomotoolRing(container_entities))
+                        .insert(Focused(focused_idx));
+                }
+                Entry::Vacant(entry) => {
+                    let entity = commands.spawn((
+                        komo_ws.clone(),
+                        KomotoolRing(container_entities),
+                        Focused(focused_idx)
+                    )).id();
+                    entry.insert(entity);
+                }
             }
         }
     }
+
+    workspace_map.0.retain(|key, entity| {
+        if current_keys.contains(key) {
+            true
+        } else {
+            commands.entity(*entity).despawn();
+            false
+        }
+    });
 }
 
 pub fn import_komorebi_monitor_state(
