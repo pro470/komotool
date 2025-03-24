@@ -3,8 +3,8 @@ use crate::resources::*;
 use bevy_ecs::entity::Entity;
 use bevy_ecs::system::{Commands, Query, Res, ResMut};
 use komorebi_client::{Container, Monitor, Window, Workspace};
-use std::collections::HashSet;
 use std::collections::hash_map::Entry;
+use std::collections::HashSet;
 
 pub fn import_komorebi_workspace_state(
     mut commands: Commands,
@@ -58,7 +58,7 @@ pub fn import_komorebi_monitor_state(
         match monitor_map.0.entry(serial.clone()) {
             Entry::Occupied(entry) => {
                 let entity = *entry.get();
-                
+
                 // Update existing monitor component
                 if let Ok(mut monitor) = existing_monitors.get_mut(entity) {
                     *monitor = komo_mon.clone();
@@ -68,7 +68,6 @@ pub fn import_komorebi_monitor_state(
                 // Spawn new monitor
                 let entity = commands.spawn(komo_mon.clone()).id();
                 entry.insert(entity);
-                
             }
         }
     }
@@ -109,7 +108,7 @@ pub fn import_komorebi_window_state(
                     match window_map.0.entry(hwnd) {
                         Entry::Occupied(entry) => {
                             let entity = *entry.get();
-                            
+
                             // Update existing window component
                             if let Ok(mut window) = existing_windows.get_mut(entity) {
                                 *window = *komo_win;
@@ -161,18 +160,16 @@ pub fn import_komorebi_container_state(
                 match container_map.0.entry(id.clone()) {
                     Entry::Occupied(entry) => {
                         let entity = *entry.get();
-                        
+
                         // Update existing container component
                         if let Ok(mut container) = existing_containers.get_mut(entity) {
                             *container = komo_cont.clone();
                         }
-
                     }
                     Entry::Vacant(entry) => {
                         // Spawn new container
                         let entity = commands.spawn(komo_cont.clone()).id();
                         entry.insert(entity);
-                        
                     }
                 }
             }
