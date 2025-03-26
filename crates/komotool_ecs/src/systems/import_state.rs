@@ -95,11 +95,12 @@ pub fn import_komorebi_monitor_state(
         current_serials.insert(serial.clone());
 
         // Get workspace entities for this monitor's workspaces
-        let workspace_entities = komo_mon.workspaces()
+        let workspace_entities = komo_mon
+            .workspaces()
             .iter()
             .filter_map(|ws| {
                 // Match workspace import's key logic
-                let key = ws.name().or_else(|| Some(ws.id().clone()))?;
+                let key = ws.name().clone().or_else(|| Some("".to_string()))?;
                 workspace_map.0.get(&key).copied()
             })
             .collect::<IndexSet<Entity>>();
@@ -115,16 +116,19 @@ pub fn import_komorebi_monitor_state(
                     *monitor = komo_mon.clone();
                 }
 
-                commands.entity(entity)
+                commands
+                    .entity(entity)
                     .insert(KomotoolRing(workspace_entities))
                     .insert(Focused(focused_idx));
             }
             Entry::Vacant(entry) => {
-                let entity = commands.spawn((
-                    komo_mon.clone(),
-                    KomotoolRing(workspace_entities),
-                    Focused(focused_idx)
-                )).id();
+                let entity = commands
+                    .spawn((
+                        komo_mon.clone(),
+                        KomotoolRing(workspace_entities),
+                        Focused(focused_idx),
+                    ))
+                    .id();
                 entry.insert(entity);
             }
         }
