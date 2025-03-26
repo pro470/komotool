@@ -1,2 +1,10 @@
 mod component;
+mod container_maker_components;
+mod monitor_maker_components;
+mod window_maker_components;
+mod workspace_maker_components;
 pub use component::*;
+pub use container_maker_components::*;
+pub use monitor_maker_components::*;
+pub use window_maker_components::*;
+pub use workspace_maker_components::*;
