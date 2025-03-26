@@ -2,7 +2,6 @@ use crate::relations::RelationRegistry;
 use bevy_ecs::entity::Entity;
 use bevy_ecs::system::Resource;
 use bevy_reflect::Reflect;
-use indexmap::IndexSet;
 use komorebi_client::{
     FocusFollowsMouseImplementation, MoveBehaviour, OperationBehaviour, Rect,
     WindowContainerBehaviour,
@@ -79,7 +78,7 @@ pub struct ContainerToEntityMap(pub HashMap<String, Entity>);
 #[derive(Resource, Default, Reflect)]
 pub struct WindowToEntityMap(pub HashMap<String, Entity>);
 
-#[derive(Resource, Default)]
+#[derive(Resource, Default, Reflect)]
 pub struct KomorebiState {
     pub current: Option<komorebi_client::State>,
     pub last: Option<komorebi_client::State>,
