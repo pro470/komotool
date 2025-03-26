@@ -63,5 +63,9 @@ impl Plugin for KomoToolEcsPlugin {
                         .run_if(resource_changed::<KomorebiState>),
                 ),
             );
+        register_container_types(app);
+        register_monitor_types(app);
+        register_window_types(app);
+        register_workspace_types(app);
     }
 }
