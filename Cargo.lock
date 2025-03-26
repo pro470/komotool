@@ -3752,7 +3752,6 @@ dependencies = [
  "indexmap 2.8.0",
  "komorebi-client",
  "komotool_pipe",
- "serde_json",
 ]
 
 [[package]]
@@ -5459,7 +5458,6 @@ version = "1.0.139"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "44f86c3acccc9c65b153fe1b85a3be07fe5515274ec9f0653b4a0875731c72a6"
 dependencies = [
- "indexmap 2.8.0",
  "itoa",
  "memchr",
  "ryu",
