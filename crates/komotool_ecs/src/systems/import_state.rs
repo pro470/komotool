@@ -1,9 +1,9 @@
 use crate::components::*;
 use crate::resources::*;
+use crate::RelationRegistry;
 use bevy_ecs::system::{Commands, Query, Res, ResMut};
 use komorebi_client::{Container, Monitor, Window, Workspace};
 use std::collections::{hash_map::Entry, HashSet};
-use crate::RelationRegistry;
 
 pub fn import_komorebi_workspace_state(
     mut commands: Commands,
@@ -259,7 +259,7 @@ pub fn build_relation_registry(
         let Some(serial) = komo_mon.serial_number_id() else {
             continue;
         };
-        
+
         let Some(monitor_entity) = monitor_map.0.get(serial) else {
             continue;
         };
@@ -277,7 +277,7 @@ pub fn build_relation_registry(
             let Some(name) = komo_ws.name() else {
                 continue;
             };
-            
+
             let Some(workspace_entity) = workspace_map.0.get(name) else {
                 continue;
             };

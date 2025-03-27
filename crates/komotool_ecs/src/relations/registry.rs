@@ -1,11 +1,12 @@
 use bevy_ecs::entity::Entity;
+use bevy_ecs::system::Resource;
 use bevy_reflect::Reflect;
 use indexmap::IndexSet;
 use std::borrow::Borrow;
-use std::cmp::{Ordering, Eq};
+use std::cmp::{Eq, Ordering};
 use std::hash::{Hash, Hasher};
 
-#[derive(Debug, Clone, Reflect)]
+#[derive(Debug, Clone, Reflect, Copy)]
 pub struct EntityRecord {
     pub entity: Entity,
     pub monitor: usize,
@@ -38,7 +39,6 @@ impl Borrow<Entity> for EntityRecord {
     }
 }
 
-
 impl PartialOrd for EntityRecord {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
@@ -47,7 +47,8 @@ impl PartialOrd for EntityRecord {
 
 impl Ord for EntityRecord {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.monitor.cmp(&other.monitor)
+        self.monitor
+            .cmp(&other.monitor)
             .then(self.workspace.cmp(&other.workspace))
             .then(self.container.cmp(&other.container))
             .then(self.window.cmp(&other.window))
@@ -61,8 +62,10 @@ impl EntityRecord {
     }
 }
 
-#[derive(Default, Debug, Clone, Reflect)]
+#[derive(Default, Debug, Clone, Reflect, PartialEq, Eq, Resource)]
 pub struct RelationRegistry {
+    /// The set of all records.
+    #[reflect(ignore)]
     pub records: IndexSet<EntityRecord>,
 }
 
@@ -82,7 +85,7 @@ impl RelationRegistry {
             container,
             window,
         };
-        
+
         // Maintain sorted order using IndexSet's insertion order
         self.records.insert(record);
         self.records.sort_unstable();
