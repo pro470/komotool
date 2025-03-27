@@ -3,6 +3,7 @@ use crate::resources::*;
 use bevy_ecs::system::{Commands, Query, Res, ResMut};
 use komorebi_client::{Container, Monitor, Window, Workspace};
 use std::collections::{hash_map::Entry, HashSet};
+use crate::RelationRegistry;
 
 pub fn import_komorebi_workspace_state(
     mut commands: Commands,
@@ -255,7 +256,7 @@ pub fn build_relation_registry(
 
     // Mirror the monitor import structure
     for (monitor_idx, komo_mon) in state.monitors.elements().iter().enumerate() {
-        let Some(monitor_entity) = monitor_map.0.get(komo_mon.serial_number_id().unwrap()) else {
+        let Some(monitor_entity) = monitor_map.0.get(komo_mon.serial_number_id().as_ref().unwrap()) else {
             continue;
         };
 
@@ -269,7 +270,7 @@ pub fn build_relation_registry(
 
         // Mirror workspace import structure
         for (workspace_idx, komo_ws) in komo_mon.workspaces().iter().enumerate() {
-            let Some(workspace_entity) = workspace_map.0.get(komo_ws.name().unwrap()) else {
+            let Some(workspace_entity) = workspace_map.0.get(komo_ws.name().as_ref().unwrap()) else {
                 continue;
             };
 
