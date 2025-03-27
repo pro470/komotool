@@ -1,4 +1,4 @@
-use crate::relations::RelationRegistry;
+use bevy_ecs::component::ComponentId;
 use bevy_ecs::entity::Entity;
 use bevy_ecs::system::Resource;
 use bevy_reflect::Reflect;
@@ -70,4 +70,9 @@ pub struct WindowToEntityMap(pub HashMap<String, Entity>);
 pub struct KomorebiState {
     pub current: Option<komorebi_client::State>,
     pub last: Option<komorebi_client::State>,
+}
+
+#[derive(Resource, Default, Reflect)]
+pub struct ExtendedMakerMap {
+    makers: HashMap<usize, ComponentId>,
 }

@@ -28,3 +28,6 @@ pub struct MaximizedWindow(pub Option<Entity>);
 
 #[derive(Component, Reflect)]
 pub struct Focused(pub usize);
+
+#[derive(Component, Reflect)]
+pub struct ExtendedMaker;
