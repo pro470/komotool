@@ -254,7 +254,6 @@ pub fn build_relation_registry(
         return;
     };
 
-    // Mirror the monitor import structure
     for (monitor_idx, komo_mon) in state.monitors.elements().iter().enumerate() {
         let Some(monitor_entity) = monitor_map.0.get(komo_mon.serial_number_id().as_ref().unwrap()) else {
             continue;
@@ -262,13 +261,12 @@ pub fn build_relation_registry(
 
         registry.insert(
             *monitor_entity,
-            monitor_idx,
+            monitor_idx + 1,
             0, // workspace placeholder
             0, // container placeholder
             0, // window placeholder
         );
 
-        // Mirror workspace import structure
         for (workspace_idx, komo_ws) in komo_mon.workspaces().iter().enumerate() {
             let Some(workspace_entity) = workspace_map.0.get(komo_ws.name().as_ref().unwrap()) else {
                 continue;
@@ -276,13 +274,12 @@ pub fn build_relation_registry(
 
             registry.insert(
                 *workspace_entity,
-                monitor_idx,
-                workspace_idx,
+                monitor_idx + 1,
+                workspace_idx + 1,
                 0, // container placeholder
                 0, // window placeholder
             );
 
-            // Mirror container import structure
             for (container_idx, komo_cont) in komo_ws.containers().iter().enumerate() {
                 let Some(container_entity) = container_map.0.get(komo_cont.id()) else {
                     continue;
@@ -290,13 +287,12 @@ pub fn build_relation_registry(
 
                 registry.insert(
                     *container_entity,
-                    monitor_idx,
-                    workspace_idx,
-                    container_idx,
+                    monitor_idx + 1,
+                    workspace_idx + 1,
+                    container_idx + 1,
                     0, // window placeholder
                 );
 
-                // Mirror window import structure
                 for (window_idx, komo_win) in komo_cont.windows().iter().enumerate() {
                     let Some(window_entity) = window_map.0.get(&komo_win.hwnd.to_string()) else {
                         continue;
@@ -304,10 +300,10 @@ pub fn build_relation_registry(
 
                     registry.insert(
                         *window_entity,
-                        monitor_idx,
-                        workspace_idx,
-                        container_idx,
-                        window_idx,
+                        monitor_idx + 1,
+                        workspace_idx + 1,
+                        container_idx + 1,
+                        window_idx + 1,
                     );
                 }
             }
