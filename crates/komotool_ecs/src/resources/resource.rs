@@ -55,18 +55,6 @@ pub struct FocusedContainerGlobal(pub Option<Entity>);
 pub struct FocusedWindowGlobal(pub Option<Entity>);
 
 #[derive(Resource, Default, Reflect)]
-pub struct MonitorReg(pub RelationRegistry);
-
-#[derive(Resource, Default, Reflect)]
-pub struct WorkspaceReg(pub RelationRegistry);
-
-#[derive(Resource, Default, Reflect)]
-pub struct ContainerReg(pub RelationRegistry);
-
-#[derive(Resource, Default, Reflect)]
-pub struct WindowReg(pub RelationRegistry);
-
-#[derive(Resource, Default, Reflect)]
 pub struct MonitorToEntityMap(pub HashMap<String, Entity>);
 
 #[derive(Resource, Default, Reflect)]

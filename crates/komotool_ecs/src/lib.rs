@@ -17,15 +17,12 @@ pub struct KomoToolEcsPlugin;
 impl Plugin for KomoToolEcsPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<AppState>()
+            .init_resource::<RelationRegistry>()
             .init_resource::<KomorebiState>()
             .init_resource::<FocusedMonitor>()
             .init_resource::<FocusedWorkspaceGlobal>()
             .init_resource::<FocusedContainerGlobal>()
             .init_resource::<FocusedWindowGlobal>()
-            .init_resource::<MonitorReg>()
-            .init_resource::<WorkspaceReg>()
-            .init_resource::<ContainerReg>()
-            .init_resource::<WindowReg>()
             .init_resource::<MonitorToEntityMap>()
             .init_resource::<WorkspaceToEntityMap>()
             .init_resource::<ContainerToEntityMap>()
