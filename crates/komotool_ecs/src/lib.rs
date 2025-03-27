@@ -50,13 +50,10 @@ impl Plugin for KomoToolEcsPlugin {
                         .after(komotool_pipe::handle_pipe_notifications),
                     // Then run all imports in parallel
                     (
-                        (
-                            import_komorebi_window_state,
-                            import_komorebi_container_state,
-                            import_komorebi_workspace_state,
-                            import_komorebi_monitor_state,
-                        )
-                            .chain(),
+                        import_komorebi_window_state,
+                        import_komorebi_container_state,
+                        import_komorebi_workspace_state,
+                        import_komorebi_monitor_state,
                         import_komorebi_appstate_state,
                     )
                         .after(update_komorebi_state_from_notifications)

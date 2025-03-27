@@ -1,8 +1,6 @@
 use crate::components::*;
 use crate::resources::*;
-use bevy_ecs::entity::Entity;
 use bevy_ecs::system::{Commands, Query, Res, ResMut};
-use indexmap::IndexSet;
 use komorebi_client::{Container, Monitor, Window, Workspace};
 use std::collections::{hash_map::Entry, HashSet};
 
@@ -11,7 +9,6 @@ pub fn import_komorebi_workspace_state(
     mut existing_workspaces: Query<&mut Workspace>,
     komorebi_state: Res<KomorebiState>,
     mut workspace_map: ResMut<WorkspaceToEntityMap>,
-    container_map: Res<ContainerToEntityMap>,
 ) {
     let Some(state) = &komorebi_state.current else {
         return;
@@ -31,13 +28,6 @@ pub fn import_komorebi_workspace_state(
 
             let focused_idx = komo_ws.focused_container_idx();
 
-            let container_entities = komo_ws
-                .containers()
-                .iter()
-                .filter_map(|c| container_map.0.get(c.id().as_str()))
-                .copied()
-                .collect::<IndexSet<Entity>>();
-
             match workspace_map.0.entry(key) {
                 Entry::Occupied(entry) => {
                     let entity = *entry.get();
@@ -48,14 +38,12 @@ pub fn import_komorebi_workspace_state(
 
                     commands
                         .entity(entity)
-                        .insert(KomotoolRing(container_entities))
                         .insert(Focused(focused_idx));
                 }
                 Entry::Vacant(entry) => {
                     let entity = commands
                         .spawn((
                             komo_ws.clone(),
-                            KomotoolRing(container_entities),
                             Focused(focused_idx),
                         ))
                         .id();
@@ -80,7 +68,6 @@ pub fn import_komorebi_monitor_state(
     mut existing_monitors: Query<&mut Monitor>,
     komorebi_state: Res<KomorebiState>,
     mut monitor_map: ResMut<MonitorToEntityMap>,
-    workspace_map: Res<WorkspaceToEntityMap>,
 ) {
     let Some(state) = &komorebi_state.current else {
         return;
@@ -93,17 +80,6 @@ pub fn import_komorebi_monitor_state(
             continue;
         };
         current_serials.insert(serial.clone());
-
-        // Get workspace entities for this monitor's workspaces
-        let workspace_entities = komo_mon
-            .workspaces()
-            .iter()
-            .filter_map(|ws| {
-                // Match workspace import's key logic
-                let key = ws.name().clone().or_else(|| Some("".to_string()))?;
-                workspace_map.0.get(&key).copied()
-            })
-            .collect::<IndexSet<Entity>>();
 
         // Get focused workspace index directly from monitor
         let focused_idx = komo_mon.focused_workspace_idx();
@@ -118,14 +94,12 @@ pub fn import_komorebi_monitor_state(
 
                 commands
                     .entity(entity)
-                    .insert(KomotoolRing(workspace_entities))
                     .insert(Focused(focused_idx));
             }
             Entry::Vacant(entry) => {
                 let entity = commands
                     .spawn((
                         komo_mon.clone(),
-                        KomotoolRing(workspace_entities),
                         Focused(focused_idx),
                     ))
                     .id();
@@ -202,7 +176,6 @@ pub fn import_komorebi_container_state(
     mut existing_containers: Query<&mut Container>,
     komorebi_state: Res<KomorebiState>,
     mut container_map: ResMut<ContainerToEntityMap>,
-    window_map: Res<WindowToEntityMap>,
 ) {
     let Some(state) = &komorebi_state.current else {
         return;
@@ -219,14 +192,6 @@ pub fn import_komorebi_container_state(
                 let id = komo_cont.id();
                 current_ids.insert(id.clone());
 
-                // Get window entities for this container's windows
-                let window_entities = komo_cont
-                    .windows()
-                    .iter()
-                    .filter_map(|w| window_map.0.get(&w.hwnd.to_string()))
-                    .copied()
-                    .collect::<IndexSet<Entity>>();
-
                 // Get focused index directly as usize
                 let focused_idx = komo_cont.focused_window_idx();
 
@@ -242,7 +207,6 @@ pub fn import_komorebi_container_state(
                         // Insert/update WindowRing component and Focused
                         commands
                             .entity(entity)
-                            .insert(KomotoolRing(window_entities))
                             .insert(Focused(focused_idx));
                     }
                     Entry::Vacant(entry) => {
@@ -250,7 +214,6 @@ pub fn import_komorebi_container_state(
                         let entity = commands
                             .spawn((
                                 komo_cont.clone(),
-                                KomotoolRing(window_entities),
                                 Focused(focused_idx),
                             ))
                             .id();
