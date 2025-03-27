@@ -1,8 +1,10 @@
 use bevy_ecs::entity::Entity;
 use bevy_reflect::Reflect;
-use std::cmp::{max, min};
+use std::cmp::{max, min, Ordering};
 use std::collections::HashMap;
 use std::ops::Range;
+use std::hash::{Hash, Hasher};
+use std::borrow::Borrow;
 
 pub trait RangeExt {
     /// Returns the intersection of two ranges, or None if they do not overlap.
@@ -34,15 +36,55 @@ impl RangeExt for Range<usize> {
 #[derive(Debug, Clone, Reflect)]
 pub struct EntityRecord {
     pub entity: Entity,
-    pub monitor: u32,
-    pub workspace: u32,
-    pub container: u32,
-    pub window: u32,
+    pub monitor: usize,
+    pub workspace: usize,
+    pub container: usize,
+    pub window: usize,
+}
+
+// Hash implementation - only hashes the entity field
+impl Hash for EntityRecord {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.entity.hash(state);
+    }
+}
+
+// PartialEq implementation - equality based only on entity
+impl PartialEq for EntityRecord {
+    fn eq(&self, other: &Self) -> bool {
+        self.entity == other.entity
+    }
+}
+
+// Eq marker trait (required for Hash)
+impl Eq for EntityRecord {}
+
+// Borrow implementation - allows direct lookup with &Entity
+impl Borrow<Entity> for EntityRecord {
+    fn borrow(&self) -> &Entity {
+        &self.entity
+    }
+}
+
+
+impl PartialOrd for EntityRecord {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for EntityRecord {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.monitor.cmp(&other.monitor)
+            .then(self.workspace.cmp(&other.workspace))
+            .then(self.container.cmp(&other.container))
+            .then(self.window.cmp(&other.window))
+    }
 }
 
 impl EntityRecord {
     /// The canonical key used for ordering.
-    pub fn key(&self) -> (u32, u32, u32, u32) {
+    pub fn key(&self) -> (usize, usize, usize, usize) {
         (self.monitor, self.workspace, self.container, self.window)
     }
 }
@@ -62,10 +104,10 @@ impl RelationRegistry {
     pub fn insert(
         &mut self,
         entity: Entity,
-        monitor: u32,
-        workspace: u32,
-        container: u32,
-        window: u32,
+        monitor: usize,
+        workspace: usize,
+        container: usize,
+        window: usize,
     ) {
         self.records.push(EntityRecord {
             entity,
@@ -100,7 +142,7 @@ impl RelationRegistry {
 
     fn build_range_index_for_component<F>(&mut self, comp: &str, getter: F)
     where
-        F: Fn(&EntityRecord) -> u32,
+        F: Fn(&EntityRecord) -> usize,
     {
         let mut current_tag: Option<String> = None;
         let mut range_start: Option<usize> = None;
@@ -127,7 +169,7 @@ impl RelationRegistry {
     /// Update a component and then re-sort/rebuild.
     pub fn update_component(&mut self, entity: Entity, tag: &str) {
         if let Some((component, value_str)) = tag.split_once('=') {
-            if let Ok(new_val) = value_str.parse::<u32>() {
+            if let Ok(new_val) = value_str.parse::<usize>() {
                 if let Some(&idx) = self.entity_to_index.get(&entity) {
                     let record = &mut self.records[idx];
                     match component {
