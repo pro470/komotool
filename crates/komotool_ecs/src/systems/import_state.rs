@@ -36,17 +36,10 @@ pub fn import_komorebi_workspace_state(
                         *workspace = komo_ws.clone();
                     }
 
-                    commands
-                        .entity(entity)
-                        .insert(Focused(focused_idx));
+                    commands.entity(entity).insert(Focused(focused_idx));
                 }
                 Entry::Vacant(entry) => {
-                    let entity = commands
-                        .spawn((
-                            komo_ws.clone(),
-                            Focused(focused_idx),
-                        ))
-                        .id();
+                    let entity = commands.spawn((komo_ws.clone(), Focused(focused_idx))).id();
                     entry.insert(entity);
                 }
             }
@@ -92,16 +85,11 @@ pub fn import_komorebi_monitor_state(
                     *monitor = komo_mon.clone();
                 }
 
-                commands
-                    .entity(entity)
-                    .insert(Focused(focused_idx));
+                commands.entity(entity).insert(Focused(focused_idx));
             }
             Entry::Vacant(entry) => {
                 let entity = commands
-                    .spawn((
-                        komo_mon.clone(),
-                        Focused(focused_idx),
-                    ))
+                    .spawn((komo_mon.clone(), Focused(focused_idx)))
                     .id();
                 entry.insert(entity);
             }
@@ -205,17 +193,12 @@ pub fn import_komorebi_container_state(
                         }
 
                         // Insert/update WindowRing component and Focused
-                        commands
-                            .entity(entity)
-                            .insert(Focused(focused_idx));
+                        commands.entity(entity).insert(Focused(focused_idx));
                     }
                     Entry::Vacant(entry) => {
                         // Spawn new container with WindowRing and Focused
                         let entity = commands
-                            .spawn((
-                                komo_cont.clone(),
-                                Focused(focused_idx),
-                            ))
+                            .spawn((komo_cont.clone(), Focused(focused_idx)))
                             .id();
                         entry.insert(entity);
                     }
