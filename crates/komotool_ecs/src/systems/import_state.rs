@@ -238,3 +238,78 @@ pub fn import_komorebi_appstate_state(
         };
     }
 }
+
+pub fn build_relation_registry(
+    komorebi_state: Res<KomorebiState>,
+    monitor_map: Res<MonitorToEntityMap>,
+    workspace_map: Res<WorkspaceToEntityMap>,
+    container_map: Res<ContainerToEntityMap>,
+    window_map: Res<WindowToEntityMap>,
+    mut registry: ResMut<RelationRegistry>,
+) {
+    registry.records.clear();
+
+    let Some(state) = &komorebi_state.current else {
+        return;
+    };
+
+    // Mirror the monitor import structure
+    for (monitor_idx, komo_mon) in state.monitors.elements().iter().enumerate() {
+        let Some(monitor_entity) = monitor_map.0.get(komo_mon.serial_number_id().unwrap()) else {
+            continue;
+        };
+
+        registry.insert(
+            *monitor_entity,
+            monitor_idx,
+            0, // workspace placeholder
+            0, // container placeholder
+            0, // window placeholder
+        );
+
+        // Mirror workspace import structure
+        for (workspace_idx, komo_ws) in komo_mon.workspaces().iter().enumerate() {
+            let Some(workspace_entity) = workspace_map.0.get(komo_ws.name().unwrap()) else {
+                continue;
+            };
+
+            registry.insert(
+                *workspace_entity,
+                monitor_idx,
+                workspace_idx,
+                0, // container placeholder
+                0, // window placeholder
+            );
+
+            // Mirror container import structure
+            for (container_idx, komo_cont) in komo_ws.containers().iter().enumerate() {
+                let Some(container_entity) = container_map.0.get(komo_cont.id()) else {
+                    continue;
+                };
+
+                registry.insert(
+                    *container_entity,
+                    monitor_idx,
+                    workspace_idx,
+                    container_idx,
+                    0, // window placeholder
+                );
+
+                // Mirror window import structure
+                for (window_idx, komo_win) in komo_cont.windows().iter().enumerate() {
+                    let Some(window_entity) = window_map.0.get(&komo_win.hwnd.to_string()) else {
+                        continue;
+                    };
+
+                    registry.insert(
+                        *window_entity,
+                        monitor_idx,
+                        workspace_idx,
+                        container_idx,
+                        window_idx,
+                    );
+                }
+            }
+        }
+    }
+}
