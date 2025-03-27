@@ -255,7 +255,12 @@ pub fn build_relation_registry(
     };
 
     for (monitor_idx, komo_mon) in state.monitors.elements().iter().enumerate() {
-        let Some(monitor_entity) = monitor_map.0.get(komo_mon.serial_number_id().as_ref().unwrap()) else {
+        // Safe monitor serial number handling
+        let Some(serial) = komo_mon.serial_number_id() else {
+            continue;
+        };
+        
+        let Some(monitor_entity) = monitor_map.0.get(serial) else {
             continue;
         };
 
@@ -268,7 +273,12 @@ pub fn build_relation_registry(
         );
 
         for (workspace_idx, komo_ws) in komo_mon.workspaces().iter().enumerate() {
-            let Some(workspace_entity) = workspace_map.0.get(komo_ws.name().as_ref().unwrap()) else {
+            // Safe workspace name handling
+            let Some(name) = komo_ws.name() else {
+                continue;
+            };
+            
+            let Some(workspace_entity) = workspace_map.0.get(name) else {
                 continue;
             };
 
@@ -281,6 +291,7 @@ pub fn build_relation_registry(
             );
 
             for (container_idx, komo_cont) in komo_ws.containers().iter().enumerate() {
+                // Container ID is mandatory in komorebi
                 let Some(container_entity) = container_map.0.get(komo_cont.id()) else {
                     continue;
                 };
@@ -294,7 +305,9 @@ pub fn build_relation_registry(
                 );
 
                 for (window_idx, komo_win) in komo_cont.windows().iter().enumerate() {
-                    let Some(window_entity) = window_map.0.get(&komo_win.hwnd.to_string()) else {
+                    // HWND is always available for windows
+                    let hwnd_str = komo_win.hwnd.to_string();
+                    let Some(window_entity) = window_map.0.get(&hwnd_str) else {
                         continue;
                     };
 
