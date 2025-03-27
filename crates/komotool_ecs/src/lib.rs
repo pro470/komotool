@@ -55,7 +55,9 @@ impl Plugin for KomoToolEcsPlugin {
                         import_komorebi_appstate_state,
                     )
                         .after(update_komorebi_state_from_notifications)
+                        .before(build_relation_registry)
                         .run_if(resource_changed::<KomorebiState>),
+                    build_relation_registry,
                 ),
             );
         register_container_types(app);
