@@ -16,7 +16,9 @@ def generate_rust_components_with_registration(base_word, limit):
     rust_code += "use bevy_reflect::Reflect;\n"
     rust_code += "use bevy_app::App;\n"
     rust_code += "use bevy_ecs::system::Commands;\n"
-    rust_code += "use bevy_ecs::entity::Entity;\n\n"
+    rust_code += "use bevy_ecs::entity::Entity;\n"
+    rust_code += "use bevy_ecs::component::ComponentId;\n"
+    rust_code += "use crate::resources::ExtendedMarkerMap;\n\n"
 
     # Generate components
     for i in range(1, limit + 1):
@@ -39,22 +41,32 @@ def generate_rust_components_with_registration(base_word, limit):
     rust_code += ";\n}\n"
 
     # Generate insert function
-    rust_code += f"\n\npub fn insert_{base_word.lower()}_marker_component(index: usize, entity: Entity, commands: &mut Commands) {{\n"
+    rust_code += f"\n\npub fn insert_{base_word.lower()}_marker_component(index: usize, entity: Entity, commands: &mut Commands, extended_marker_map: &ExtendedMarkerMap) {{\n"
     rust_code += "    match index {\n"
     for i in range(1, limit + 1):
         component_name = f"{base_word}{i}"
         rust_code += f"        {i} => commands.entity(entity).insert({component_name}),\n"
-    rust_code += "        _ => {},\n"  # Default case, do nothing
+    rust_code += f"        n if n > {limit} => {{\n"
+    rust_code += "            if let Some(component_id) = extended_marker_map.get_component_id(n) {\n"
+    rust_code += "                commands.entity(entity).insert_by_id(component_id);\n"
+    rust_code += "            }\n"
+    rust_code += "        }},\n"
+    rust_code += "        _ => {},\n"  # Default case for 0 or unexpected values
     rust_code += "    };\n"
     rust_code += "}\n"
 
     # Generate despawn function
-    rust_code += f"\n\npub fn despawn_{base_word.lower()}_marker_component(index: usize, entity: Entity, commands: &mut Commands) {{\n"
+    rust_code += f"\n\npub fn despawn_{base_word.lower()}_marker_component(index: usize, entity: Entity, commands: &mut Commands, extended_marker_map: &ExtendedMarkerMap) {{\n"
     rust_code += "    match index {\n"
     for i in range(1, limit + 1):
         component_name = f"{base_word}{i}"
         rust_code += f"        {i} => commands.entity(entity).remove::<{component_name}>(),\n"
-    rust_code += "        _ => {},\n"  # Default case, do nothing
+    rust_code += f"        n if n > {limit} => {{\n"
+    rust_code += "            if let Some(component_id) = extended_marker_map.get_component_id(n) {\n"
+    rust_code += "                commands.entity(entity).remove_by_id(component_id);\n"
+    rust_code += "            }\n"
+    rust_code += "        }},\n"
+    rust_code += "        _ => {},\n"  # Default case for 0 or unexpected values
     rust_code += "    };\n"
     rust_code += "}\n"
 
