@@ -4,10 +4,10 @@ use crate::RelationRegistry;
 use bevy_ecs::system::{Commands, Query, Res, ResMut};
 use komorebi_client::{Container, Monitor, Window, Workspace};
 use std::collections::{hash_map::Entry, HashSet};
-use crate::components::container_maker_components::insert_container_marker_component;
-use crate::components::monitor_maker_components::insert_monitor_marker_component;
-use crate::components::window_maker_components::insert_window_marker_component;
-use crate::components::workspace_maker_components::insert_workspace_marker_component;
+use crate::components::container_maker_components::{insert_container_marker_component, despawn_container_marker_component};
+use crate::components::monitor_maker_components::{insert_monitor_marker_component, despawn_monitor_marker_component};
+use crate::components::window_maker_components::{insert_window_marker_component, despawn_window_marker_component};
+use crate::components::workspace_maker_components::{insert_workspace_marker_component, despawn_workspace_marker_component};
 use crate::components::Focused;
 
 pub fn import_komorebi_workspace_state(
