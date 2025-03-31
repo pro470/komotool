@@ -47,8 +47,8 @@ def generate_rust_components_with_registration(base_word, limit):
         component_name = f"{base_word}{i}"
         rust_code += f"        {i} => commands.entity(entity).insert({component_name}),\n"
     rust_code += f"        n if n > {limit} => unsafe {{\n"
-    rust_code += "            if let Some(component_id) = extended_marker_map.get_component_id(n) {\n"
-    rust_code += "                commands.entity(entity).insert_by_id(component_id, DynamicComponent::default());\n"
+    rust_code += "            if let Some(component_id) = extended_marker_map.makers.get(&n) {\n"
+    rust_code += "                commands.entity(entity).insert_by_id(*component_id, DynamicComponent::default());\n"
     rust_code += "            }\n"
     rust_code += "        },\n"
     rust_code += "        _ => {},\n"  # Default case for 0 or unexpected values
@@ -62,8 +62,8 @@ def generate_rust_components_with_registration(base_word, limit):
         component_name = f"{base_word}{i}"
         rust_code += f"        {i} => commands.entity(entity).remove::<{component_name}>(),\n"
     rust_code += f"        n if n > {limit} => {{\n"
-    rust_code += "            if let Some(component_id) = extended_marker_map.get_component_id(n) {\n"
-    rust_code += "                commands.entity(entity).remove_by_id(component_id);\n"
+    rust_code += "            if let Some(component_id) = extended_marker_map.makers.get(&n) {\n"
+    rust_code += "                commands.entity(entity).remove_by_id(*component_id);\n"
     rust_code += "            }\n"
     rust_code += "        },\n"
     rust_code += "        _ => {},\n"  # Default case for 0 or unexpected values
