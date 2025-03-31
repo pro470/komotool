@@ -10,6 +10,8 @@ pub fn import_komorebi_workspace_state(
     mut existing_workspaces: Query<&mut Workspace>,
     komorebi_state: Res<KomorebiState>,
     mut workspace_map: ResMut<WorkspaceToEntityMap>,
+    registry: Res<RelationRegistry>,
+    extended_marker_map: Res<ExtendedMarkerMap>,
 ) {
     let Some(state) = &komorebi_state.current else {
         return;
@@ -30,6 +32,18 @@ pub fn import_komorebi_workspace_state(
             match workspace_map.0.entry(key) {
                 Entry::Occupied(entry) => {
                     let entity = *entry.get();
+
+                    // Despawn the old marker component if it exists
+                    if let Some(record) = registry.records.get(entity) {
+                        if record.workspace > 0 {
+                            despawn_workspace_marker_component(
+                                record.workspace,
+                                entity,
+                                &mut commands,
+                                &extended_marker_map,
+                            );
+                        }
+                    }
 
                     if let Ok(mut workspace) = existing_workspaces.get_mut(entity) {
                         *workspace = komo_ws.clone();
@@ -58,6 +72,8 @@ pub fn import_komorebi_monitor_state(
     mut existing_monitors: Query<&mut Monitor>,
     komorebi_state: Res<KomorebiState>,
     mut monitor_map: ResMut<MonitorToEntityMap>,
+    registry: Res<RelationRegistry>,
+    extended_marker_map: Res<ExtendedMarkerMap>,
 ) {
     let Some(state) = &komorebi_state.current else {
         return;
@@ -103,6 +119,8 @@ pub fn import_komorebi_window_state(
     mut existing_windows: Query<&mut Window>,
     komorebi_state: Res<KomorebiState>,
     mut window_map: ResMut<WindowToEntityMap>,
+    registry: Res<RelationRegistry>,
+    extended_marker_map: Res<ExtendedMarkerMap>,
 ) {
     let Some(state) = &komorebi_state.current else {
         return;
@@ -156,6 +174,8 @@ pub fn import_komorebi_container_state(
     mut existing_containers: Query<&mut Container>,
     komorebi_state: Res<KomorebiState>,
     mut container_map: ResMut<ContainerToEntityMap>,
+    registry: Res<RelationRegistry>,
+    extended_marker_map: Res<ExtendedMarkerMap>,
 ) {
     let Some(state) = &komorebi_state.current else {
         return;
