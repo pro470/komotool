@@ -362,26 +362,17 @@ pub fn build_relation_registry(
     };
 
     for (monitor_idx, komo_mon) in state.monitors.elements().iter().enumerate() {
-        // Safe monitor serial number handling
-        let Some(serial) = komo_mon.serial_number_id() else {
-            continue;
-        };
-
-        let Some(monitor_entity) = monitor_map.0.get(serial) else {
-            continue;
-        };
-
-        let monitor_marker_idx = monitor_idx + 1;
+        let Some(serial) = komo_mon.serial_number_id() else { continue; };
+        let Some(monitor_entity) = monitor_map.0.get(serial) else { continue; };
+        let monitor_marker_idx = monitor_idx + 1; // 1-based index
 
         // Insert Monitor Markers
-        if monitor_marker_idx > 0 {
-            insert_monitor_marker_component(
-                monitor_marker_idx,
-                *monitor_entity,
-                commands.reborrow(),
-                &extended_marker_map,
-            );
-        }
+        insert_monitor_marker_component(
+            monitor_marker_idx,
+            *monitor_entity,
+            commands.reborrow(),
+            &extended_marker_map,
+        );
 
         // Check and insert/remove monitor focus
         if state.monitors.focused_idx() == monitor_idx {
@@ -393,66 +384,105 @@ pub fn build_relation_registry(
         registry.insert(*monitor_entity, monitor_marker_idx, 0, 0, 0);
 
         for (workspace_idx, komo_ws) in komo_mon.workspaces().iter().enumerate() {
-            // Safe workspace name handling
-            let Some(name) = komo_ws.name() else {
-                continue;
-            };
+            let Some(name) = komo_ws.name() else { continue; };
+            let Some(workspace_entity) = workspace_map.0.get(name) else { continue; };
+            let workspace_marker_idx = workspace_idx + 1; // 1-based index
 
-            let Some(workspace_entity) = workspace_map.0.get(name) else {
-                continue;
-            };
-
-            // Check and insert workspace focus
-            if komo_mon.focused_workspace_idx() == workspace_idx {
-                commands.entity(*workspace_entity).insert(Focused);
-            }
-
-            registry.insert(
+            // Insert Workspace Markers
+            insert_monitor_marker_component(
+                monitor_marker_idx,
                 *workspace_entity,
-                monitor_idx + 1,
-                workspace_idx + 1,
-                0, // container placeholder
-                0, // window placeholder
+                commands.reborrow(),
+                &extended_marker_map,
+            );
+            insert_workspace_marker_component(
+                workspace_marker_idx,
+                *workspace_entity,
+                commands.reborrow(),
+                &extended_marker_map,
             );
 
+            // Check and insert/remove workspace focus
+            if komo_mon.focused_workspace_idx() == workspace_idx {
+                commands.entity(*workspace_entity).insert(Focused);
+            } else {
+                commands.entity(*workspace_entity).remove::<Focused>();
+            }
+
+            registry.insert(*workspace_entity, monitor_marker_idx, workspace_marker_idx, 0, 0);
+
             for (container_idx, komo_cont) in komo_ws.containers().iter().enumerate() {
-                // Container ID is mandatory in komorebi
-                let Some(container_entity) = container_map.0.get(komo_cont.id()) else {
-                    continue;
-                };
+                let Some(container_entity) = container_map.0.get(komo_cont.id()) else { continue; };
+                let container_marker_idx = container_idx + 1; // 1-based index
 
-                // Check and insert container focus
-                if komo_ws.focused_container_idx() == container_idx {
-                    commands.entity(*container_entity).insert(Focused);
-                }
-
-                registry.insert(
+                // Insert Container Markers
+                insert_monitor_marker_component(
+                    monitor_marker_idx,
                     *container_entity,
-                    monitor_idx + 1,
-                    workspace_idx + 1,
-                    container_idx + 1,
-                    0, // window placeholder
+                    commands.reborrow(),
+                    &extended_marker_map,
+                );
+                insert_workspace_marker_component(
+                    workspace_marker_idx,
+                    *container_entity,
+                    commands.reborrow(),
+                    &extended_marker_map,
+                );
+                insert_container_marker_component(
+                    container_marker_idx,
+                    *container_entity,
+                    commands.reborrow(),
+                    &extended_marker_map,
                 );
 
-                for (window_idx, komo_win) in komo_cont.windows().iter().enumerate() {
-                    // HWND is always available for windows
-                    let hwnd_str = komo_win.hwnd.to_string();
-                    let Some(window_entity) = window_map.0.get(&hwnd_str) else {
-                        continue;
-                    };
+                // Check and insert/remove container focus
+                if komo_ws.focused_container_idx() == container_idx {
+                    commands.entity(*container_entity).insert(Focused);
+                } else {
+                    commands.entity(*container_entity).remove::<Focused>();
+                }
 
-                    // Check and insert window focus
+                registry.insert(*container_entity, monitor_marker_idx, workspace_marker_idx, container_marker_idx, 0);
+
+                for (window_idx, komo_win) in komo_cont.windows().iter().enumerate() {
+                    let hwnd_str = komo_win.hwnd.to_string();
+                    let Some(window_entity) = window_map.0.get(&hwnd_str) else { continue; };
+                    let window_marker_idx = window_idx + 1; // 1-based index
+
+                    // Insert Window Markers
+                    insert_monitor_marker_component(
+                        monitor_marker_idx,
+                        *window_entity,
+                        commands.reborrow(),
+                        &extended_marker_map,
+                    );
+                    insert_workspace_marker_component(
+                        workspace_marker_idx,
+                        *window_entity,
+                        commands.reborrow(),
+                        &extended_marker_map,
+                    );
+                    insert_container_marker_component(
+                        container_marker_idx,
+                        *window_entity,
+                        commands.reborrow(),
+                        &extended_marker_map,
+                    );
+                    insert_window_marker_component(
+                        window_marker_idx,
+                        *window_entity,
+                        commands.reborrow(),
+                        &extended_marker_map,
+                    );
+
+                    // Check and insert/remove window focus
                     if komo_cont.focused_window_idx() == window_idx {
                         commands.entity(*window_entity).insert(Focused);
+                    } else {
+                        commands.entity(*window_entity).remove::<Focused>();
                     }
 
-                    registry.insert(
-                        *window_entity,
-                        monitor_idx + 1,
-                        workspace_idx + 1,
-                        container_idx + 1,
-                        window_idx + 1,
-                    );
+                    registry.insert(*window_entity, monitor_marker_idx, workspace_marker_idx, container_marker_idx, window_marker_idx);
                 }
             }
         }
