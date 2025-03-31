@@ -91,6 +91,18 @@ pub fn import_komorebi_monitor_state(
             Entry::Occupied(entry) => {
                 let entity = *entry.get();
 
+                // Despawn the old marker component if it exists
+                if let Some(record) = registry.records.get(&entity) {
+                    if record.monitor > 0 {
+                        despawn_monitor_marker_component(
+                            record.monitor,
+                            entity,
+                            commands.reborrow(),
+                            &extended_marker_map,
+                        );
+                    }
+                }
+
                 if let Ok(mut monitor) = existing_monitors.get_mut(entity) {
                     *monitor = komo_mon.clone();
                 }
@@ -141,6 +153,18 @@ pub fn import_komorebi_window_state(
                     match window_map.0.entry(hwnd) {
                         Entry::Occupied(entry) => {
                             let entity = *entry.get();
+
+                            // Despawn the old marker component if it exists
+                            if let Some(record) = registry.records.get(&entity) {
+                                if record.window > 0 {
+                                    despawn_window_marker_component(
+                                        record.window,
+                                        entity,
+                                        commands.reborrow(),
+                                        &extended_marker_map,
+                                    );
+                                }
+                            }
 
                             // Update existing window component
                             if let Ok(mut window) = existing_windows.get_mut(entity) {
@@ -195,6 +219,18 @@ pub fn import_komorebi_container_state(
                 match container_map.0.entry(id.clone()) {
                     Entry::Occupied(entry) => {
                         let entity = *entry.get();
+
+                        // Despawn the old marker component if it exists
+                        if let Some(record) = registry.records.get(&entity) {
+                            if record.container > 0 {
+                                despawn_container_marker_component(
+                                    record.container,
+                                    entity,
+                                    commands.reborrow(),
+                                    &extended_marker_map,
+                                );
+                            }
+                        }
 
                         // Update existing container component
                         if let Ok(mut container) = existing_containers.get_mut(entity) {
