@@ -14,7 +14,9 @@ def generate_rust_components_with_registration(base_word, limit):
     # Start with the imports
     rust_code = "use bevy_ecs::component::Component;\n"
     rust_code += "use bevy_reflect::Reflect;\n"
-    rust_code += "use bevy_app::App;\n\n"
+    rust_code += "use bevy_app::App;\n"
+    rust_code += "use bevy_ecs::system::Commands;\n"
+    rust_code += "use bevy_ecs::entity::Entity;\n\n"
 
     # Generate components
     for i in range(1, limit + 1):
@@ -35,6 +37,26 @@ def generate_rust_components_with_registration(base_word, limit):
 
     # Close the function with semicolon
     rust_code += ";\n}\n"
+
+    # Generate insert function
+    rust_code += f"\n\npub fn insert_{base_word.lower()}_marker_component(index: usize, entity: Entity, commands: &mut Commands) {{\n"
+    rust_code += "    match index {\n"
+    for i in range(1, limit + 1):
+        component_name = f"{base_word}{i}"
+        rust_code += f"        {i} => commands.entity(entity).insert({component_name}),\n"
+    rust_code += "        _ => {},\n"  # Default case, do nothing
+    rust_code += "    };\n"
+    rust_code += "}\n"
+
+    # Generate despawn function
+    rust_code += f"\n\npub fn despawn_{base_word.lower()}_marker_component(index: usize, entity: Entity, commands: &mut Commands) {{\n"
+    rust_code += "    match index {\n"
+    for i in range(1, limit + 1):
+        component_name = f"{base_word}{i}"
+        rust_code += f"        {i} => commands.entity(entity).remove::<{component_name}>(),\n"
+    rust_code += "        _ => {},\n"  # Default case, do nothing
+    rust_code += "    };\n"
+    rust_code += "}\n"
 
     return rust_code
 
