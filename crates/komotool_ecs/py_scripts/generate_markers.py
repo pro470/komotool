@@ -17,8 +17,8 @@ def generate_rust_components_with_registration(base_word, limit):
     rust_code += "use bevy_app::App;\n"
     rust_code += "use bevy_ecs::system::Commands;\n"
     rust_code += "use bevy_ecs::entity::Entity;\n"
-    rust_code += "use bevy_ecs::component::ComponentId;\n"
-    rust_code += "use crate::resources::ExtendedMarkerMap;\n\n"
+    rust_code += "use crate::resources::ExtendedMarkerMap;\n"
+    rust_code += "use bevy_mod_scripting::core::bindings::DynamicComponent;\n\n"
 
     # Generate components
     for i in range(1, limit + 1):
@@ -50,7 +50,7 @@ def generate_rust_components_with_registration(base_word, limit):
     rust_code += "            if let Some(component_id) = extended_marker_map.get_component_id(n) {\n"
     rust_code += "                commands.entity(entity).insert_by_id(component_id, DynamicComponent::default());\n"
     rust_code += "            }\n"
-    rust_code += "        }},\n"
+    rust_code += "        },\n"
     rust_code += "        _ => {},\n"  # Default case for 0 or unexpected values
     rust_code += "    };\n"
     rust_code += "}\n"
