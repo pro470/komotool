@@ -34,12 +34,12 @@ pub fn import_komorebi_workspace_state(
                     let entity = *entry.get();
 
                     // Despawn the old marker component if it exists
-                    if let Some(record) = registry.records.get(entity) {
+                    if let Some(record) = registry.records.get(&entity) {
                         if record.workspace > 0 {
                             despawn_workspace_marker_component(
                                 record.workspace,
                                 entity,
-                                &mut commands,
+                                commands.reborrow(),
                                 &extended_marker_map,
                             );
                         }
