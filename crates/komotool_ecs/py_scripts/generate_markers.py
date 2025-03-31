@@ -50,7 +50,7 @@ def generate_rust_components_with_registration(base_word, limit):
     rust_code += "            if let Some(component_id) = extended_marker_map.get_component_id(n) {\n"
     rust_code += "                commands.entity(entity).insert_by_id(component_id);\n"
     rust_code += "            }\n"
-    rust_code += "        }},\n"
+    rust_code += "        },\n"
     rust_code += "        _ => {},\n"  # Default case for 0 or unexpected values
     rust_code += "    };\n"
     rust_code += "}\n"
@@ -65,7 +65,7 @@ def generate_rust_components_with_registration(base_word, limit):
     rust_code += "            if let Some(component_id) = extended_marker_map.get_component_id(n) {\n"
     rust_code += "                commands.entity(entity).remove_by_id(component_id);\n"
     rust_code += "            }\n"
-    rust_code += "        }},\n"
+    rust_code += "        },\n"
     rust_code += "        _ => {},\n"  # Default case for 0 or unexpected values
     rust_code += "    };\n"
     rust_code += "}\n"
