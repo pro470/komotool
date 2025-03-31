@@ -33,8 +33,18 @@ pub fn import_komorebi_workspace_state(
                 Entry::Occupied(entry) => {
                     let entity = *entry.get();
 
-                    // Despawn the old marker component if it exists
+                    // Despawn all relevant marker components
                     if let Some(record) = registry.records.get(&entity) {
+                        // Despawn Monitor marker
+                        if record.monitor > 0 {
+                            despawn_monitor_marker_component(
+                                record.monitor,
+                                entity,
+                                commands.reborrow(),
+                                &extended_marker_map,
+                            );
+                        }
+                        // Despawn Workspace marker
                         if record.workspace > 0 {
                             despawn_workspace_marker_component(
                                 record.workspace,
@@ -154,8 +164,36 @@ pub fn import_komorebi_window_state(
                         Entry::Occupied(entry) => {
                             let entity = *entry.get();
 
-                            // Despawn the old marker component if it exists
+                            // Despawn all relevant marker components
                             if let Some(record) = registry.records.get(&entity) {
+                                // Despawn Monitor marker
+                                if record.monitor > 0 {
+                                    despawn_monitor_marker_component(
+                                        record.monitor,
+                                        entity,
+                                        commands.reborrow(),
+                                        &extended_marker_map,
+                                    );
+                                }
+                                // Despawn Workspace marker
+                                if record.workspace > 0 {
+                                    despawn_workspace_marker_component(
+                                        record.workspace,
+                                        entity,
+                                        commands.reborrow(),
+                                        &extended_marker_map,
+                                    );
+                                }
+                                // Despawn Container marker
+                                if record.container > 0 {
+                                    despawn_container_marker_component(
+                                        record.container,
+                                        entity,
+                                        commands.reborrow(),
+                                        &extended_marker_map,
+                                    );
+                                }
+                                // Despawn Window marker
                                 if record.window > 0 {
                                     despawn_window_marker_component(
                                         record.window,
@@ -220,8 +258,27 @@ pub fn import_komorebi_container_state(
                     Entry::Occupied(entry) => {
                         let entity = *entry.get();
 
-                        // Despawn the old marker component if it exists
+                        // Despawn all relevant marker components
                         if let Some(record) = registry.records.get(&entity) {
+                            // Despawn Monitor marker
+                            if record.monitor > 0 {
+                                despawn_monitor_marker_component(
+                                    record.monitor,
+                                    entity,
+                                    commands.reborrow(),
+                                    &extended_marker_map,
+                                );
+                            }
+                            // Despawn Workspace marker
+                            if record.workspace > 0 {
+                                despawn_workspace_marker_component(
+                                    record.workspace,
+                                    entity,
+                                    commands.reborrow(),
+                                    &extended_marker_map,
+                                );
+                            }
+                            // Despawn Container marker
                             if record.container > 0 {
                                 despawn_container_marker_component(
                                     record.container,
