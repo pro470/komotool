@@ -27,8 +27,6 @@ pub fn import_komorebi_workspace_state(
             };
             current_keys.insert(key.clone());
 
-            let focused_idx = komo_ws.focused_container_idx();
-
             match workspace_map.0.entry(key) {
                 Entry::Occupied(entry) => {
                     let entity = *entry.get();
@@ -72,9 +70,6 @@ pub fn import_komorebi_monitor_state(
             continue;
         };
         current_serials.insert(serial.clone());
-
-        // Get focused workspace index directly from monitor
-        let focused_idx = komo_mon.focused_workspace_idx();
 
         match monitor_map.0.entry(serial.clone()) {
             Entry::Occupied(entry) => {
@@ -177,9 +172,6 @@ pub fn import_komorebi_container_state(
                 let id = komo_cont.id();
                 current_ids.insert(id.clone());
 
-                // Get focused index directly as usize
-                let focused_idx = komo_cont.focused_window_idx();
-
                 match container_map.0.entry(id.clone()) {
                     Entry::Occupied(entry) => {
                         let entity = *entry.get();
@@ -261,7 +253,7 @@ pub fn build_relation_registry(
         };
 
         // Check and insert monitor focus
-        if state.focused_monitor_idx() == monitor_idx {
+        if state.monitors.focused_idx() == monitor_idx {
             commands.entity(*monitor_entity).insert(Focused);
         }
 
