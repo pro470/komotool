@@ -1,33 +1,22 @@
 use bevy_ecs::component::Component;
 use bevy_ecs::entity::Entity;
+use bevy_ecs::prelude::Resource;
 use bevy_reflect::Reflect;
 
 #[derive(Component, Reflect)]
-pub struct MonocleContainer(pub Option<Entity>);
+pub struct MonocleContainer;
 
 #[derive(Component, Reflect)]
 pub struct FloatingWindow;
 
 #[derive(Component, Reflect)]
-pub struct FocusedWindow(pub Option<Entity>);
+pub struct MaximizedWindow;
 
 #[derive(Component, Reflect)]
-pub struct FocusedContainer(pub Option<Entity>);
+pub struct Focused;
 
 #[derive(Component, Reflect)]
-pub struct LastFocusedContainer(pub Option<Entity>);
+pub struct LastFocused;
 
 #[derive(Component, Reflect)]
-pub struct FocusedWorkspace(pub Option<Entity>);
-
-#[derive(Component, Reflect)]
-pub struct LastFocusedWorkspace(pub Option<Entity>);
-
-#[derive(Component, Reflect)]
-pub struct MaximizedWindow(pub Option<Entity>);
-
-#[derive(Component, Reflect)]
-pub struct Focused(pub usize);
-
-#[derive(Component, Reflect)]
-pub struct ExtendedMaker;
+pub struct FocusedGlobal;
