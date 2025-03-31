@@ -10,3 +10,4 @@ bevy_reflect = {workspace = true}
 komorebi-client = {workspace = true}
 indexmap = {workspace = true}
 komotool_pipe = { path = "../komotool_pipe"}
+bevy_mod_scripting = {workspace = true}
