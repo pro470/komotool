@@ -41,7 +41,7 @@ def generate_rust_components_with_registration(base_word, limit):
     rust_code += ";\n}\n"
 
     # Generate insert function
-    rust_code += f"\n\npub fn insert_{base_word.lower()}_marker_component(index: usize, entity: Entity, commands: &mut Commands, extended_marker_map: &ExtendedMarkerMap) {{\n"
+    rust_code += f"\n\npub fn insert_{base_word.lower()}_marker_component(index: usize, entity: Entity, mut commands: Commands, extended_marker_map: &ExtendedMarkerMap) {{\n"
     rust_code += "    match index {\n"
     for i in range(1, limit + 1):
         component_name = f"{base_word}{i}"
@@ -50,13 +50,13 @@ def generate_rust_components_with_registration(base_word, limit):
     rust_code += "            if let Some(component_id) = extended_marker_map.makers.get(&n) {\n"
     rust_code += "                commands.entity(entity).insert_by_id(*component_id, DynamicComponent::default());\n"
     rust_code += "            }\n"
-    rust_code += "        }},\n"
+    rust_code += "        },\n"
     rust_code += "        _ => {},\n"  # Default case for 0 or unexpected values
     rust_code += "    };\n"
     rust_code += "}\n"
 
     # Generate despawn function
-    rust_code += f"\n\npub fn despawn_{base_word.lower()}_marker_component(index: usize, entity: Entity, commands: &mut Commands, extended_marker_map: &ExtendedMarkerMap) {{\n"
+    rust_code += f"\n\npub fn despawn_{base_word.lower()}_marker_component(index: usize, entity: Entity, mut commands: Commands, extended_marker_map: &ExtendedMarkerMap) {{\n"
     rust_code += "    match index {\n"
     for i in range(1, limit + 1):
         component_name = f"{base_word}{i}"
@@ -67,7 +67,7 @@ def generate_rust_components_with_registration(base_word, limit):
     rust_code += "            } else {\n"
     rust_code += f"                // Optional: Log warning if needed for index {{n}}\n"
     rust_code += "            }\n"
-    rust_code += "        }},\n"
+    rust_code += "        },\n"
     rust_code += "        _ => {},\n"  # Default case for 0 or unexpected values
     rust_code += "    };\n"
     rust_code += "}\n"
