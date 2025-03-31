@@ -4,6 +4,11 @@ use crate::RelationRegistry;
 use bevy_ecs::system::{Commands, Query, Res, ResMut};
 use komorebi_client::{Container, Monitor, Window, Workspace};
 use std::collections::{hash_map::Entry, HashSet};
+use crate::components::container_maker_components::insert_container_marker_component;
+use crate::components::monitor_maker_components::insert_monitor_marker_component;
+use crate::components::window_maker_components::insert_window_marker_component;
+use crate::components::workspace_maker_components::insert_workspace_marker_component;
+use crate::components::Focused;
 
 pub fn import_komorebi_workspace_state(
     mut commands: Commands,
@@ -348,6 +353,7 @@ pub fn build_relation_registry(
     container_map: Res<ContainerToEntityMap>,
     window_map: Res<WindowToEntityMap>,
     mut registry: ResMut<RelationRegistry>,
+    extended_marker_map: Res<ExtendedMarkerMap>,
 ) {
     registry.records.clear();
 
@@ -365,18 +371,26 @@ pub fn build_relation_registry(
             continue;
         };
 
-        // Check and insert monitor focus
-        if state.monitors.focused_idx() == monitor_idx {
-            commands.entity(*monitor_entity).insert(Focused);
+        let monitor_marker_idx = monitor_idx + 1;
+
+        // Insert Monitor Markers
+        if monitor_marker_idx > 0 {
+            insert_monitor_marker_component(
+                monitor_marker_idx,
+                *monitor_entity,
+                commands.reborrow(),
+                &extended_marker_map,
+            );
         }
 
-        registry.insert(
-            *monitor_entity,
-            monitor_idx + 1,
-            0, // workspace placeholder
-            0, // container placeholder
-            0, // window placeholder
-        );
+        // Check and insert/remove monitor focus
+        if state.monitors.focused_idx() == monitor_idx {
+            commands.entity(*monitor_entity).insert(Focused);
+        } else {
+            commands.entity(*monitor_entity).remove::<Focused>();
+        }
+
+        registry.insert(*monitor_entity, monitor_marker_idx, 0, 0, 0);
 
         for (workspace_idx, komo_ws) in komo_mon.workspaces().iter().enumerate() {
             // Safe workspace name handling
