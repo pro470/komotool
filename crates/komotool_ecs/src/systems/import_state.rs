@@ -36,11 +36,9 @@ pub fn import_komorebi_workspace_state(
                     if let Ok(mut workspace) = existing_workspaces.get_mut(entity) {
                         *workspace = komo_ws.clone();
                     }
-
-                    commands.entity(entity).insert(Focused(focused_idx));
                 }
                 Entry::Vacant(entry) => {
-                    let entity = commands.spawn((komo_ws.clone(), Focused(focused_idx))).id();
+                    let entity = commands.spawn(komo_ws.clone()).id();
                     entry.insert(entity);
                 }
             }
@@ -85,12 +83,10 @@ pub fn import_komorebi_monitor_state(
                 if let Ok(mut monitor) = existing_monitors.get_mut(entity) {
                     *monitor = komo_mon.clone();
                 }
-
-                commands.entity(entity).insert(Focused(focused_idx));
             }
             Entry::Vacant(entry) => {
                 let entity = commands
-                    .spawn((komo_mon.clone(), Focused(focused_idx)))
+                    .spawn(komo_mon.clone())
                     .id();
                 entry.insert(entity);
             }
@@ -193,13 +189,12 @@ pub fn import_komorebi_container_state(
                             *container = komo_cont.clone();
                         }
 
-                        // Insert/update WindowRing component and Focused
-                        commands.entity(entity).insert(Focused(focused_idx));
+                        // Insert/update WindowRing component
                     }
                     Entry::Vacant(entry) => {
-                        // Spawn new container with WindowRing and Focused
+                        // Spawn new container with WindowRing
                         let entity = commands
-                            .spawn((komo_cont.clone(), Focused(focused_idx)))
+                            .spawn(komo_cont.clone())
                             .id();
                         entry.insert(entity);
                     }
@@ -241,6 +236,7 @@ pub fn import_komorebi_appstate_state(
 }
 
 pub fn build_relation_registry(
+    mut commands: Commands,
     komorebi_state: Res<KomorebiState>,
     monitor_map: Res<MonitorToEntityMap>,
     workspace_map: Res<WorkspaceToEntityMap>,
@@ -264,6 +260,11 @@ pub fn build_relation_registry(
             continue;
         };
 
+        // Check and insert monitor focus
+        if state.focused_monitor_idx() == monitor_idx {
+            commands.entity(*monitor_entity).insert(Focused);
+        }
+
         registry.insert(
             *monitor_entity,
             monitor_idx + 1,
@@ -282,6 +283,11 @@ pub fn build_relation_registry(
                 continue;
             };
 
+            // Check and insert workspace focus
+            if komo_mon.focused_workspace_idx() == workspace_idx {
+                commands.entity(*workspace_entity).insert(Focused);
+            }
+
             registry.insert(
                 *workspace_entity,
                 monitor_idx + 1,
@@ -295,6 +301,11 @@ pub fn build_relation_registry(
                 let Some(container_entity) = container_map.0.get(komo_cont.id()) else {
                     continue;
                 };
+
+                // Check and insert container focus
+                if komo_ws.focused_container_idx() == container_idx {
+                    commands.entity(*container_entity).insert(Focused);
+                }
 
                 registry.insert(
                     *container_entity,
@@ -310,6 +321,11 @@ pub fn build_relation_registry(
                     let Some(window_entity) = window_map.0.get(&hwnd_str) else {
                         continue;
                     };
+
+                    // Check and insert window focus
+                    if komo_cont.focused_window_idx() == window_idx {
+                        commands.entity(*window_entity).insert(Focused);
+                    }
 
                     registry.insert(
                         *window_entity,
