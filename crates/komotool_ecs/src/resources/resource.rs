@@ -40,21 +40,6 @@ impl Default for AppState {
 }
 
 #[derive(Resource, Default, Reflect)]
-pub struct FocusedMonitor(pub Option<Entity>);
-
-#[derive(Resource, Default, Reflect)]
-pub struct LastFocusedMonitor(pub Option<Entity>);
-
-#[derive(Resource, Default, Reflect)]
-pub struct FocusedWorkspaceGlobal(pub Option<Entity>);
-
-#[derive(Resource, Default, Reflect)]
-pub struct FocusedContainerGlobal(pub Option<Entity>);
-
-#[derive(Resource, Default, Reflect)]
-pub struct FocusedWindowGlobal(pub Option<Entity>);
-
-#[derive(Resource, Default, Reflect)]
 pub struct MonitorToEntityMap(pub HashMap<String, Entity>);
 
 #[derive(Resource, Default, Reflect)]
@@ -73,6 +58,6 @@ pub struct KomorebiState {
 }
 
 #[derive(Resource, Default, Reflect)]
-pub struct ExtendedMakerMap {
-    makers: HashMap<usize, ComponentId>,
+pub struct ExtendedMarkerMap {
+    pub makers: HashMap<usize, ComponentId>,
 }

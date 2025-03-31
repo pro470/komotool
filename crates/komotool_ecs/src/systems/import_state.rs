@@ -1,14 +1,10 @@
+use crate::components::Focused;
 use crate::components::*;
 use crate::resources::*;
 use crate::RelationRegistry;
 use bevy_ecs::system::{Commands, Query, Res, ResMut};
 use komorebi_client::{Container, Monitor, Window, Workspace};
 use std::collections::{hash_map::Entry, HashSet};
-use crate::components::container_maker_components::{insert_container_marker_component, despawn_container_marker_component};
-use crate::components::monitor_maker_components::{insert_monitor_marker_component, despawn_monitor_marker_component};
-use crate::components::window_maker_components::{insert_window_marker_component, despawn_window_marker_component};
-use crate::components::workspace_maker_components::{insert_workspace_marker_component, despawn_workspace_marker_component};
-use crate::components::Focused;
 
 pub fn import_komorebi_workspace_state(
     mut commands: Commands,
@@ -123,9 +119,7 @@ pub fn import_komorebi_monitor_state(
                 }
             }
             Entry::Vacant(entry) => {
-                let entity = commands
-                    .spawn(komo_mon.clone())
-                    .id();
+                let entity = commands.spawn(komo_mon.clone()).id();
                 entry.insert(entity);
             }
         }
@@ -303,9 +297,7 @@ pub fn import_komorebi_container_state(
                     }
                     Entry::Vacant(entry) => {
                         // Spawn new container with WindowRing
-                        let entity = commands
-                            .spawn(komo_cont.clone())
-                            .id();
+                        let entity = commands.spawn(komo_cont.clone()).id();
                         entry.insert(entity);
                     }
                 }
@@ -362,8 +354,12 @@ pub fn build_relation_registry(
     };
 
     for (monitor_idx, komo_mon) in state.monitors.elements().iter().enumerate() {
-        let Some(serial) = komo_mon.serial_number_id() else { continue; };
-        let Some(monitor_entity) = monitor_map.0.get(serial) else { continue; };
+        let Some(serial) = komo_mon.serial_number_id() else {
+            continue;
+        };
+        let Some(monitor_entity) = monitor_map.0.get(serial) else {
+            continue;
+        };
         let monitor_marker_idx = monitor_idx + 1; // 1-based index
 
         // Insert Monitor Markers
@@ -384,8 +380,12 @@ pub fn build_relation_registry(
         registry.insert(*monitor_entity, monitor_marker_idx, 0, 0, 0);
 
         for (workspace_idx, komo_ws) in komo_mon.workspaces().iter().enumerate() {
-            let Some(name) = komo_ws.name() else { continue; };
-            let Some(workspace_entity) = workspace_map.0.get(name) else { continue; };
+            let Some(name) = komo_ws.name() else {
+                continue;
+            };
+            let Some(workspace_entity) = workspace_map.0.get(name) else {
+                continue;
+            };
             let workspace_marker_idx = workspace_idx + 1; // 1-based index
 
             // Insert Workspace Markers
@@ -409,10 +409,18 @@ pub fn build_relation_registry(
                 commands.entity(*workspace_entity).remove::<Focused>();
             }
 
-            registry.insert(*workspace_entity, monitor_marker_idx, workspace_marker_idx, 0, 0);
+            registry.insert(
+                *workspace_entity,
+                monitor_marker_idx,
+                workspace_marker_idx,
+                0,
+                0,
+            );
 
             for (container_idx, komo_cont) in komo_ws.containers().iter().enumerate() {
-                let Some(container_entity) = container_map.0.get(komo_cont.id()) else { continue; };
+                let Some(container_entity) = container_map.0.get(komo_cont.id()) else {
+                    continue;
+                };
                 let container_marker_idx = container_idx + 1; // 1-based index
 
                 // Insert Container Markers
@@ -442,11 +450,19 @@ pub fn build_relation_registry(
                     commands.entity(*container_entity).remove::<Focused>();
                 }
 
-                registry.insert(*container_entity, monitor_marker_idx, workspace_marker_idx, container_marker_idx, 0);
+                registry.insert(
+                    *container_entity,
+                    monitor_marker_idx,
+                    workspace_marker_idx,
+                    container_marker_idx,
+                    0,
+                );
 
                 for (window_idx, komo_win) in komo_cont.windows().iter().enumerate() {
                     let hwnd_str = komo_win.hwnd.to_string();
-                    let Some(window_entity) = window_map.0.get(&hwnd_str) else { continue; };
+                    let Some(window_entity) = window_map.0.get(&hwnd_str) else {
+                        continue;
+                    };
                     let window_marker_idx = window_idx + 1; // 1-based index
 
                     // Insert Window Markers
@@ -482,7 +498,13 @@ pub fn build_relation_registry(
                         commands.entity(*window_entity).remove::<Focused>();
                     }
 
-                    registry.insert(*window_entity, monitor_marker_idx, workspace_marker_idx, container_marker_idx, window_marker_idx);
+                    registry.insert(
+                        *window_entity,
+                        monitor_marker_idx,
+                        workspace_marker_idx,
+                        container_marker_idx,
+                        window_marker_idx,
+                    );
                 }
             }
         }
