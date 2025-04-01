@@ -1,11 +1,12 @@
 use super::super::get_or_create_komotool_config_path;
 use bevy_ecs::event::{Event, EventWriter};
 use bevy_ecs::system::{Commands, Res, Resource};
+use bevy_reflect::Reflect;
 use crossbeam_channel::Receiver;
 use notify::{Config, Event as NotifyEvent, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 
 // Event emitted when a file is removed
-#[derive(Event)]
+#[derive(Event, Reflect)]
 pub struct FileRemovedEvent {
     pub path: String,
 }

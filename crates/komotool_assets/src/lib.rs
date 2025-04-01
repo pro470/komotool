@@ -14,6 +14,7 @@ use bevy_mod_scripting::core::asset::{ScriptAsset, ScriptMetadataStore};
 use bevy_mod_scripting::core::event::IntoCallbackLabel;
 use bevy_mod_scripting::core::script::{ScriptComponent, ScriptId};
 use bevy_mod_scripting::core::IntoScriptPluginParams;
+use bevy_reflect::Reflect;
 use bevy_state::app::AppExtStates;
 use bevy_state::condition::in_state;
 use bevy_state::state::{NextState, OnEnter, OnExit, States};
@@ -34,13 +35,13 @@ pub enum ScriptLoadState {
     Loaded,
 }
 
-#[derive(Resource)]
+#[derive(Resource, Reflect)]
 pub struct ScriptLoadTracker {
     handle: Handle<LoadedFolder>,
 }
 
 /// Resource to keep track of which entity corresponds to which script asset
-#[derive(Resource, Default)]
+#[derive(Resource, Default, Reflect)]
 pub struct ScriptEntityMapping {
     pub handle_to_entity: HashMap<AssetId<ScriptAsset>, Entity>,
 }

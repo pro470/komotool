@@ -1,9 +1,10 @@
 use crate::{PostUpdateStartup, PreUpdateStartup, UpdateStartup};
 use bevy_ecs::schedule::Schedules;
 use bevy_ecs::system::{Res, ResMut, Resource};
+use bevy_reflect::Reflect;
 use bevy_state::state::{NextState, State, States};
 
-#[derive(Resource, Default)]
+#[derive(Resource, Default, Reflect)]
 pub struct LoadingCounter(pub usize);
 
 #[derive(States, Debug, Clone, Copy, Eq, PartialEq, Hash, Default)]

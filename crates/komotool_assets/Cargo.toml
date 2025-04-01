@@ -8,6 +8,7 @@ bevy_asset = { workspace = true, features = ["file_watcher"]}
 bevy_app = {workspace = true}
 bevy_ecs = {workspace = true}
 bevy_state = {workspace = true}
+bevy_reflect = {workspace = true}
 bevy_mod_scripting = {workspace = true}
 komotool_utils = {path = "../komotool_utils"}
 crossbeam-channel = {workspace = true}
