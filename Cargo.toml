@@ -42,6 +42,12 @@ bevy_mod_scripting = {version = "0.10.0", features = ["lua54", "rhai"]}
 indexmap = "2.8.0"
 crossbeam-channel = "0.5.14"
 
+[workspace.metadata.bevy_lint]
+pedantic = "warn"
+missing_reflect = "warn"
+panicking_methods = { level = "forbid" }
+nursery = { level = "warn" }
+
 [profile.release]
 lto = true
 codegen-units = 1
