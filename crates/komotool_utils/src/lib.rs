@@ -25,10 +25,13 @@ impl Plugin for KomoToolUtilsPlugin {
             .add_schedule(Schedule::new(PreUpdateStartup))
             .add_schedule(Schedule::new(UpdateStartup))
             .add_schedule(Schedule::new(PostUpdateStartup));
-        let mut main_schedule_order = app.world_mut().resource_mut::<MainScheduleOrder>();
-        main_schedule_order.insert_after(PostUpdate, PreUpdateStartup);
-        main_schedule_order.insert_after(PreUpdateStartup, UpdateStartup);
-        main_schedule_order.insert_after(UpdateStartup, PostUpdateStartup);
+        if let Some(mut main_schedule_order) =
+            app.world_mut().get_resource_mut::<MainScheduleOrder>()
+        {
+            main_schedule_order.insert_after(PostUpdate, PreUpdateStartup);
+            main_schedule_order.insert_after(PreUpdateStartup, UpdateStartup);
+            main_schedule_order.insert_after(UpdateStartup, PostUpdateStartup);
+        }
         app.add_systems(
             UpdateStartup,
             update_global_state.run_if(
