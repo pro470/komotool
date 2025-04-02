@@ -14,7 +14,7 @@ pub fn import_komorebi_workspace_state(
     mut workspace_map: ResMut<WorkspaceToEntityMap>,
     registry: Res<RelationRegistry>,
     extended_marker_map: Res<ExtendedMarkerMap>,
-    keep_alive_workspaces: Res<KeepAliveWorkspaces>,
+    mut keep_alive_workspaces: ResMut<KeepAliveWorkspaces>,
 ) {
     let Some(state) = &komorebi_state.current else {
         return;
@@ -79,32 +79,51 @@ pub fn import_komorebi_workspace_state(
         } else {
             // Workspace is no longer managed by Komorebi. Check if we should keep it alive.
             if keep_alive_workspaces.0.contains(entity) {
-                // Keep the entity alive, but remove its markers.
-                if let Some(record) = registry.records.get(entity) {
-                    // Despawn Monitor marker
-                    if record.monitor > 0 {
-                        despawn_monitor_marker_component(
-                            record.monitor,
-                            *entity,
-                            commands.reborrow(),
-                            &extended_marker_map,
-                        );
+                // Check if the entity actually still exists and has the component
+                match existing_workspaces.get(*entity) {
+                    Ok(_) => {
+                        // Entity exists: Keep it alive, but remove its markers and focus.
+                        if let Some(record) = registry.records.get(entity) {
+                            // Despawn Monitor marker
+                            if record.monitor > 0 {
+                                despawn_monitor_marker_component(
+                                    record.monitor,
+                                    *entity,
+                                    commands.reborrow(),
+                                    &extended_marker_map,
+                                );
+                            }
+                            // Despawn Workspace marker
+                            if record.workspace > 0 {
+                                despawn_workspace_marker_component(
+                                    record.workspace,
+                                    *entity,
+                                    commands.reborrow(),
+                                    &extended_marker_map,
+                                );
+                            }
+                        }
+                        commands.entity(*entity).remove::<Focused>();
+                        true // Keep the entity in the map
                     }
-                    // Despawn Workspace marker
-                    if record.workspace > 0 {
-                        despawn_workspace_marker_component(
-                            record.workspace,
-                            *entity,
-                            commands.reborrow(),
-                            &extended_marker_map,
-                        );
+                    Err(error) => {
+                        match error {
+                            QueryEntityError::AliasedMutability(_) => {
+                                // Entity exists but is mutably borrowed elsewhere. Keep it.
+                                true // Keep in map
+                            }
+                            QueryEntityError::QueryDoesNotMatch(_, _)
+                            | QueryEntityError::NoSuchEntity(_) => {
+                                // Entity doesn't exist or lacks component, despite being in KeepAlive.
+                                // Clean up KeepAlive entry and remove from map.
+                                keep_alive_workspaces.0.remove(entity);
+                                false // Remove from map (entity might already be gone)
+                            }
+                        }
                     }
                 }
-                // Ensure focus is removed (build_relation_registry won't add it)
-                commands.entity(*entity).remove::<Focused>();
-                true // Keep the entity in the map
             } else {
-                // Not marked to keep alive, despawn the entity entirely.
+                // Not marked to keep alive and not in current state: Despawn the entity entirely.
                 commands.entity(*entity).despawn();
                 false // Remove from map
             }
@@ -119,7 +138,7 @@ pub fn import_komorebi_monitor_state(
     mut monitor_map: ResMut<MonitorToEntityMap>,
     registry: Res<RelationRegistry>,
     extended_marker_map: Res<ExtendedMarkerMap>,
-    keep_alive_monitors: Res<KeepAliveMonitors>,
+    mut keep_alive_monitors: ResMut<KeepAliveMonitors>,
 ) {
     let Some(state) = &komorebi_state.current else {
         return;
@@ -169,22 +188,41 @@ pub fn import_komorebi_monitor_state(
         } else {
             // Monitor is no longer managed by Komorebi. Check if we should keep it alive.
             if keep_alive_monitors.0.contains(entity) {
-                // Keep the entity alive, but remove its marker.
-                if let Some(record) = registry.records.get(entity) {
-                    if record.monitor > 0 {
-                        despawn_monitor_marker_component(
-                            record.monitor,
-                            *entity,
-                            commands.reborrow(),
-                            &extended_marker_map,
-                        );
+                // Check if the entity actually still exists and has the component
+                match existing_monitors.get(*entity) {
+                    Ok(_) => {
+                        // Entity exists: Keep it alive, but remove its marker and focus.
+                        if let Some(record) = registry.records.get(entity) {
+                            if record.monitor > 0 {
+                                despawn_monitor_marker_component(
+                                    record.monitor,
+                                    *entity,
+                                    commands.reborrow(),
+                                    &extended_marker_map,
+                                );
+                            }
+                        }
+                        commands.entity(*entity).remove::<Focused>();
+                        true // Keep the entity in the map
+                    }
+                    Err(error) => {
+                        match error {
+                            QueryEntityError::AliasedMutability(_) => {
+                                // Entity exists but is mutably borrowed elsewhere. Keep it.
+                                true // Keep in map
+                            }
+                            QueryEntityError::QueryDoesNotMatch(_, _)
+                            | QueryEntityError::NoSuchEntity(_) => {
+                                // Entity doesn't exist or lacks component, despite being in KeepAlive.
+                                // Clean up KeepAlive entry and remove from map.
+                                keep_alive_monitors.0.remove(entity);
+                                false // Remove from map (entity might already be gone)
+                            }
+                        }
                     }
                 }
-                // Ensure focus is removed (build_relation_registry won't add it)
-                commands.entity(*entity).remove::<Focused>();
-                true // Keep the entity in the map
             } else {
-                // Not marked to keep alive, despawn the entity entirely.
+                // Not marked to keep alive and not in current state: Despawn the entity entirely.
                 commands.entity(*entity).despawn();
                 false // Remove from map
             }
@@ -368,7 +406,7 @@ pub fn import_komorebi_container_state(
     mut container_map: ResMut<ContainerToEntityMap>,
     registry: Res<RelationRegistry>,
     extended_marker_map: Res<ExtendedMarkerMap>,
-    keep_alive_containers: Res<KeepAliveContainers>,
+    mut keep_alive_containers: ResMut<KeepAliveContainers>,
 ) {
     let Some(state) = &komorebi_state.current else {
         return;
@@ -447,41 +485,60 @@ pub fn import_komorebi_container_state(
         } else {
             // Container is no longer managed by Komorebi. Check if we should keep it alive.
             if keep_alive_containers.0.contains(entity) {
-                // Keep the entity alive, but remove its markers.
-                if let Some(record) = registry.records.get(entity) {
-                    // Despawn Monitor marker
-                    if record.monitor > 0 {
-                        despawn_monitor_marker_component(
-                            record.monitor,
-                            *entity,
-                            commands.reborrow(),
-                            &extended_marker_map,
-                        );
+                // Check if the entity actually still exists and has the component
+                match existing_containers.get(*entity) {
+                    Ok(_) => {
+                        // Entity exists: Keep it alive, but remove its markers and focus.
+                        if let Some(record) = registry.records.get(entity) {
+                            // Despawn Monitor marker
+                            if record.monitor > 0 {
+                                despawn_monitor_marker_component(
+                                    record.monitor,
+                                    *entity,
+                                    commands.reborrow(),
+                                    &extended_marker_map,
+                                );
+                            }
+                            // Despawn Workspace marker
+                            if record.workspace > 0 {
+                                despawn_workspace_marker_component(
+                                    record.workspace,
+                                    *entity,
+                                    commands.reborrow(),
+                                    &extended_marker_map,
+                                );
+                            }
+                            // Despawn Container marker
+                            if record.container > 0 {
+                                despawn_container_marker_component(
+                                    record.container,
+                                    *entity,
+                                    commands.reborrow(),
+                                    &extended_marker_map,
+                                );
+                            }
+                        }
+                        commands.entity(*entity).remove::<Focused>();
+                        true // Keep the entity in the map
                     }
-                    // Despawn Workspace marker
-                    if record.workspace > 0 {
-                        despawn_workspace_marker_component(
-                            record.workspace,
-                            *entity,
-                            commands.reborrow(),
-                            &extended_marker_map,
-                        );
-                    }
-                    // Despawn Container marker
-                    if record.container > 0 {
-                        despawn_container_marker_component(
-                            record.container,
-                            *entity,
-                            commands.reborrow(),
-                            &extended_marker_map,
-                        );
+                    Err(error) => {
+                        match error {
+                            QueryEntityError::AliasedMutability(_) => {
+                                // Entity exists but is mutably borrowed elsewhere. Keep it.
+                                true // Keep in map
+                            }
+                            QueryEntityError::QueryDoesNotMatch(_, _)
+                            | QueryEntityError::NoSuchEntity(_) => {
+                                // Entity doesn't exist or lacks component, despite being in KeepAlive.
+                                // Clean up KeepAlive entry and remove from map.
+                                keep_alive_containers.0.remove(entity);
+                                false // Remove from map (entity might already be gone)
+                            }
+                        }
                     }
                 }
-                // Ensure focus is removed (build_relation_registry won't add it)
-                commands.entity(*entity).remove::<Focused>();
-                true // Keep the entity in the map
             } else {
-                // Not marked to keep alive, despawn the entity entirely.
+                // Not marked to keep alive and not in current state: Despawn the entity entirely.
                 commands.entity(*entity).despawn();
                 false // Remove from map
             }
