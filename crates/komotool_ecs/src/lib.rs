@@ -2,6 +2,7 @@ mod components;
 mod relations;
 mod resources;
 mod systems;
+mod register_komorebi_types;
 
 use bevy_app::{App, First, Plugin};
 use bevy_ecs::prelude::resource_changed;
@@ -11,6 +12,7 @@ use komorebi_client::{Container, Monitor, Window, Workspace};
 pub use relations::*;
 pub use resources::*;
 pub use systems::*;
+use register_komorebi_types::register_komorebi_types;
 
 pub struct KomoToolEcsPlugin;
 
@@ -60,5 +62,6 @@ impl Plugin for KomoToolEcsPlugin {
         register_monitor_types(app);
         register_window_types(app);
         register_workspace_types(app);
+        register_komorebi_types(app);
     }
 }
