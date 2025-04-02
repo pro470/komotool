@@ -1,18 +1,18 @@
-use crate::components::Rect;
-use crate::relations::RelationRegistry;
+use bevy_ecs::component::ComponentId;
 use bevy_ecs::entity::Entity;
 use bevy_ecs::system::Resource;
 use bevy_reflect::Reflect;
 use komorebi_client::{
-    FocusFollowsMouseImplementation, /*WindowContainerBehaviour,*/ MoveBehaviour,
-    OperationBehaviour,
+    FocusFollowsMouseImplementation, MoveBehaviour, OperationBehaviour, Rect, StaticConfig,
+    WindowContainerBehaviour,
 };
+use std::collections::{HashMap, HashSet};
 
-#[derive(Resource)]
+#[derive(Resource, Reflect)]
 pub struct AppState {
     pub is_paused: bool,
     pub resize_delta: i32,
-    //pub new_window_behaviour: WindowContainerBehaviour,
+    pub new_window_behaviour: WindowContainerBehaviour,
     pub float_override: bool,
     pub cross_monitor_move_behaviour: MoveBehaviour,
     pub unmanaged_window_operation_behaviour: OperationBehaviour,
@@ -27,7 +27,7 @@ impl Default for AppState {
         Self {
             is_paused: false,
             resize_delta: 50,
-            //new_window_behaviour: ff,
+            new_window_behaviour: WindowContainerBehaviour::Create,
             float_override: false,
             cross_monitor_move_behaviour: MoveBehaviour::Insert,
             unmanaged_window_operation_behaviour: OperationBehaviour::NoOp,
@@ -40,34 +40,39 @@ impl Default for AppState {
 }
 
 #[derive(Resource, Default, Reflect)]
-pub struct FocusedMonitor(pub Option<Entity>);
+pub struct MonitorToEntityMap(pub HashMap<String, Entity>);
 
 #[derive(Resource, Default, Reflect)]
-pub struct LastFocusedMonitor(pub Option<Entity>);
+pub struct WorkspaceToEntityMap(pub HashMap<String, Entity>);
 
 #[derive(Resource, Default, Reflect)]
-pub struct FocusedWorkspaceGlobal(pub Option<Entity>);
+pub struct ContainerToEntityMap(pub HashMap<String, Entity>);
 
 #[derive(Resource, Default, Reflect)]
-pub struct FocusedContainerGlobal(pub Option<Entity>);
+pub struct WindowToEntityMap(pub HashMap<String, Entity>);
 
 #[derive(Resource, Default, Reflect)]
-pub struct FocusedWindowGlobal(pub Option<Entity>);
-
-#[derive(Resource, Default, Reflect)]
-pub struct MonitorReg(pub RelationRegistry);
-
-#[derive(Resource, Default, Reflect)]
-pub struct WorkspaceReg(pub RelationRegistry);
-
-#[derive(Resource, Default, Reflect)]
-pub struct ContainerReg(pub RelationRegistry);
-
-#[derive(Resource, Default, Reflect)]
-pub struct WindowReg(pub RelationRegistry);
-
-#[derive(Resource, Default)]
 pub struct KomorebiState {
     pub current: Option<komorebi_client::State>,
     pub last: Option<komorebi_client::State>,
 }
+
+#[derive(Resource, Default, Reflect)]
+pub struct KomotoolStaticConfig {
+    pub config: Option<StaticConfig>,
+    pub komotool_config: Option<StaticConfig>,
+}
+
+#[derive(Resource, Default, Reflect)]
+pub struct ExtendedMarkerMap {
+    pub makers: HashMap<usize, ComponentId>,
+}
+
+#[derive(Resource, Default, Reflect)]
+pub struct KeepAliveMonitors(pub HashSet<Entity>);
+
+#[derive(Resource, Default, Reflect)]
+pub struct KeepAliveWorkspaces(pub HashSet<Entity>);
+
+#[derive(Resource, Default, Reflect)]
+pub struct KeepAliveContainers(pub HashSet<Entity>);

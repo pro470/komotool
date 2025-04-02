@@ -1,5 +1,3 @@
-mod komotoolquerybuilder;
 mod registry;
 
-pub use komotoolquerybuilder::*;
-pub use registry::*;
+pub use registry::{EntityRecord, RelationRegistry};

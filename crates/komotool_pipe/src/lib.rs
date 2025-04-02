@@ -2,6 +2,7 @@ use anyhow::Result;
 use bevy_app::{App, First, Plugin};
 use bevy_ecs::event::{Event, EventWriter};
 use bevy_ecs::system::NonSend;
+use bevy_reflect::Reflect;
 use crossbeam_channel::{unbounded, Receiver, Sender};
 use komorebi_client::{
     send_query, subscribe_with_options, Notification, SocketMessage, SubscribeOptions,
@@ -12,7 +13,7 @@ use std::time::Duration;
 
 pub struct KomoToolPipePlugin;
 
-#[derive(Event)]
+#[derive(Event, Reflect)]
 pub struct PipeNotificationEvent {
     pub notification: Notification,
 }
