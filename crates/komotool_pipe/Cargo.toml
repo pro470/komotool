@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 bevy_app = { workspace = true }
 bevy_ecs = { workspace = true }
+bevy_reflect = { workspace = true }
 anyhow = { workspace = true }
 serde_json = { workspace = true }
 komorebi-client = { workspace = true }

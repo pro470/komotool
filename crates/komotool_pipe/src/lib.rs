@@ -9,10 +9,11 @@ use komorebi_client::{
 use std::io::{BufReader, Read};
 use std::thread;
 use std::time::Duration;
+use bevy_reflect::Reflect;
 
 pub struct KomoToolPipePlugin;
 
-#[derive(Event)]
+#[derive(Event, Reflect)]
 pub struct PipeNotificationEvent {
     pub notification: Notification,
 }
