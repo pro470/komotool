@@ -219,13 +219,77 @@ pub fn import_komorebi_window_state(
         }
     }
 
-    // Second pass: Remove windows that no longer exist
-    window_map.0.retain(|hwnd, entity| {
-        if current_hwnds.contains(hwnd) {
+    // Second pass: Retain/Remove windows based on presence in current state and process status
+    window_map.0.retain(|_hwnd, entity| {
+        if current_hwnds.contains(_hwnd) {
+            // Window is still managed by Komorebi, keep it.
+            // Markers were cleared during the update phase if it existed previously.
+            // build_relation_registry will add the correct markers and focus state.
             true
         } else {
-            commands.entity(*entity).despawn();
-            false
+            // Window is no longer managed by Komorebi. Check if its process still exists.
+            match existing_windows.get(*entity) {
+                Ok(window) => {
+                    match window.exe() {
+                        Ok(_) => {
+                            // Process exists: Keep entity but remove markers and focus.
+                            // Markers *should* have been removed if it was previously managed,
+                            // but clear them again just in case it's an edge case.
+                            if let Some(record) = registry.records.get(entity) {
+                                // Despawn Monitor marker
+                                if record.monitor > 0 {
+                                    despawn_monitor_marker_component(
+                                        record.monitor,
+                                        *entity,
+                                        commands.reborrow(),
+                                        &extended_marker_map,
+                                    );
+                                }
+                                // Despawn Workspace marker
+                                if record.workspace > 0 {
+                                    despawn_workspace_marker_component(
+                                        record.workspace,
+                                        *entity,
+                                        commands.reborrow(),
+                                        &extended_marker_map,
+                                    );
+                                }
+                                // Despawn Container marker
+                                if record.container > 0 {
+                                    despawn_container_marker_component(
+                                        record.container,
+                                        *entity,
+                                        commands.reborrow(),
+                                        &extended_marker_map,
+                                    );
+                                }
+                                // Despawn Window marker
+                                if record.window > 0 {
+                                    despawn_window_marker_component(
+                                        record.window,
+                                        *entity,
+                                        commands.reborrow(),
+                                        &extended_marker_map,
+                                    );
+                                }
+                            }
+                            // Ensure focus is removed as it's no longer managed
+                            commands.entity(*entity).remove::<Focused>();
+                            true // Keep the entity in the map
+                        }
+                        Err(_) => {
+                            // Process doesn't exist: Despawn the entity entirely.
+                            commands.entity(*entity).despawn();
+                            false // Remove from map
+                        }
+                    }
+                }
+                Err(_) => {
+                    // Can't get Window component (entity might already be gone?): Despawn.
+                    commands.entity(*entity).despawn();
+                    false // Remove from map
+                }
+            }
         }
     });
 }
