@@ -348,7 +348,8 @@ pub fn import_komorebi_window_state(
                             // Keep the entity, don't despawn.
                             true // Keep in map
                         }
-                        QueryEntityError::QueryDoesNotMatch(_, _) | QueryEntityError::NoSuchEntity(_) => {
+                        QueryEntityError::QueryDoesNotMatch(_, _)
+                        | QueryEntityError::NoSuchEntity(_) => {
                             // Entity doesn't have the component or doesn't exist. Despawn.
                             commands.entity(*entity).despawn();
                             false // Remove from map
