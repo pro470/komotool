@@ -1,13 +1,12 @@
 use bevy_ecs::component::ComponentId;
 use bevy_ecs::entity::Entity;
 use bevy_ecs::system::Resource;
-use std::collections::{HashMap, HashSet};
 use bevy_reflect::Reflect;
 use komorebi_client::{
     FocusFollowsMouseImplementation, MoveBehaviour, OperationBehaviour, Rect, StaticConfig,
     WindowContainerBehaviour,
 };
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 #[derive(Resource, Reflect)]
 pub struct AppState {
