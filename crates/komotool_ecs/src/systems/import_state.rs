@@ -2,6 +2,7 @@ use crate::components::Focused;
 use crate::components::*;
 use crate::resources::*;
 use crate::RelationRegistry;
+use bevy_ecs::query::QueryEntityError;
 use bevy_ecs::system::{Commands, Query, Res, ResMut};
 use komorebi_client::{Container, Monitor, Window, Workspace};
 use std::collections::{hash_map::Entry, HashSet};
@@ -340,10 +341,19 @@ pub fn import_komorebi_window_state(
                         }
                     }
                 }
-                Err(_) => {
-                    // Can't get Window component (entity might already be gone?): Despawn.
-                    commands.entity(*entity).despawn();
-                    false // Remove from map
+                Err(error) => {
+                    match error {
+                        QueryEntityError::AliasedMutability(_) => {
+                            // Entity exists and has the component, but is mutably borrowed elsewhere.
+                            // Keep the entity, don't despawn.
+                            true // Keep in map
+                        }
+                        QueryEntityError::QueryDoesNotMatch(_, _) | QueryEntityError::NoSuchEntity(_) => {
+                            // Entity doesn't have the component or doesn't exist. Despawn.
+                            commands.entity(*entity).despawn();
+                            false // Remove from map
+                        }
+                    }
                 }
             }
         }
