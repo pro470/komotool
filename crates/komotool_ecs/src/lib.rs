@@ -1,18 +1,18 @@
 mod components;
+mod register_komorebi_types;
 mod relations;
 mod resources;
 mod systems;
-mod register_komorebi_types;
 
 use bevy_app::{App, First, Plugin};
 use bevy_ecs::prelude::resource_changed;
 use bevy_ecs::schedule::IntoSystemConfigs;
 pub use components::*;
 use komorebi_client::{Container, Monitor, Window, Workspace};
+use register_komorebi_types::register_komorebi_types;
 pub use relations::*;
 pub use resources::*;
 pub use systems::*;
-use register_komorebi_types::register_komorebi_types;
 
 pub struct KomoToolEcsPlugin;
 
