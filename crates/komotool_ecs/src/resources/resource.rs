@@ -1,6 +1,7 @@
 use bevy_ecs::component::ComponentId;
 use bevy_ecs::entity::Entity;
 use bevy_ecs::system::Resource;
+use std::collections::{HashMap, HashSet};
 use bevy_reflect::Reflect;
 use komorebi_client::{
     FocusFollowsMouseImplementation, MoveBehaviour, OperationBehaviour, Rect, StaticConfig,
@@ -67,3 +68,12 @@ pub struct KomotoolStaticConfig {
 pub struct ExtendedMarkerMap {
     pub makers: HashMap<usize, ComponentId>,
 }
+
+#[derive(Resource, Default, Reflect)]
+pub struct KeepAliveMonitors(pub HashSet<Entity>);
+
+#[derive(Resource, Default, Reflect)]
+pub struct KeepAliveWorkspaces(pub HashSet<Entity>);
+
+#[derive(Resource, Default, Reflect)]
+pub struct KeepAliveContainers(pub HashSet<Entity>);

@@ -13,6 +13,7 @@ pub fn import_komorebi_workspace_state(
     mut workspace_map: ResMut<WorkspaceToEntityMap>,
     registry: Res<RelationRegistry>,
     extended_marker_map: Res<ExtendedMarkerMap>,
+    keep_alive_workspaces: Res<KeepAliveWorkspaces>,
 ) {
     let Some(state) = &komorebi_state.current else {
         return;
@@ -70,10 +71,42 @@ pub fn import_komorebi_workspace_state(
 
     workspace_map.0.retain(|key, entity| {
         if current_keys.contains(key) {
+            // Workspace is still managed by Komorebi, keep it.
+            // Markers were cleared during the update phase if it existed previously.
+            // build_relation_registry will add the correct markers and focus state.
             true
         } else {
-            commands.entity(*entity).despawn();
-            false
+            // Workspace is no longer managed by Komorebi. Check if we should keep it alive.
+            if keep_alive_workspaces.0.contains(entity) {
+                // Keep the entity alive, but remove its markers.
+                if let Some(record) = registry.records.get(entity) {
+                    // Despawn Monitor marker
+                    if record.monitor > 0 {
+                        despawn_monitor_marker_component(
+                            record.monitor,
+                            *entity,
+                            commands.reborrow(),
+                            &extended_marker_map,
+                        );
+                    }
+                    // Despawn Workspace marker
+                    if record.workspace > 0 {
+                        despawn_workspace_marker_component(
+                            record.workspace,
+                            *entity,
+                            commands.reborrow(),
+                            &extended_marker_map,
+                        );
+                    }
+                }
+                // Ensure focus is removed (build_relation_registry won't add it)
+                commands.entity(*entity).remove::<Focused>();
+                true // Keep the entity in the map
+            } else {
+                // Not marked to keep alive, despawn the entity entirely.
+                commands.entity(*entity).despawn();
+                false // Remove from map
+            }
         }
     });
 }
@@ -85,6 +118,7 @@ pub fn import_komorebi_monitor_state(
     mut monitor_map: ResMut<MonitorToEntityMap>,
     registry: Res<RelationRegistry>,
     extended_marker_map: Res<ExtendedMarkerMap>,
+    keep_alive_monitors: Res<KeepAliveMonitors>,
 ) {
     let Some(state) = &komorebi_state.current else {
         return;
@@ -127,10 +161,32 @@ pub fn import_komorebi_monitor_state(
 
     monitor_map.0.retain(|serial, entity| {
         if current_serials.contains(serial) {
+            // Monitor is still managed by Komorebi, keep it.
+            // Markers were cleared during the update phase if it existed previously.
+            // build_relation_registry will add the correct markers and focus state.
             true
         } else {
-            commands.entity(*entity).despawn();
-            false
+            // Monitor is no longer managed by Komorebi. Check if we should keep it alive.
+            if keep_alive_monitors.0.contains(entity) {
+                // Keep the entity alive, but remove its marker.
+                if let Some(record) = registry.records.get(entity) {
+                    if record.monitor > 0 {
+                        despawn_monitor_marker_component(
+                            record.monitor,
+                            *entity,
+                            commands.reborrow(),
+                            &extended_marker_map,
+                        );
+                    }
+                }
+                // Ensure focus is removed (build_relation_registry won't add it)
+                commands.entity(*entity).remove::<Focused>();
+                true // Keep the entity in the map
+            } else {
+                // Not marked to keep alive, despawn the entity entirely.
+                commands.entity(*entity).despawn();
+                false // Remove from map
+            }
         }
     });
 }
@@ -301,6 +357,7 @@ pub fn import_komorebi_container_state(
     mut container_map: ResMut<ContainerToEntityMap>,
     registry: Res<RelationRegistry>,
     extended_marker_map: Res<ExtendedMarkerMap>,
+    keep_alive_containers: Res<KeepAliveContainers>,
 ) {
     let Some(state) = &komorebi_state.current else {
         return;
@@ -372,10 +429,51 @@ pub fn import_komorebi_container_state(
     // Second pass: Remove containers that no longer exist
     container_map.0.retain(|id, entity| {
         if current_ids.contains(id) {
+            // Container is still managed by Komorebi, keep it.
+            // Markers were cleared during the update phase if it existed previously.
+            // build_relation_registry will add the correct markers and focus state.
             true
         } else {
-            commands.entity(*entity).despawn();
-            false
+            // Container is no longer managed by Komorebi. Check if we should keep it alive.
+            if keep_alive_containers.0.contains(entity) {
+                // Keep the entity alive, but remove its markers.
+                if let Some(record) = registry.records.get(entity) {
+                    // Despawn Monitor marker
+                    if record.monitor > 0 {
+                        despawn_monitor_marker_component(
+                            record.monitor,
+                            *entity,
+                            commands.reborrow(),
+                            &extended_marker_map,
+                        );
+                    }
+                    // Despawn Workspace marker
+                    if record.workspace > 0 {
+                        despawn_workspace_marker_component(
+                            record.workspace,
+                            *entity,
+                            commands.reborrow(),
+                            &extended_marker_map,
+                        );
+                    }
+                    // Despawn Container marker
+                    if record.container > 0 {
+                        despawn_container_marker_component(
+                            record.container,
+                            *entity,
+                            commands.reborrow(),
+                            &extended_marker_map,
+                        );
+                    }
+                }
+                // Ensure focus is removed (build_relation_registry won't add it)
+                commands.entity(*entity).remove::<Focused>();
+                true // Keep the entity in the map
+            } else {
+                // Not marked to keep alive, despawn the entity entirely.
+                commands.entity(*entity).despawn();
+                false // Remove from map
+            }
         }
     });
 }
