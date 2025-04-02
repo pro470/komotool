@@ -26,6 +26,7 @@ impl Plugin for KomoToolEcsPlugin {
             .init_resource::<WorkspaceToEntityMap>()
             .init_resource::<ContainerToEntityMap>()
             .init_resource::<WindowToEntityMap>()
+            .init_resource::<KomotoolStaticConfig>()
             .register_type::<Monitor>()
             .register_type::<Window>()
             .register_type::<Container>()
