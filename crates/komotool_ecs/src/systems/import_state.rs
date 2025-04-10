@@ -554,6 +554,7 @@ pub fn import_komorebi_appstate_state(
         // Update AppState
         *app_state = AppState {
             is_paused: state.is_paused,
+            monitor_usr_idx_map: state.monitor_usr_idx_map.clone(),
             resize_delta: state.resize_delta,
             float_override: state.float_override,
             new_window_behaviour: state.new_window_behaviour,

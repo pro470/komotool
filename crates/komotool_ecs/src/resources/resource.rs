@@ -11,6 +11,7 @@ use std::collections::{HashMap, HashSet};
 #[derive(Resource, Reflect)]
 pub struct AppState {
     pub is_paused: bool,
+    pub monitor_usr_idx_map: HashMap<usize, usize>,
     pub resize_delta: i32,
     pub new_window_behaviour: WindowContainerBehaviour,
     pub float_override: bool,
@@ -25,7 +26,8 @@ pub struct AppState {
 impl Default for AppState {
     fn default() -> Self {
         Self {
-            is_paused: false,
+            is_paused: true,
+            monitor_usr_idx_map: HashMap::new(),
             resize_delta: 50,
             new_window_behaviour: WindowContainerBehaviour::Create,
             float_override: false,
