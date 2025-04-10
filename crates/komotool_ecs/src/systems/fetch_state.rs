@@ -9,7 +9,6 @@ pub fn update_komorebi_state_from_notifications(
 ) {
     // Take last notification
     if let Some(last) = notifications.read().last() {
-        komorebi_state.last = komorebi_state.current.take();
-        komorebi_state.current = Some(last.notification.state.clone());
+        komorebi_state.komorebi = Some(last.notification.state.clone());
     }
 }

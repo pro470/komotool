@@ -55,14 +55,22 @@ pub struct WindowToEntityMap(pub HashMap<String, Entity>);
 
 #[derive(Resource, Default, Reflect)]
 pub struct KomorebiState {
+    pub komorebi: Option<komorebi_client::State>,
+}
+
+#[derive(Resource, Default, Reflect)]
+pub struct KomotoolState {
     pub current: Option<komorebi_client::State>,
-    pub last: Option<komorebi_client::State>,
 }
 
 #[derive(Resource, Default, Reflect)]
 pub struct KomotoolStaticConfig {
     pub config: Option<StaticConfig>,
-    pub komotool_config: Option<StaticConfig>,
+}
+
+#[derive(Resource, Default, Reflect)]
+pub struct KomorebiStaticConfig {
+    pub config: Option<StaticConfig>,
 }
 
 #[derive(Resource, Default, Reflect)]

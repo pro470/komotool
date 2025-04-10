@@ -4,7 +4,7 @@ mod relations;
 mod resources;
 mod systems;
 
-use bevy_app::{App, First, Plugin};
+use bevy_app::{App, First, Last, Plugin};
 use bevy_ecs::prelude::resource_changed;
 use bevy_ecs::schedule::IntoSystemConfigs;
 pub use components::*;
@@ -22,11 +22,13 @@ impl Plugin for KomoToolEcsPlugin {
             .init_resource::<RelationRegistry>()
             .init_resource::<ExtendedMarkerMap>()
             .init_resource::<KomorebiState>()
+            .init_resource::<KomotoolState>()
             .init_resource::<MonitorToEntityMap>()
             .init_resource::<WorkspaceToEntityMap>()
             .init_resource::<ContainerToEntityMap>()
             .init_resource::<WindowToEntityMap>()
             .init_resource::<KomotoolStaticConfig>()
+            .init_resource::<KomorebiStaticConfig>()
             .init_resource::<KeepAliveMonitors>()
             .init_resource::<KeepAliveWorkspaces>()
             .init_resource::<KeepAliveContainers>()
@@ -61,6 +63,10 @@ impl Plugin for KomoToolEcsPlugin {
                         .after(update_komorebi_state_from_notifications)
                         .run_if(resource_changed::<KomorebiState>),
                 ),
+            )
+            .add_systems(
+                Last,
+                export_state_to_komorebi.before(komotool_framepace::framerate_limiter),
             );
         register_container_types(app);
         register_monitor_types(app);

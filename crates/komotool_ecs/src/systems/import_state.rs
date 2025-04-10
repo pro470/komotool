@@ -16,7 +16,7 @@ pub fn import_komorebi_workspace_state(
     extended_marker_map: Res<ExtendedMarkerMap>,
     mut keep_alive_workspaces: ResMut<KeepAliveWorkspaces>,
 ) {
-    let Some(state) = &komorebi_state.current else {
+    let Some(state) = &komorebi_state.komorebi else {
         return;
     };
 
@@ -140,7 +140,7 @@ pub fn import_komorebi_monitor_state(
     extended_marker_map: Res<ExtendedMarkerMap>,
     mut keep_alive_monitors: ResMut<KeepAliveMonitors>,
 ) {
-    let Some(state) = &komorebi_state.current else {
+    let Some(state) = &komorebi_state.komorebi else {
         return;
     };
 
@@ -238,7 +238,7 @@ pub fn import_komorebi_window_state(
     registry: Res<RelationRegistry>,
     extended_marker_map: Res<ExtendedMarkerMap>,
 ) {
-    let Some(state) = &komorebi_state.current else {
+    let Some(state) = &komorebi_state.komorebi else {
         return;
     };
 
@@ -408,7 +408,7 @@ pub fn import_komorebi_container_state(
     extended_marker_map: Res<ExtendedMarkerMap>,
     mut keep_alive_containers: ResMut<KeepAliveContainers>,
 ) {
-    let Some(state) = &komorebi_state.current else {
+    let Some(state) = &komorebi_state.komorebi else {
         return;
     };
 
@@ -550,7 +550,7 @@ pub fn import_komorebi_appstate_state(
     mut app_state: ResMut<AppState>,
     komorebi_state: Res<KomorebiState>,
 ) {
-    if let Some(state) = &komorebi_state.current {
+    if let Some(state) = &komorebi_state.komorebi {
         // Update AppState
         *app_state = AppState {
             is_paused: state.is_paused,
@@ -580,7 +580,7 @@ pub fn build_relation_registry(
 ) {
     registry.records.clear();
 
-    let Some(state) = &komorebi_state.current else {
+    let Some(state) = &komorebi_state.komorebi else {
         return;
     };
 
