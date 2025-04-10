@@ -5,7 +5,7 @@ use bevy_ecs::system::NonSend;
 use bevy_reflect::Reflect;
 use crossbeam_channel::{unbounded, Receiver, Sender};
 use komorebi_client::{
-    send_query, subscribe_with_options, Notification, SocketMessage, SubscribeOptions,
+    send_message, subscribe_with_options, Notification, SocketMessage, SubscribeOptions,
 };
 use std::io::{BufReader, Read};
 use std::thread;
@@ -44,6 +44,7 @@ fn run_pipe_listener(sender: &Sender<Notification>) -> Result<()> {
     const NAME: &str = "komotool";
 
     log::info!("Connecting to named pipe: {}", NAME);
+    println!("Connecting to named pipe: {}", NAME);
 
     // Attempt to subscribe
     let socket = match subscribe_with_options(
@@ -74,15 +75,17 @@ fn run_pipe_listener(sender: &Sender<Notification>) -> Result<()> {
                 // Detect disconnections
                 if matches!(reader.read_to_end(&mut buffer), Ok(0)) {
                     log::warn!("Disconnected from komorebi. Attempting to reconnect...");
+                    println!("Disconnected from komorebi. Attempting to reconnect...");
 
                     // Keep retrying until it successfully reconnects
-                    while send_query(&SocketMessage::AddSubscriberSocket(NAME.to_string())).is_err()
+                    while send_message(&SocketMessage::AddSubscriberSocket(NAME.to_string()))
+                        .is_err()
                     {
-                        log::warn!("Reconnection attempt failed. Retrying in 1s...");
+                        println!("Reconnection attempt failed. Retrying in 1s...");
                         thread::sleep(Duration::from_secs(1));
                     }
 
-                    log::info!("Reconnected to komorebi!");
+                    println!("Reconnected to komorebi!");
                     continue; // Restart pipe listening
                 }
 
@@ -92,19 +95,20 @@ fn run_pipe_listener(sender: &Sender<Notification>) -> Result<()> {
                         match serde_json::from_str::<Notification>(&notification_string) {
                             Ok(notification) => {
                                 if sender.send(notification).is_err() {
-                                    log::warn!("Failed to send notification to channel");
+                                    println!("Failed to send notification to channel");
                                 }
                             }
-                            Err(e) => log::debug!("Malformed notification: {}", e),
+                            Err(e) => println!("Malformed notification: {}", e),
                         }
                     }
                     Err(e) => {
-                        log::error!("Notification string was invalid UTF-8: {}", e);
+                        println!("Notification string was invalid UTF-8: {}", e);
                     }
                 }
             }
             Err(e) => {
                 log::warn!("Socket error: {}. Reconnecting...", e);
+                println!("Socket error: {}. Reconnecting...", e);
                 return Ok(()); // Exit to trigger reconnection
             }
         }
