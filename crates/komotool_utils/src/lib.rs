@@ -5,11 +5,13 @@ pub mod prelude;
 pub mod send_event_systems;
 pub mod startup_schedule;
 
+use handler::KomoToolScriptStoreAll;
 use bevy_app::{App, Last, MainScheduleOrder, Plugin, PostUpdate};
 use bevy_ecs::prelude::{not, resource_added, resource_changed};
 use bevy_ecs::schedule::{Condition, IntoSystemConfigs, Schedule};
 use bevy_state::app::AppExtStates;
 use bevy_state::condition::in_state;
+use handler::insert_komotool_handlers;
 pub use loading_systems::*;
 pub use prelude::*;
 use send_event_systems::*;
@@ -21,6 +23,9 @@ impl Plugin for KomoToolUtilsPlugin {
     fn build(&self, app: &mut App) {
         let app = app
             .init_resource::<LoadingCounter>()
+            .init_resource::<KomoToolScriptStoreAll<OnPreUpdate>>()
+            .init_resource::<KomoToolScriptStoreAll<OnUpdate>>()
+            .init_resource::<KomoToolScriptStoreAll<OnPostUpdate>>()
             .init_state::<GlobalLoadingState>()
             .add_schedule(Schedule::new(PreUpdateStartup))
             .add_schedule(Schedule::new(UpdateStartup))
@@ -70,6 +75,10 @@ impl Plugin for KomoToolUtilsPlugin {
         .add_systems(
             PreUpdateStartup,
             insert_event_sending_systems.run_if(in_state(GlobalLoadingState::CleanupDone)),
+        )
+        .add_systems(
+            UpdateStartup,
+            insert_komotool_handlers.run_if(in_state(GlobalLoadingState::CleanupDone)),
         );
     }
 }
