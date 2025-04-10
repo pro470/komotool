@@ -311,6 +311,22 @@ pub fn import_komorebi_window_state(
                     }
                 }
             }
+
+            if let Some(max) = komo_ws.maximized_window() {
+                let hwnd = max.hwnd;
+                current_hwnds.insert(hwnd.to_string().clone());
+                match window_map.0.entry(hwnd.to_string().clone()) {
+                    Entry::Occupied(entry) => {
+                        let entity = *entry.get();
+                        commands.entity(entity).insert(MaximizedWindow);
+                    }
+
+                    Entry::Vacant(entry) => {
+                        let entity = commands.spawn((*max, MaximizedWindow)).id();
+                        entry.insert(entity);
+                    }
+                }
+            }
         }
     }
 
@@ -468,6 +484,22 @@ pub fn import_komorebi_container_state(
                     Entry::Vacant(entry) => {
                         // Spawn new container with WindowRing
                         let entity = commands.spawn(komo_cont.clone()).id();
+                        entry.insert(entity);
+                    }
+                }
+            }
+            if let Some(monocle) = komo_ws.monocle_container() {
+                let id = monocle.id();
+                current_ids.insert(id.clone());
+                match container_map.0.entry(id.clone()) {
+                    Entry::Occupied(entry) => {
+                        let entity = *entry.get();
+                        commands.entity(entity).insert(MonocleContainer);
+                    }
+
+                    Entry::Vacant(entry) => {
+                        // Spawn new container with MonocleContainer
+                        let entity = commands.spawn((monocle.clone(), MonocleContainer)).id();
                         entry.insert(entity);
                     }
                 }
@@ -737,6 +769,40 @@ pub fn build_relation_registry(
                         window_marker_idx,
                     );
                 }
+            }
+            if let Some(monocle) = komo_ws.monocle_container() {
+                if let Some(monocle_entity) = container_map.0.get(monocle.id()) {
+                    insert_monitor_marker_component(
+                        monitor_marker_idx,
+                        *monocle_entity,
+                        commands.reborrow(),
+                        &extended_marker_map,
+                    );
+                    insert_workspace_marker_component(
+                        workspace_marker_idx,
+                        *monocle_entity,
+                        commands.reborrow(),
+                        &extended_marker_map,
+                    );
+                };
+            }
+
+            if let Some(maximized) = komo_ws.maximized_window() {
+                if let Some(maximized_entity) = window_map.0.get(&maximized.hwnd.to_string()) {
+                    insert_monitor_marker_component(
+                        monitor_marker_idx,
+                        *maximized_entity,
+                        commands.reborrow(),
+                        &extended_marker_map,
+                    );
+                    insert_workspace_marker_component(
+                        workspace_marker_idx,
+                        *maximized_entity,
+                        commands.reborrow(),
+                        &extended_marker_map,
+                    );
+                }
+
             }
         }
     }
