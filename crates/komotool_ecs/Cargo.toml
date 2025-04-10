@@ -9,5 +9,6 @@ bevy_app = {workspace = true}
 bevy_reflect = {workspace = true}
 komorebi-client = {workspace = true}
 indexmap = {workspace = true}
+komotool_framepace = { path = "../komotool_framepace"}
 komotool_pipe = { path = "../komotool_pipe"}
 bevy_mod_scripting = {workspace = true}

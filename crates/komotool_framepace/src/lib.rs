@@ -72,12 +72,12 @@ impl Limiter {
 
 /// Tracks timing information between frames
 #[derive(Debug, Default, Resource, Reflect)]
-struct FrameTimer {
+pub struct FrameTimer {
     last_frame: Option<Instant>,
 }
 
 /// Sleeps until it's time to start the next frame
-fn framerate_limiter(
+pub fn framerate_limiter(
     mut timer: ResMut<FrameTimer>,
     settings: Res<FramepaceSettings>,
     mut stats: ResMut<FramePaceStats>,
@@ -101,7 +101,7 @@ fn framerate_limiter(
 }
 
 /// Updates frame timer at start of frame
-fn update_frame_timer(mut timer: ResMut<FrameTimer>) {
+pub fn update_frame_timer(mut timer: ResMut<FrameTimer>) {
     if timer.last_frame.is_none() {
         timer.last_frame = Some(Instant::now());
     }
