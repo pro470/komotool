@@ -1,3 +1,3 @@
-mod registry;
+pub mod registry;
 
 pub use registry::{EntityRecord, RelationRegistry};
