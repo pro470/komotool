@@ -16,6 +16,7 @@ pub use loading_systems::*;
 pub use prelude::*;
 use send_event_systems::*;
 use startup_schedule::{PostUpdateStartup, PreUpdateStartup, UpdateStartup};
+use startup_schedule::configure_single_threaded_schedules;
 
 pub struct KomoToolUtilsPlugin;
 
@@ -72,6 +73,10 @@ impl Plugin for KomoToolUtilsPlugin {
             Last,
             remove_startup_schedules.run_if(in_state(GlobalLoadingState::AllDone)),
         )
+            .add_systems(
+                PostUpdateStartup,
+                configure_single_threaded_schedules.run_if(in_state(GlobalLoadingState::CleanupDone)),
+            )
         .add_systems(
             PreUpdateStartup,
             insert_event_sending_systems.run_if(in_state(GlobalLoadingState::CleanupDone)),
