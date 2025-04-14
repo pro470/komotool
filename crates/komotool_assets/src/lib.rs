@@ -4,7 +4,7 @@ use bevy_app::{App, Plugin, PreStartup, PreUpdate, Startup};
 use bevy_asset::{
     AssetApp, AssetEvent, AssetId, AssetPath, AssetServer, Assets, Handle, LoadedFolder,
     RecursiveDependencyLoadState,
-    {io::AssetSourceBuilder, AssetPlugin},
+    {AssetPlugin, io::AssetSourceBuilder},
 };
 use bevy_ecs::entity::Entity;
 use bevy_ecs::event::EventReader;
@@ -23,7 +23,7 @@ use bevy_state::state::{NextState, OnEnter, OnExit, States};
 use komotool_utils::handler::{KomoToolScriptStore, KomoToolScriptStoreAll, ScriptFunctionChecker};
 use komotool_utils::prelude::*;
 use komotool_utils::startup_schedule::PreUpdateStartup;
-pub use remove_watcher::{check_file_events, setup_file_watcher, FileRemovedEvent};
+pub use remove_watcher::{FileRemovedEvent, check_file_events, setup_file_watcher};
 use std::{
     collections::HashMap,
     env, fs,

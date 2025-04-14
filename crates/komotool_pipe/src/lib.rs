@@ -24,14 +24,16 @@ impl Plugin for KomoToolPipePlugin {
         let (sender, receiver) = unbounded();
 
         // Spawn listener in a separate thread
-        thread::spawn(move || loop {
-            match run_pipe_listener(&sender) {
-                Ok(_) => log::info!("Pipe listener finished, attempting to reconnect..."),
-                Err(e) => log::warn!("Pipe listener error: {}. Retrying...", e),
-            }
+        thread::spawn(move || {
+            loop {
+                match run_pipe_listener(&sender) {
+                    Ok(_) => log::info!("Pipe listener finished, attempting to reconnect..."),
+                    Err(e) => log::warn!("Pipe listener error: {}. Retrying...", e),
+                }
 
-            // Wait before retrying to prevent overwhelming the system
-            thread::sleep(Duration::from_secs(2));
+                // Wait before retrying to prevent overwhelming the system
+                thread::sleep(Duration::from_secs(2));
+            }
         });
 
         // Add system to process received messages

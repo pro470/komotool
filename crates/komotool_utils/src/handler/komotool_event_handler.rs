@@ -13,9 +13,9 @@ use bevy_mod_scripting::core::event::{CallbackLabel, Recipients};
 use bevy_mod_scripting::core::extractors::HandlerContext;
 use bevy_mod_scripting::core::handler::handle_script_errors;
 use bevy_mod_scripting::core::{
+    IntoScriptPluginParams,
     event::{IntoCallbackLabel, ScriptCallbackEvent},
     extractors::WithWorldGuard,
-    IntoScriptPluginParams,
 };
 use bevy_mod_scripting::lua::LuaScriptingPlugin;
 use bevy_mod_scripting::rhai::RhaiScriptingPlugin;
@@ -203,7 +203,8 @@ fn komotool_event_handler_inner<
                             trace_once!(
                                 "{}: Script `{}` on entity `{:?}` is either still loading, doesn't exist, or is for another language, ignoring until the corresponding script is loaded.",
                                 P::LANGUAGE,
-                                script_id, entity
+                                script_id,
+                                entity
                             );
                             continue;
                         }
