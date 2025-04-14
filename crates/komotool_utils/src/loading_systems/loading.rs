@@ -1,3 +1,4 @@
+use bevy_ecs::change_detection::DetectChanges;
 use crate::{PostUpdateStartup, PreUpdateStartup, UpdateStartup};
 use bevy_ecs::schedule::Schedules;
 use bevy_ecs::system::{Res, ResMut, Resource};
@@ -45,6 +46,9 @@ pub fn remove_startup_schedules(
     mut schedules: ResMut<Schedules>,
     mut state: ResMut<NextState<GlobalLoadingState>>,
 ) {
+    if !state.is_changed() && !state.is_added() {
+        return;
+    }
     schedules.remove_entry(PreUpdateStartup);
     schedules.remove_entry(UpdateStartup);
     schedules.remove_entry(PostUpdateStartup);
