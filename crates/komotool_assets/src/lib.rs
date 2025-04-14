@@ -349,10 +349,7 @@ pub fn handle_script_store_updates_all_labels<P>(
                             println!("Added to OnPostUpdate: {}", script_id);
                         }
 
-                        println!(
-                            "Processed new script: {}",
-                            path.path().to_string_lossy().to_string()
-                        );
+                        println!("Processed new script: {}", path.path().to_string_lossy());
                     }
                 }
             }
@@ -497,7 +494,7 @@ pub fn handle_script_store_updates_all(
 
                     println!(
                         "Processed new script: {}",
-                        script_bytes.asset_path.path().to_string_lossy().to_string()
+                        script_bytes.asset_path.path().to_string_lossy()
                     );
                 }
             }
