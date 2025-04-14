@@ -297,6 +297,7 @@ pub fn import_komorebi_window_state(
                                     );
                                 }
                             }
+                            commands.entity(entity).remove::<MaximizedWindow>();
 
                             // Update existing window component
                             if let Ok(mut window) = existing_windows.get_mut(entity) {
@@ -473,6 +474,7 @@ pub fn import_komorebi_container_state(
                                 );
                             }
                         }
+                        commands.entity(entity).remove::<MonocleContainer>();
 
                         // Update existing container component
                         if let Ok(mut container) = existing_containers.get_mut(entity) {
@@ -802,7 +804,6 @@ pub fn build_relation_registry(
                         &extended_marker_map,
                     );
                 }
-
             }
         }
     }
