@@ -71,18 +71,20 @@ unsafe impl<T: Resource + Default + 'static> SystemParam for ResScope<'_, T> {
         _change_tick: Tick,
     ) -> Self::Item<'world, 'state> {
         // Get the resource pointer
-        let mut ptr = world.get_resource_mut::<T>().unwrap_or_else(|| {
-            panic!(
-                "Resource requested by ResScope does not exist: {}",
-                std::any::type_name::<T>()
-            )
-        });
+        let mut ptr = unsafe {
+            world.get_resource_mut::<T>().unwrap_or_else(|| {
+                panic!(
+                    "Resource requested by ResScope does not exist: {}",
+                    std::any::type_name::<T>()
+                )
+            })
+        };
 
         // IMPORTANT: Use the correct approach to get a reference with 'world lifetime
         // This uses unsafe to extend the lifetime, but is safe because we know
         // the resource lives for the 'world lifetime
         let raw_ptr = ptr.as_mut() as *mut T;
-        let resource_ref = &mut *raw_ptr;
+        let resource_ref = unsafe { &mut *raw_ptr };
 
         ResScope(resource_ref)
     }
