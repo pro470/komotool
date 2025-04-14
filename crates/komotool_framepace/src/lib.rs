@@ -1,22 +1,5 @@
 use bevy_app::{App, Last, Plugin, PreUpdate, Update};
 use bevy_ecs::reflect::ReflectResource;
-use bevy_utils::Instant;
-
-/// Tracks the last time there was activity to determine idle state for frame pacing.
-#[derive(Resource, Reflect, Debug)]
-#[reflect(Resource)]
-pub struct IdleFramePaceState {
-    /// The timestamp of the last registered activity.
-    pub last_activity: Instant,
-}
-
-impl Default for IdleFramePaceState {
-    fn default() -> Self {
-        Self {
-            last_activity: Instant::now(),
-        }
-    }
-}
 use bevy_ecs::schedule::{IntoSystemConfigs, Schedules};
 use bevy_ecs::system::{Local, Res, ResMut, Resource};
 use bevy_reflect::Reflect;
@@ -39,8 +22,6 @@ impl Plugin for KomotoolFramepacePlugin {
             .init_resource::<FrameTimer>()
             .init_resource::<FramePaceStats>()
             .init_resource::<FPS>()
-            //.add_systems(PreUpdate, update_frame_timer)
-            //.add_systems(Last, framerate_limiter);
             .add_systems(
                 UpdateStartup,
                 insert_komotool_framepace_systems.run_if(in_state(GlobalLoadingState::CleanupDone)),
@@ -68,7 +49,23 @@ impl Default for FramepaceSettings {
             // Default idle limiter to 4 FPS
             idle_limiter: Limiter::from_framerate(4.0),
             // Default idle threshold to 66 seconds
-            idle_threshold: Duration::from_secs(66),
+            idle_threshold: Duration::from_secs(60),
+        }
+    }
+}
+
+/// Tracks the last time there was activity to determine idle state for frame pacing.
+#[derive(Resource, Reflect, Debug)]
+#[reflect(Resource)]
+pub struct IdleFramePaceState {
+    /// The timestamp of the last registered activity.
+    pub last_activity: Instant,
+}
+
+impl Default for IdleFramePaceState {
+    fn default() -> Self {
+        Self {
+            last_activity: Instant::now(),
         }
     }
 }
