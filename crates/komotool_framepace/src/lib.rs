@@ -1,5 +1,22 @@
 use bevy_app::{App, Last, Plugin, PreUpdate, Update};
 use bevy_ecs::reflect::ReflectResource;
+use bevy_utils::Instant;
+
+/// Tracks the last time there was activity to determine idle state for frame pacing.
+#[derive(Resource, Reflect, Debug)]
+#[reflect(Resource)]
+pub struct IdleFramePaceState {
+    /// The timestamp of the last registered activity.
+    pub last_activity: Instant,
+}
+
+impl Default for IdleFramePaceState {
+    fn default() -> Self {
+        Self {
+            last_activity: Instant::now(),
+        }
+    }
+}
 use bevy_ecs::schedule::{IntoSystemConfigs, Schedules};
 use bevy_ecs::system::{Local, Res, ResMut, Resource};
 use bevy_reflect::Reflect;
@@ -17,6 +34,8 @@ impl Plugin for KomotoolFramepacePlugin {
     fn build(&self, app: &mut App) {
         app.register_type::<FramepaceSettings>()
             .init_resource::<FramepaceSettings>()
+            .register_type::<IdleFramePaceState>()
+            .init_resource::<IdleFramePaceState>()
             .init_resource::<FrameTimer>()
             .init_resource::<FramePaceStats>()
             .init_resource::<FPS>()
@@ -34,14 +53,22 @@ impl Plugin for KomotoolFramepacePlugin {
 #[derive(Debug, Clone, Resource, Reflect)]
 #[reflect(Resource)]
 pub struct FramepaceSettings {
-    /// Configures the framerate limiting strategy
+    /// Configures the framerate limiting strategy when active.
     pub limiter: Limiter,
+    /// Configures the framerate limiting strategy when idle.
+    pub idle_limiter: Limiter,
+    /// The duration of inactivity before switching to the idle limiter.
+    pub idle_threshold: Duration,
 }
 
 impl Default for FramepaceSettings {
     fn default() -> Self {
         Self {
             limiter: Limiter::Manual(Duration::from_secs_f64(1.0 / 60.0)),
+            // Default idle limiter to 4 FPS
+            idle_limiter: Limiter::from_framerate(4.0),
+            // Default idle threshold to 66 seconds
+            idle_threshold: Duration::from_secs(66),
         }
     }
 }
@@ -84,13 +111,23 @@ pub fn framerate_limiter(
     mut timer: ResMut<FrameTimer>,
     settings: Res<FramepaceSettings>,
     mut stats: ResMut<FramePaceStats>,
+    idle_state: Res<IdleFramePaceState>,
 ) {
     let now = Instant::now();
 
     if let Some(last_frame) = timer.last_frame {
         let frame_time = now - last_frame;
 
-        if let Limiter::Manual(target_duration) = &settings.limiter {
+        // Determine which limiter to use
+        let time_since_last_activity = now.duration_since(idle_state.last_activity);
+        let active_limiter = if time_since_last_activity > settings.idle_threshold {
+            &settings.idle_limiter
+        } else {
+            &settings.limiter
+        };
+
+        // Use the selected limiter
+        if let Limiter::Manual(target_duration) = active_limiter {
             if let Some(sleep_duration) = target_duration.checked_sub(frame_time) {
                 spin_sleep::sleep(sleep_duration);
             }
