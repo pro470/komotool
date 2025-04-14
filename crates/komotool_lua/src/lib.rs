@@ -20,19 +20,19 @@ impl Plugin for KomoToolLuaPlugin {
             .add_systems(
                 PreUpdateStartup,
                 komotool_event_handler::<LuaScriptingPlugin, OnPreStartUp>
-                    .run_if(in_state(GlobalLoadingState::PreStartupDone))
+                    .run_if(in_state(GlobalLoadingState::Loaded))
                     .after(send_pre_startup_events),
             )
             .add_systems(
                 UpdateStartup,
                 komotool_event_handler::<LuaScriptingPlugin, OnStartUp>
-                    .run_if(in_state(GlobalLoadingState::StartupDone))
+                    .run_if(in_state(GlobalLoadingState::Loaded))
                     .after(send_startup_events),
             )
             .add_systems(
                 PostUpdateStartup,
                 komotool_event_handler::<LuaScriptingPlugin, OnPostStartUp>
-                    .run_if(in_state(GlobalLoadingState::PostStartupDone))
+                    .run_if(in_state(GlobalLoadingState::Loaded))
                     .after(send_post_startup_events),
             )
             .add_systems(

@@ -12,9 +12,6 @@ pub enum GlobalLoadingState {
     #[default]
     Loading,
     Loaded,
-    PreStartupDone,
-    StartupDone,
-    PostStartupDone,
     CleanupDone,
     AllDone,
     Finished,
