@@ -3,7 +3,6 @@ use bevy_ecs::system::Resource;
 use bevy_mod_scripting::core::IntoScriptPluginParams;
 use bevy_mod_scripting::core::event::IntoCallbackLabel;
 use bevy_mod_scripting::core::script::ScriptId;
-use bevy_mod_scripting::core::IntoScriptPluginParams;
 use bevy_reflect::Reflect;
 use indexmap::IndexSet;
 use std::marker::PhantomData;

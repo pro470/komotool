@@ -1,10 +1,10 @@
+use crate::KomorebiState;
 use crate::components::{FloatingWindow, Focused, MaximizedWindow, MonocleContainer};
 use crate::relations::registry::RelationRegistry;
 use crate::resources::AppState;
-use crate::KomorebiState;
 use bevy_ecs::prelude::*;
 use komorebi_client::{
-    send_message, Container, Monitor, Ring, SocketMessage, State, Window, Workspace,
+    Container, Monitor, Ring, SocketMessage, State, Window, Workspace, send_message,
 };
 
 #[allow(clippy::too_many_arguments)]

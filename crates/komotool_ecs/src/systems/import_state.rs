@@ -1,11 +1,11 @@
+use crate::RelationRegistry;
 use crate::components::Focused;
 use crate::components::*;
 use crate::resources::*;
-use crate::RelationRegistry;
 use bevy_ecs::query::QueryEntityError;
 use bevy_ecs::system::{Commands, Query, Res, ResMut};
 use komorebi_client::{Container, Monitor, Window, Workspace};
-use std::collections::{hash_map::Entry, HashSet};
+use std::collections::{HashSet, hash_map::Entry};
 
 pub fn import_komorebi_workspace_state(
     mut commands: Commands,

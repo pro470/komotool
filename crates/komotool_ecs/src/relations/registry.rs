@@ -15,7 +15,6 @@ pub struct EntityRecord {
     pub window: usize,
 }
 
-
 // Hash implementation - only hashes the entity field
 impl Hash for EntityRecord {
     fn hash<H: Hasher>(&self, state: &mut H) {

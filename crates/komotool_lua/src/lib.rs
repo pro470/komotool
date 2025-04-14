@@ -4,7 +4,7 @@ use bevy_ecs::system::Commands;
 use bevy_mod_scripting::lua::LuaScriptingPlugin;
 use bevy_state::condition::in_state;
 use komotool_assets::{check_scripts_loaded, handle_script_store_updates};
-use komotool_utils::handler::{komotool_event_handler, KomoToolScriptStore};
+use komotool_utils::handler::{KomoToolScriptStore, komotool_event_handler};
 use komotool_utils::startup_schedule::{PostUpdateStartup, PreUpdateStartup, UpdateStartup};
 use komotool_utils::{prelude::*, send_event_systems::*};
 

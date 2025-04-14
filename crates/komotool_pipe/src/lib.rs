@@ -3,9 +3,9 @@ use bevy_app::{App, First, Plugin};
 use bevy_ecs::event::{Event, EventWriter};
 use bevy_ecs::system::NonSend;
 use bevy_reflect::Reflect;
-use crossbeam_channel::{unbounded, Receiver, Sender};
+use crossbeam_channel::{Receiver, Sender, unbounded};
 use komorebi_client::{
-    send_message, subscribe_with_options, Notification, SocketMessage, SubscribeOptions,
+    Notification, SocketMessage, SubscribeOptions, send_message, subscribe_with_options,
 };
 use std::io::{BufReader, Read};
 use std::thread;

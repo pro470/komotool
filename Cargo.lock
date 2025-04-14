@@ -1337,9 +1337,9 @@ dependencies = [
 
 [[package]]
 name = "bevy_state"
-version = "0.15.2"
+version = "0.15.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "309a822106bf032ae71a3e99716c6c1d275116c76357ed647544e1eee20d7093"
+checksum = "243a72266f81452412f7a3859e5d11473952a25767dc29c8d285660330f007ba"
 dependencies = [
  "bevy_app",
  "bevy_ecs",
@@ -1351,9 +1351,9 @@ dependencies = [
 
 [[package]]
 name = "bevy_state_macros"
-version = "0.15.2"
+version = "0.15.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e9f8706d4c2a548f3d4d2ac5a205cef8000326de94c1eaad5424163c4bfd3bcc"
+checksum = "022eb069dfd64090fd92ba4a7f235383e49aa1c0f4320dab4999b23f67843b36"
 dependencies = [
  "bevy_macro_utils",
  "proc-macro2",
@@ -3634,8 +3634,9 @@ checksum = "e2db585e1d738fc771bf08a151420d3ed193d9d895a36df7f6f8a9456b911ddc"
 [[package]]
 name = "komorebi"
 version = "0.1.35"
-source = "git+https://github.com/pro470/komorebi?branch=komotool#b63341fa3374769141e27b898f50db785f3f53e5"
+source = "git+https://github.com/pro470/komorebi?branch=komotool#8062b1043ef69162d617e5b9d7ce0fa1cbb4a117"
 dependencies = [
+ "bevy_asset",
  "bevy_ecs",
  "bevy_reflect",
  "bitflags 2.8.0",
@@ -3683,7 +3684,7 @@ dependencies = [
 [[package]]
 name = "komorebi-client"
 version = "0.1.35"
-source = "git+https://github.com/pro470/komorebi?branch=komotool#b63341fa3374769141e27b898f50db785f3f53e5"
+source = "git+https://github.com/pro470/komorebi?branch=komotool#8062b1043ef69162d617e5b9d7ce0fa1cbb4a117"
 dependencies = [
  "komorebi",
  "serde_json_lenient",
@@ -3693,7 +3694,7 @@ dependencies = [
 [[package]]
 name = "komorebi-themes"
 version = "0.1.35"
-source = "git+https://github.com/pro470/komorebi?branch=komotool#b63341fa3374769141e27b898f50db785f3f53e5"
+source = "git+https://github.com/pro470/komorebi?branch=komotool#8062b1043ef69162d617e5b9d7ce0fa1cbb4a117"
 dependencies = [
  "base16-egui-themes",
  "bevy_ecs",
@@ -3734,6 +3735,7 @@ dependencies = [
  "bevy_asset",
  "bevy_ecs",
  "bevy_mod_scripting",
+ "bevy_reflect",
  "bevy_state",
  "crossbeam-channel",
  "komotool_utils",
@@ -3752,8 +3754,10 @@ dependencies = [
  "bevy_ecs",
  "bevy_mod_scripting",
  "bevy_reflect",
+ "bevy_utils",
  "indexmap 2.8.0",
  "komorebi-client",
+ "komotool_framepace",
  "komotool_pipe",
 ]
 
@@ -3765,6 +3769,7 @@ dependencies = [
  "bevy_ecs",
  "bevy_reflect",
  "bevy_state",
+ "bevy_time",
  "bevy_utils",
  "komotool_utils",
  "spin_sleep",
@@ -3804,6 +3809,7 @@ dependencies = [
  "anyhow",
  "bevy_app",
  "bevy_ecs",
+ "bevy_reflect",
  "crossbeam-channel",
  "komorebi-client",
  "log",
@@ -3827,6 +3833,7 @@ name = "komotool_utils"
 version = "0.1.0"
 dependencies = [
  "bevy_app",
+ "bevy_asset",
  "bevy_ecs",
  "bevy_log",
  "bevy_mod_scripting",

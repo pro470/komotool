@@ -326,7 +326,8 @@ fn komotool_event_handler_inner_all<
                             trace_once!(
                                 "{}: Script `{}` on entity `{:?}` is either still loading, doesn't exist, or is for another language, ignoring until the corresponding script is loaded.",
                                 &language,
-                                script_id, entity
+                                script_id,
+                                entity
                             );
                             continue;
                         }
