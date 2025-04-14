@@ -5,13 +5,13 @@ pub mod prelude;
 pub mod send_event_systems;
 pub mod startup_schedule;
 
-use handler::KomoToolScriptStoreAll;
 use bevy_app::{App, Last, MainScheduleOrder, Plugin, PostUpdate};
 use bevy_ecs::prelude::{not, resource_added, resource_changed};
 use bevy_ecs::schedule::{Condition, IntoSystemConfigs, Schedule};
 use bevy_state::app::AppExtStates;
 use bevy_state::condition::in_state;
 use handler::insert_komotool_handlers;
+use handler::KomoToolScriptStoreAll;
 pub use loading_systems::*;
 pub use prelude::*;
 use send_event_systems::*;
