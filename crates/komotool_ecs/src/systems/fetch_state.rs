@@ -1,21 +1,25 @@
 use crate::resources::KomorebiState;
 use bevy_ecs::event::EventReader;
 use bevy_ecs::system::ResMut;
+use bevy_utils::Instant;
+use komotool_framepace::IdleFramePaceState;
 use komotool_pipe::PipeNotificationEvent;
-use serde_json::{from_value, to_value};
 
 pub fn update_komorebi_state_from_notifications(
     mut komorebi_state: ResMut<KomorebiState>,
     mut notifications: EventReader<PipeNotificationEvent>,
+    mut idle: ResMut<IdleFramePaceState>,
 ) {
     // Take last notification
     if let Some(last) = notifications.read().last() {
-        komorebi_state.last = komorebi_state.current.take();
-
-        // Deep clone via JSON serialization
-        let json = to_value(&last.notification.state).expect("Failed to serialize state");
-        let cloned_state = from_value(json).expect("Failed to deserialize state");
-
-        komorebi_state.current = Some(cloned_state);
+        if let Some(state) = &komorebi_state.komorebi {
+            if state.has_been_modified(&last.notification.state) {
+                println!("State has been modified");
+                komorebi_state.komorebi = Some(last.notification.state.clone());
+                idle.last_activity = Instant::now();
+            }
+        } else {
+            komorebi_state.komorebi = Some(last.notification.state.clone());
+        }
     }
 }
