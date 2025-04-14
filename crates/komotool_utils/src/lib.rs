@@ -49,17 +49,17 @@ impl Plugin for KomoToolUtilsPlugin {
         )
         .add_systems(
             UpdateStartup,
-            send_startup_events.run_if(in_state(GlobalLoadingState::PreStartupDone)),
+            send_startup_events.run_if(in_state(GlobalLoadingState::Loaded)),
         )
         // Post-Startup Events [Original "StartupDone"]
         .add_systems(
             PostUpdateStartup,
-            send_post_startup_events.run_if(in_state(GlobalLoadingState::StartupDone)),
+            send_post_startup_events.run_if(in_state(GlobalLoadingState::Loaded)),
         )
         .add_systems(
             PostUpdateStartup,
             advance_to_clean_up_done
-                .run_if(in_state(GlobalLoadingState::PostStartupDone))
+                .run_if(in_state(GlobalLoadingState::Loaded))
                 .after(send_post_startup_events),
         )
         .add_systems(
