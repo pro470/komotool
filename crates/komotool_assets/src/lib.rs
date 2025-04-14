@@ -239,10 +239,7 @@ pub fn handle_script_store_updates<P, L>(
                             let script_id =
                                 ScriptId::from(path.path().to_string_lossy().to_string());
                             script_store.scripts.insert(script_id);
-                            println!(
-                                "Adding script: {}",
-                                path.path().to_string_lossy()
-                            );
+                            println!("Adding script: {}", path.path().to_string_lossy());
                         }
                     }
                 }
