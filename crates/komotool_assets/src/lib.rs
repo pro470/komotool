@@ -241,7 +241,7 @@ pub fn handle_script_store_updates<P, L>(
                             script_store.scripts.insert(script_id);
                             println!(
                                 "Adding script: {}",
-                                path.path().to_string_lossy().to_string()
+                                path.path().to_string_lossy()
                             );
                         }
                     }
