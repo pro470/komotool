@@ -8,7 +8,7 @@ use komorebi_client::{
 };
 
 #[allow(clippy::too_many_arguments)]
-pub fn export_state_to_komorebi(
+pub fn export_state(
     registry: Res<RelationRegistry>,
     app_state: Res<AppState>,
     monitor_query: Query<&Monitor>,
@@ -238,7 +238,7 @@ pub fn export_state_to_komorebi(
         Err(e) => eprintln!("Failed to send ApplyState message to komorebi: {}", e),
     }
 }
-pub fn export_state_to_komotool(world: &mut World) {
+pub fn export_state_to_komorebi(world: &mut World) {
     let mut komotool_state_is_some = false;
 
     // Step 1: Check KomotoolState.current in a scope
