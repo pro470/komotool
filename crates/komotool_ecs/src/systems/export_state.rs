@@ -268,12 +268,19 @@ pub fn export_state_to_komotool(world: &mut World) {
     let komotool_state_res = world.get_resource::<KomotoolState>();
 
     // Use if let to ensure both states are Some before comparing
-    if let (Some(komorebi_state_res), Some(komotool_state_res)) = (komorebi_state_res, komotool_state_res) {
-        if let (Some(komorebi_s), Some(komotool_s)) = (komorebi_state_res.komorebi.as_ref(), komotool_state_res.current.as_ref()) {
+    if let (Some(komorebi_state_res), Some(komotool_state_res)) =
+        (komorebi_state_res, komotool_state_res)
+    {
+        if let (Some(komorebi_s), Some(komotool_s)) = (
+            komorebi_state_res.komorebi.as_ref(),
+            komotool_state_res.current.as_ref(),
+        ) {
             // Both states exist, compare them
-            if komorebi_s != komotool_s {
+            if komotool_s.has_been_modified(komorebi_s) {
                 // States are different, send the Komotool state
-                println!("Komotool state differs from Komorebi state after flush, sending ApplyState to komotool");
+                println!(
+                    "Komotool state differs from Komorebi state after flush, sending ApplyState to komotool"
+                );
                 let message = SocketMessage::ApplyState(komotool_s.clone());
                 match send_message(&message) {
                     Ok(_) => println!("Successfully sent ApplyState message to komotool"),
