@@ -1,7 +1,7 @@
 use crate::KomorebiState;
 use crate::components::{FloatingWindow, Focused, MaximizedWindow, MonocleContainer};
 use crate::relations::registry::RelationRegistry;
-use crate::resources::AppState;
+use crate::resources::{AppState, KomotoolState};
 use bevy_ecs::prelude::*;
 use komorebi_client::{
     Container, Monitor, Ring, SocketMessage, State, Window, Workspace, send_message,
@@ -236,5 +236,61 @@ pub fn export_state_to_komorebi(
     match send_message(&message) {
         Ok(_) => println!("Successfully sent ApplyState message to komorebi"),
         Err(e) => eprintln!("Failed to send ApplyState message to komorebi: {}", e),
+    }
+}
+pub fn export_state_to_komotool(world: &mut World) {
+    let mut komotool_state_is_some = false;
+
+    // Step 1: Check KomotoolState.current in a scope
+    {
+        let komotool_state_res = world.get_resource::<KomotoolState>();
+        if let Some(state_res) = komotool_state_res {
+            if state_res.current.is_some() {
+                komotool_state_is_some = true;
+            }
+        }
+        // Implicitly drop the borrow of komotool_state_res here
+    }
+
+    // Step 2: Conditional Flush
+    if komotool_state_is_some {
+        // Only flush if KomotoolState.current was Some initially
+        world.flush(); // Apply any queued commands
+    } else {
+        // KomotoolState.current was None, nothing to flush or send.
+        // println!("KomotoolState.current is None initially, skipping flush and send.");
+        return;
+    }
+
+    // Step 3: Comparison and Send (after potential flush)
+    // Re-fetch resources after flush
+    let komorebi_state_res = world.get_resource::<KomorebiState>();
+    let komotool_state_res = world.get_resource::<KomotoolState>();
+
+    // Use if let to ensure both states are Some before comparing
+    if let (Some(komorebi_state_res), Some(komotool_state_res)) = (komorebi_state_res, komotool_state_res) {
+        if let (Some(komorebi_s), Some(komotool_s)) = (komorebi_state_res.komorebi.as_ref(), komotool_state_res.current.as_ref()) {
+            // Both states exist, compare them
+            if komorebi_s != komotool_s {
+                // States are different, send the Komotool state
+                println!("Komotool state differs from Komorebi state after flush, sending ApplyState to komotool");
+                let message = SocketMessage::ApplyState(komotool_s.clone());
+                match send_message(&message) {
+                    Ok(_) => println!("Successfully sent ApplyState message to komotool"),
+                    Err(e) => eprintln!("Failed to send ApplyState message to komotool: {}", e),
+                }
+            } else {
+                // States are the same, do nothing
+                // println!("Komotool state matches Komorebi state after flush, skipping send.");
+            }
+        } else {
+            // At least one of the inner Option<&State> was None, do nothing.
+            // This covers cases where KomorebiState exists but komorebi is None,
+            // or KomotoolState exists but current is None (e.g., after flush).
+            // println!("Either Komorebi or Komotool state content is None after flush, skipping send.");
+        }
+    } else {
+        // At least one of the resources (KomorebiState or KomotoolState) doesn't exist, do nothing.
+        // println!("KomorebiState or KomotoolState resource missing after flush, skipping send.");
     }
 }
