@@ -45,7 +45,6 @@ impl Plugin for KomoToolPipePlugin {
 fn run_pipe_listener(sender: &Sender<Notification>) -> Result<()> {
     const NAME: &str = "komotool";
 
-    log::info!("Connecting to named pipe: {}", NAME);
     println!("Connecting to named pipe: {}", NAME);
 
     // Attempt to subscribe
@@ -56,11 +55,11 @@ fn run_pipe_listener(sender: &Sender<Notification>) -> Result<()> {
         },
     ) {
         Ok(socket) => {
-            log::info!("Connected to named pipe successfully");
+            println!("Connected to named pipe successfully");
             socket
         }
         Err(e) => {
-            log::warn!(
+            eprintln!(
                 "Failed to connect to the named pipe: {}. Retrying in 2s...",
                 e
             );
@@ -76,7 +75,6 @@ fn run_pipe_listener(sender: &Sender<Notification>) -> Result<()> {
 
                 // Detect disconnections
                 if matches!(reader.read_to_end(&mut buffer), Ok(0)) {
-                    log::warn!("Disconnected from komorebi. Attempting to reconnect...");
                     println!("Disconnected from komorebi. Attempting to reconnect...");
 
                     // Keep retrying until it successfully reconnects
@@ -109,7 +107,6 @@ fn run_pipe_listener(sender: &Sender<Notification>) -> Result<()> {
                 }
             }
             Err(e) => {
-                log::warn!("Socket error: {}. Reconnecting...", e);
                 println!("Socket error: {}. Reconnecting...", e);
                 return Ok(()); // Exit to trigger reconnection
             }
