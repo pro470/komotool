@@ -4,21 +4,21 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-bevy_app = {workspace = true}
-bevy_state = {workspace = true}
-bevy_core = {workspace = true}
-bevy_time = {workspace = true}
-komotool_pipe = {path = "crates/komotool_pipe"}
-komotool_lua = {path = "crates/komotool_lua"}
-komotool_komorebic = {path = "crates/komotool_komorebic"}
-komotool_rhai = {path = "crates/komotool_rhai"}
-komotool_utils = {path = "crates/komotool_utils"}
+bevy_app = { workspace = true }
+bevy_state = { workspace = true }
+bevy_core = { workspace = true }
+bevy_time = { workspace = true }
+komotool_pipe = { path = "crates/komotool_pipe" }
+komotool_lua = { path = "crates/komotool_lua" }
+komotool_komorebic = { path = "crates/komotool_komorebic" }
+komotool_rhai = { path = "crates/komotool_rhai" }
+komotool_utils = { path = "crates/komotool_utils" }
 #komotool_windows = {path = "crates/komotool_windows"}
-komotoolc_pipe = {path = "crates/komotoolc_pipe"}
-komotool_ecs = {path = "crates/komotool_ecs"}
-komotool_assets = {path = "crates/komotool_assets"}
-komotool_framepace = {path = "crates/komotool_framepace"}
-bevy_mod_scripting = {workspace = true}
+komotoolc_pipe = { path = "crates/komotoolc_pipe" }
+komotool_ecs = { path = "crates/komotool_ecs" }
+komotool_assets = { path = "crates/komotool_assets" }
+komotool_framepace = { path = "crates/komotool_framepace" }
+bevy_mod_scripting = { workspace = true }
 
 [workspace]
 members = ["crates/*"]
@@ -34,13 +34,13 @@ bevy_state = "0.15.3"
 bevy_core = "0.15.3"
 bevy_time = "0.15.3"
 bevy_asset = { version = "0.15.3", features = ["file_watcher"]}
-anyhow = "1.0"
-serde_json = "1.0"
+anyhow = "1.0.98"
+serde_json = "1.0.140"
 komorebi-client  = { git = "https://github.com/pro470/komorebi", branch = "komotool"}
-log = "0.4"
+log = "0.4.27"
 bevy_mod_scripting = {version = "0.11.1", features = ["lua54", "rhai"]}
-indexmap = "2.8.0"
-crossbeam-channel = "0.5.14"
+indexmap = "2.9.0"
+crossbeam-channel = "0.5.15"
 
 [workspace.metadata.bevy_lint]
 pedantic = "warn"
