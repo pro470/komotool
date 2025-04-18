@@ -112,6 +112,18 @@ pub fn get_or_create_komotool_config_path() -> std::io::Result<PathBuf> {
 
 /// Function to load all scripts from the "scripts" folder
 fn load_scripts(asset_server: Res<AssetServer>, mut commands: Commands) {
+    if let Ok(komotool_config_path) = get_or_create_komotool_config_path() {
+        let path = komotool_config_path.join("scripts");
+        if !path.exists() {
+            match fs::create_dir_all(&path) {
+                Ok(_) => println!("Created directory: {}", path.display()),
+                Err(e) => println!("Failed to create directory: {}", e),
+            };
+        }
+    } else {
+        println!("Failed to get Komotool config path");
+        return;
+    }
     let path = Path::new("scripts");
     let source = bevy_asset::io::AssetSourceId::from("komotool_config");
     let asset_path = bevy_asset::AssetPath::from_path(path).with_source(source);
