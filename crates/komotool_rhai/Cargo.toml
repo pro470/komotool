@@ -4,9 +4,12 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-bevy_state = {workspace = true}
-bevy_ecs = {workspace = true}
-bevy_app = {workspace = true}
-bevy_mod_scripting = {workspace = true}
-komotool_utils = {path = "../komotool_utils"}
-komotool_assets = {path = "../komotool_assets"}
+bevy_state = { workspace = true }
+bevy_ecs = { workspace = true }
+bevy_app = { workspace = true }
+bevy_mod_scripting = { workspace = true }
+komotool_utils = { path = "../komotool_utils" }
+komotool_assets = { path = "../komotool_assets" }
+
+[lints]
+workspace = true

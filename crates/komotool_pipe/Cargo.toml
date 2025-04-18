@@ -12,3 +12,6 @@ serde_json = { workspace = true }
 komorebi-client = { workspace = true }
 log = { workspace = true }
 crossbeam-channel = { workspace = true }
+
+[lints]
+workspace = true

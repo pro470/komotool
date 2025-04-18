@@ -4,8 +4,11 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-bevy_app = {workspace = true}
-bevy_reflect = {workspace = true}
-komorebi-client = {workspace = true}
-bevy_mod_scripting = {workspace = true}
-log = {workspace = true}
+bevy_app = { workspace = true }
+bevy_reflect = { workspace = true }
+komorebi-client = { workspace = true }
+bevy_mod_scripting = { workspace = true }
+log = { workspace = true }
+
+[lints]
+workspace = true

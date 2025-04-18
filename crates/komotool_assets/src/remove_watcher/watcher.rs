@@ -23,7 +23,7 @@ pub fn setup_file_watcher(mut commands: Commands) {
     let (tx, rx) = crossbeam_channel::unbounded();
 
     // Configure the watcher to watch for removal events
-    let mut watcher = RecommendedWatcher::new(
+    let mut watcher = match RecommendedWatcher::new(
         move |res: Result<NotifyEvent, notify::Error>| {
             if let Ok(event) = res {
                 if let EventKind::Remove(_) = event.kind {
@@ -36,16 +36,24 @@ pub fn setup_file_watcher(mut commands: Commands) {
             }
         },
         Config::default(),
-    )
-    .expect("Failed to create file watcher");
+    ) {
+        Ok(watcher) => watcher,
+        Err(e) => {
+            println!("Failed to create file watcher: {}", e);
+            return;
+        }
+    };
 
     // Watch the target directory RECURSIVELY as requested
-    watcher
-        .watch(
-            &get_or_create_komotool_config_path().unwrap(),
-            RecursiveMode::Recursive,
-        )
-        .expect("Failed to watch directory");
+    if let Ok(komotool_path) = get_or_create_komotool_config_path() {
+        match watcher.watch(&komotool_path, RecursiveMode::Recursive) {
+            Ok(_) => (),
+            Err(e) => {
+                println!("Failed to watch directory: {}", e);
+                return;
+            }
+        }
+    }
 
     // Insert the resource with the watcher and receiver
     commands.insert_resource(FileWatcher {
@@ -55,11 +63,13 @@ pub fn setup_file_watcher(mut commands: Commands) {
 }
 
 pub fn check_file_events(
-    watcher: Res<FileWatcher>,
+    watcher: Option<Res<FileWatcher>>,
     mut removed_events: EventWriter<FileRemovedEvent>,
 ) {
-    // Process all available events without blocking
-    while let Ok(path) = watcher.rx.try_recv() {
-        removed_events.send(FileRemovedEvent { path });
+    if let Some(watcher) = watcher {
+        // Process all available events without blocking
+        while let Ok(path) = watcher.rx.try_recv() {
+            removed_events.send(FileRemovedEvent { path });
+        }
     }
 }

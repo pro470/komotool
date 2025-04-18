@@ -46,8 +46,19 @@ crossbeam-channel = "0.5.14"
 pedantic = "warn"
 missing_reflect = "warn"
 panicking_methods = { level = "forbid" }
-nursery = { level = "warn" }
 
 [profile.release]
 lto = true
 codegen-units = 1
+
+[profile.dev-release]
+inherits = "release" # Inherits all release settings except those we override
+lto = false          # Disable LTO for faster development builds
+codegen-units = 16   # More codegen units for faster compilation
+debug = true
+
+[workspace.lints.clippy]
+panic = "deny"
+unwrap_used = "deny"
+expect_used = "deny"
+todo = "deny"

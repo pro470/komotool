@@ -54,13 +54,12 @@ pub struct KomotoolAssetsPlugin;
 
 impl Plugin for KomotoolAssetsPlugin {
     fn build(&self, app: &mut App) {
-        let komotool_config_path = get_or_create_komotool_config_path()
-            .expect("Failed to set up `.config/Komotool` directory");
-
-        app.register_asset_source(
-            "komotool_config",
-            AssetSourceBuilder::platform_default(&komotool_config_path.to_string_lossy(), None),
-        );
+        if let Ok(komotool_config_path) = get_or_create_komotool_config_path() {
+            app.register_asset_source(
+                "komotool_config",
+                AssetSourceBuilder::platform_default(&komotool_config_path.to_string_lossy(), None),
+            );
+        }
 
         app.add_plugins(AssetPlugin {
             watch_for_changes_override: Some(true),
@@ -89,17 +88,26 @@ impl Plugin for KomotoolAssetsPlugin {
 
 /// Function that retrieves the `.config\Komotool` path and ensures the directory exists.
 pub fn get_or_create_komotool_config_path() -> std::io::Result<PathBuf> {
-    let user_profile =
-        env::var("USERPROFILE").expect("Failed to fetch USERPROFILE environment variable");
+    let user_profile = env::var("USERPROFILE");
+    match user_profile {
+        Ok(usr) => {
+            let komotool_path = Path::new(&usr).join(".config").join("Komotool");
 
-    let komotool_path = Path::new(&user_profile).join(".config").join("Komotool");
+            if !komotool_path.exists() {
+                fs::create_dir_all(&komotool_path)?;
+                println!("Created directory: {}", komotool_path.display());
+            }
 
-    if !komotool_path.exists() {
-        fs::create_dir_all(&komotool_path)?;
-        println!("Created directory: {}", komotool_path.display());
+            Ok(komotool_path)
+        }
+        Err(e) => {
+            let error = format!(
+                "Failed to fetch USERPROFILE environment variable. ValueError: {}",
+                e
+            );
+            Err(std::io::Error::new(std::io::ErrorKind::NotFound, error))
+        }
     }
-
-    Ok(komotool_path)
 }
 
 /// Function to load all scripts from the "scripts" folder
@@ -180,27 +188,27 @@ pub fn handle_script_asset_events(
         }
     }
 
-    let komotool_path = get_or_create_komotool_config_path().unwrap();
-
-    for event in remove_event.read() {
-        if !is_in_script_folder(&event.path, &komotool_path) {
-            continue;
+    if let Ok(komotool_path) = get_or_create_komotool_config_path() {
+        for event in remove_event.read() {
+            if !is_in_script_folder(&event.path, &komotool_path) {
+                continue;
+            }
+            let event_path = create_komotool_asset_path(&event.path);
+            let assetid = asset_server
+                .get_path_id(&event_path)
+                .unwrap_or_else(|| {
+                    println!("Failed to get path ID for file: {}", &event.path);
+                    AssetId::<ScriptAsset>::default().into()
+                })
+                .typed::<ScriptAsset>();
+            // Remove the entity if the script is removed
+            if let Some(entity) = script_mapping.handle_to_entity.remove(&assetid) {
+                println!("Removing script entity: {:?}", entity);
+                commands.entity(entity).despawn();
+                println!("File removed: {}", event_path.path().to_string_lossy());
+            }
         }
-        let event_path = create_komotool_asset_path(&event.path);
-        let assetid = asset_server
-            .get_path_id(&event_path)
-            .unwrap_or_else(|| {
-                println!("Failed to get path ID for file: {}", &event.path);
-                AssetId::<ScriptAsset>::default().into()
-            })
-            .typed::<ScriptAsset>();
-        // Remove the entity if the script is removed
-        if let Some(entity) = script_mapping.handle_to_entity.remove(&assetid) {
-            println!("Removing script entity: {:?}", entity);
-            commands.entity(entity).despawn();
-            println!("File removed: {}", event_path.path().to_string_lossy());
-        }
-    }
+    };
 }
 
 pub fn handle_script_store_updates<P, L>(
@@ -280,16 +288,17 @@ pub fn handle_script_store_updates<P, L>(
     }
 
     // Process file removal events
-    let komotool_path = get_or_create_komotool_config_path().unwrap();
-    for event in remove_events.read() {
-        if !is_in_script_folder(&event.path, &komotool_path) {
-            continue;
-        }
+    if let Ok(komotool_path) = get_or_create_komotool_config_path() {
+        for event in remove_events.read() {
+            if !is_in_script_folder(&event.path, &komotool_path) {
+                continue;
+            }
 
-        let asset_path = create_komotool_asset_path(&event.path);
-        let script_id = ScriptId::from(asset_path.path().to_string_lossy().to_string());
-        script_store.scripts.shift_remove(&script_id);
-    }
+            let asset_path = create_komotool_asset_path(&event.path);
+            let script_id = ScriptId::from(asset_path.path().to_string_lossy().to_string());
+            script_store.scripts.shift_remove(&script_id);
+        }
+    };
 }
 
 pub fn handle_script_store_updates_all_labels<P>(
@@ -408,22 +417,23 @@ pub fn handle_script_store_updates_all_labels<P>(
     }
 
     // Process file removal events
-    let komotool_path = get_or_create_komotool_config_path().unwrap();
-    for event in remove_events.read() {
-        if !is_in_script_folder(&event.path, &komotool_path) {
-            continue;
+    if let Ok(komotool_path) = get_or_create_komotool_config_path() {
+        for event in remove_events.read() {
+            if !is_in_script_folder(&event.path, &komotool_path) {
+                continue;
+            }
+
+            let asset_path = create_komotool_asset_path(&event.path);
+            let script_id = ScriptId::from(asset_path.path().to_string_lossy().to_string());
+
+            // Remove from all stores
+            update.scripts.shift_remove(&script_id);
+            preupdate.scripts.shift_remove(&script_id);
+            postupdate.scripts.shift_remove(&script_id);
+
+            println!("File removed: {}", asset_path.path().to_string_lossy());
         }
-
-        let asset_path = create_komotool_asset_path(&event.path);
-        let script_id = ScriptId::from(asset_path.path().to_string_lossy().to_string());
-
-        // Remove from all stores
-        update.scripts.shift_remove(&script_id);
-        preupdate.scripts.shift_remove(&script_id);
-        postupdate.scripts.shift_remove(&script_id);
-
-        println!("File removed: {}", asset_path.path().to_string_lossy());
-    }
+    };
 }
 
 pub fn is_in_script_folder(file_path: &str, komotool_path: &Path) -> bool {
@@ -555,22 +565,23 @@ pub fn handle_script_store_updates_all(
     }
 
     // Process file removal events
-    let komotool_path = get_or_create_komotool_config_path().unwrap();
-    for event in remove_events.read() {
-        if !is_in_script_folder(&event.path, &komotool_path) {
-            continue;
+    if let Ok(komotool_path) = get_or_create_komotool_config_path() {
+        for event in remove_events.read() {
+            if !is_in_script_folder(&event.path, &komotool_path) {
+                continue;
+            }
+
+            let asset_path = create_komotool_asset_path(&event.path);
+            let script_id = ScriptId::from(asset_path.path().to_string_lossy().to_string());
+
+            // Remove from all stores
+            update.scripts.shift_remove(&script_id);
+            preupdate.scripts.shift_remove(&script_id);
+            postupdate.scripts.shift_remove(&script_id);
+
+            println!("File removed: {}", asset_path.path().to_string_lossy());
         }
-
-        let asset_path = create_komotool_asset_path(&event.path);
-        let script_id = ScriptId::from(asset_path.path().to_string_lossy().to_string());
-
-        // Remove from all stores
-        update.scripts.shift_remove(&script_id);
-        preupdate.scripts.shift_remove(&script_id);
-        postupdate.scripts.shift_remove(&script_id);
-
-        println!("File removed: {}", asset_path.path().to_string_lossy());
-    }
+    };
 }
 
 pub fn create_komotool_asset_path(file_path: &str) -> AssetPath<'static> {
