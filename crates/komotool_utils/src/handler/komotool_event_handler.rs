@@ -71,7 +71,7 @@ unsafe impl<T: Resource + Default + 'static> SystemParam for ResScope<'_, T> {
         _change_tick: Tick,
     ) -> Self::Item<'world, 'state> {
         // Get the resource pointer
-        let mut ptr = unsafe {
+        let resource_ref = if let Some(mut ptr) = unsafe {
             if let Some(item) = world.get_resource_mut::<T>() {
                 Some(item)
             } else {
@@ -80,9 +80,7 @@ unsafe impl<T: Resource + Default + 'static> SystemParam for ResScope<'_, T> {
                 }
                 world.get_resource_mut::<T>()
             }
-        };
-
-        let resource_ref = if let Some(mut ptr) = ptr {
+        } {
             // IMPORTANT: Use the correct approach to get a reference with 'world lifetime
             // This uses unsafe to extend the lifetime, but is safe because we know
             // the resource lives for the 'world lifetime
