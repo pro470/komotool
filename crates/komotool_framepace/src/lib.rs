@@ -119,6 +119,7 @@ pub fn framerate_limiter(
     mut stats: ResMut<FramePaceStats>,
     idle_state: Res<IdleFramePaceState>,
     mut fixedtime: ResMut<Time<Fixed>>,
+    _main_thread_marker: Option<NonSend<NonSendMarker>>,
 ) {
     let now = Instant::now();
 
