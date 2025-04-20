@@ -3773,6 +3773,7 @@ name = "komotool_framepace"
 version = "0.1.0"
 dependencies = [
  "bevy_app",
+ "bevy_core",
  "bevy_ecs",
  "bevy_reflect",
  "bevy_state",
