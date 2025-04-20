@@ -1,7 +1,7 @@
 use crate::{
     GlobalLoadingState, OnPostStartUp, OnPostUpdate, OnPreStartUp, OnPreUpdate, OnStartUp, OnUpdate,
 };
-use bevy_app::{Last, PreUpdate, Update};
+use bevy_app::{FixedLast, FixedPreUpdate, FixedUpdate};
 use bevy_ecs::event::EventWriter;
 use bevy_ecs::schedule::Schedules;
 use bevy_ecs::system::ResMut;
@@ -43,7 +43,7 @@ pub fn send_post_update_events(mut writer: EventWriter<ScriptCallbackEvent>) {
 }
 
 pub fn insert_event_sending_systems(mut schedule: ResMut<Schedules>) {
-    schedule.add_systems(Last, send_pre_update_events);
-    schedule.add_systems(PreUpdate, send_update_events);
-    schedule.add_systems(Update, send_post_update_events);
+    schedule.add_systems(FixedLast, send_pre_update_events);
+    schedule.add_systems(FixedPreUpdate, send_update_events);
+    schedule.add_systems(FixedUpdate, send_post_update_events);
 }

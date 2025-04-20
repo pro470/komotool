@@ -1,10 +1,11 @@
 use bevy_app::{App, Last, Plugin, PreUpdate, Update};
+use bevy_core::NonSendMarker;
 use bevy_ecs::reflect::ReflectResource;
 use bevy_ecs::schedule::{IntoSystemConfigs, Schedules};
-use bevy_ecs::system::{Local, Res, ResMut, Resource};
+use bevy_ecs::system::{Local, NonSend, Res, ResMut, Resource};
 use bevy_reflect::Reflect;
 use bevy_state::condition::in_state;
-use bevy_time::{Time, Timer, TimerMode};
+use bevy_time::{Fixed, Time, Timer, TimerMode};
 use bevy_utils::{Duration, Instant};
 use komotool_utils::GlobalLoadingState;
 use komotool_utils::startup_schedule::UpdateStartup;
@@ -40,6 +41,10 @@ pub struct FramepaceSettings {
     pub idle_limiter: Limiter,
     /// The duration of inactivity before switching to the idle limiter.
     pub idle_threshold: Duration,
+    /// Fixed time limiter
+    pub fixed_time_limiter: Duration,
+    /// Fixed time idle limiter
+    pub fixed_time_idle_limiter: Duration,
 }
 
 impl Default for FramepaceSettings {
@@ -47,9 +52,13 @@ impl Default for FramepaceSettings {
         Self {
             limiter: Limiter::Manual(Duration::from_secs_f64(1.0 / 60.0)),
             // Default idle limiter to 4 FPS
-            idle_limiter: Limiter::from_framerate(4.0),
-            // Default idle threshold to 66 seconds
+            idle_limiter: Limiter::from_framerate(30.0),
+            // Default idle threshold to 60 seconds
             idle_threshold: Duration::from_secs(60),
+            // Fixed time limiters
+            fixed_time_limiter: Duration::from_secs_f64(1.0 / 30.0),
+            // Fixed time idle limiters
+            fixed_time_idle_limiter: Duration::from_secs_f64(1.0 / 4.0),
         }
     }
 }
@@ -109,6 +118,7 @@ pub fn framerate_limiter(
     settings: Res<FramepaceSettings>,
     mut stats: ResMut<FramePaceStats>,
     idle_state: Res<IdleFramePaceState>,
+    mut fixedtime: ResMut<Time<Fixed>>,
 ) {
     let now = Instant::now();
 
@@ -117,13 +127,28 @@ pub fn framerate_limiter(
 
         // Determine which limiter to use
         let time_since_last_activity = now.duration_since(idle_state.last_activity);
-        let active_limiter = if time_since_last_activity > settings.idle_threshold {
+        let is_idle = time_since_last_activity > settings.idle_threshold;
+
+        // Calculate the target timestep based on current state
+        let target_timestep = if is_idle {
+            settings.fixed_time_idle_limiter
+        } else {
+            settings.fixed_time_limiter
+        };
+
+        // Only update the timestep if it's different from the current one
+        if fixedtime.timestep() != target_timestep {
+            fixedtime.set_timestep(target_timestep);
+        }
+
+        // Select the appropriate limiter for frame pacing
+        let active_limiter = if is_idle {
             &settings.idle_limiter
         } else {
             &settings.limiter
         };
 
-        // Use the selected limiter
+        // Apply frame limiting
         if let Limiter::Manual(target_duration) = active_limiter {
             if let Some(sleep_duration) = target_duration.checked_sub(frame_time) {
                 spin_sleep::sleep(sleep_duration);
@@ -133,7 +158,6 @@ pub fn framerate_limiter(
         stats.frametime = frame_time;
         stats.oversleep = now.elapsed().saturating_sub(frame_time);
     }
-
     timer.last_frame = Some(Instant::now());
 }
 
