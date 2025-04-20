@@ -23,7 +23,7 @@ use bevy_state::state::{NextState, OnEnter, OnExit, States};
 use komotool_utils::handler::{KomoToolScriptStore, KomoToolScriptStoreAll, ScriptFunctionChecker};
 use komotool_utils::prelude::*;
 use komotool_utils::startup_schedule::PreUpdateStartup;
-pub use remove_watcher::{FileRemovedEvent, check_file_events, setup_file_watcher};
+pub use remove_watcher::{check_file_events, setup_file_watcher};
 use std::{
     collections::HashMap,
     env, fs,
@@ -68,7 +68,6 @@ impl Plugin for KomotoolAssetsPlugin {
 
         // Add general script loading functionality
         app.init_state::<ScriptLoadState>()
-            .add_event::<FileRemovedEvent>()
             .init_resource::<ScriptEntityMapping>()
             .add_systems(OnEnter(ScriptLoadState::Loading), increment_loading_counter)
             .add_systems(OnExit(ScriptLoadState::Loading), decrement_loading_counter)
@@ -153,7 +152,6 @@ pub fn check_scripts_loaded(
 /// System to handle hot-reloading of script assets
 pub fn handle_script_asset_events(
     mut events: EventReader<AssetEvent<ScriptAsset>>,
-    mut remove_event: EventReader<FileRemovedEvent>,
     asset_server: Res<AssetServer>,
     mut commands: Commands,
     mut script_mapping: ResMut<ScriptEntityMapping>,
@@ -199,33 +197,10 @@ pub fn handle_script_asset_events(
             _ => {}
         }
     }
-
-    if let Ok(komotool_path) = get_or_create_komotool_config_path() {
-        for event in remove_event.read() {
-            if !is_in_script_folder(&event.path, &komotool_path) {
-                continue;
-            }
-            let event_path = create_komotool_asset_path(&event.path);
-            let assetid = asset_server
-                .get_path_id(&event_path)
-                .unwrap_or_else(|| {
-                    println!("Failed to get path ID for file: {}", &event.path);
-                    AssetId::<ScriptAsset>::default().into()
-                })
-                .typed::<ScriptAsset>();
-            // Remove the entity if the script is removed
-            if let Some(entity) = script_mapping.handle_to_entity.remove(&assetid) {
-                println!("Removing script entity: {:?}", entity);
-                commands.entity(entity).despawn();
-                println!("File removed: {}", event_path.path().to_string_lossy());
-            }
-        }
-    };
 }
 
 pub fn handle_script_store_updates<P, L>(
     mut events: EventReader<AssetEvent<ScriptAsset>>,
-    mut remove_events: EventReader<FileRemovedEvent>,
     asset_server: Res<AssetServer>,
     assets: Res<Assets<ScriptAsset>>,
     metadata_store: Res<ScriptMetadataStore>,
@@ -298,24 +273,10 @@ pub fn handle_script_store_updates<P, L>(
             _ => {}
         }
     }
-
-    // Process file removal events
-    if let Ok(komotool_path) = get_or_create_komotool_config_path() {
-        for event in remove_events.read() {
-            if !is_in_script_folder(&event.path, &komotool_path) {
-                continue;
-            }
-
-            let asset_path = create_komotool_asset_path(&event.path);
-            let script_id = ScriptId::from(asset_path.path().to_string_lossy().to_string());
-            script_store.scripts.shift_remove(&script_id);
-        }
-    };
 }
 
 pub fn handle_script_store_updates_all_labels<P>(
     mut events: EventReader<AssetEvent<ScriptAsset>>,
-    mut remove_events: EventReader<FileRemovedEvent>,
     asset_server: Res<AssetServer>,
     assets: Res<Assets<ScriptAsset>>,
     metadata_store: Res<ScriptMetadataStore>,
@@ -427,25 +388,6 @@ pub fn handle_script_store_updates_all_labels<P>(
             _ => {}
         }
     }
-
-    // Process file removal events
-    if let Ok(komotool_path) = get_or_create_komotool_config_path() {
-        for event in remove_events.read() {
-            if !is_in_script_folder(&event.path, &komotool_path) {
-                continue;
-            }
-
-            let asset_path = create_komotool_asset_path(&event.path);
-            let script_id = ScriptId::from(asset_path.path().to_string_lossy().to_string());
-
-            // Remove from all stores
-            update.scripts.shift_remove(&script_id);
-            preupdate.scripts.shift_remove(&script_id);
-            postupdate.scripts.shift_remove(&script_id);
-
-            println!("File removed: {}", asset_path.path().to_string_lossy());
-        }
-    };
 }
 
 pub fn is_in_script_folder(file_path: &str, komotool_path: &Path) -> bool {
@@ -463,7 +405,6 @@ pub fn is_in_script_folder(file_path: &str, komotool_path: &Path) -> bool {
 
 pub fn handle_script_store_updates_all(
     mut events: EventReader<AssetEvent<ScriptAsset>>,
-    mut remove_events: EventReader<FileRemovedEvent>,
     assets: Res<Assets<ScriptAsset>>,
     asset_server: Res<AssetServer>,
     metadata_store: Res<ScriptMetadataStore>,
@@ -575,25 +516,6 @@ pub fn handle_script_store_updates_all(
             _ => {}
         }
     }
-
-    // Process file removal events
-    if let Ok(komotool_path) = get_or_create_komotool_config_path() {
-        for event in remove_events.read() {
-            if !is_in_script_folder(&event.path, &komotool_path) {
-                continue;
-            }
-
-            let asset_path = create_komotool_asset_path(&event.path);
-            let script_id = ScriptId::from(asset_path.path().to_string_lossy().to_string());
-
-            // Remove from all stores
-            update.scripts.shift_remove(&script_id);
-            preupdate.scripts.shift_remove(&script_id);
-            postupdate.scripts.shift_remove(&script_id);
-
-            println!("File removed: {}", asset_path.path().to_string_lossy());
-        }
-    };
 }
 
 pub fn create_komotool_asset_path(file_path: &str) -> AssetPath<'static> {

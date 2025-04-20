@@ -1,15 +1,11 @@
 use super::super::get_or_create_komotool_config_path;
-use bevy_ecs::event::{Event, EventWriter};
+use crate::create_komotool_asset_path;
+use bevy_asset::{AssetEvent, AssetServer};
+use bevy_ecs::event::EventWriter;
 use bevy_ecs::system::{Commands, Res, Resource};
-use bevy_reflect::Reflect;
+use bevy_mod_scripting::core::asset::{Language, ScriptAsset, ScriptAssetSettings};
 use crossbeam_channel::Receiver;
 use notify::{Config, Event as NotifyEvent, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
-
-// Event emitted when a file is removed
-#[derive(Event, Reflect)]
-pub struct FileRemovedEvent {
-    pub path: String,
-}
 
 // Resource to hold the file watcher and event receiver
 #[derive(Resource)]
@@ -64,12 +60,31 @@ pub fn setup_file_watcher(mut commands: Commands) {
 
 pub fn check_file_events(
     watcher: Option<Res<FileWatcher>>,
-    mut removed_events: EventWriter<FileRemovedEvent>,
+    mut event: EventWriter<AssetEvent<ScriptAsset>>,
+    asset_server: Res<AssetServer>,
+    settings: Res<ScriptAssetSettings>,
 ) {
     if let Some(watcher) = watcher {
         // Process all available events without blocking
         while let Ok(path) = watcher.rx.try_recv() {
-            removed_events.send(FileRemovedEvent { path });
+            let asset_path = create_komotool_asset_path(&path);
+
+            if let Some(id) = asset_server.get_path_id(&asset_path) {
+                match settings.select_script_language(&asset_path) {
+                    Language::Lua | Language::Rhai => {
+                        let typed_id = id.try_typed::<ScriptAsset>();
+                        match typed_id {
+                            Ok(typed) => {
+                                event.send(AssetEvent::Removed { id: typed });
+                            }
+                            Err(e) => {
+                                println!("Failed to get typed id: {}", e);
+                            }
+                        }
+                    }
+                    _ => (),
+                }
+            }
         }
     }
 }
