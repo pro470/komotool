@@ -25,7 +25,9 @@ use bevy_reflect::Reflect;
 use bevy_state::app::AppExtStates;
 use bevy_state::condition::in_state;
 use bevy_state::state::{NextState, OnEnter, OnExit, States};
+use komotool_utils::callbacklabels::{OnPostUpdate, OnPreUpdate, OnUpdate};
 use komotool_utils::handler::{KomoToolScriptStore, KomoToolScriptStoreAll, ScriptFunctionChecker};
+use komotool_utils::loading_systems::{decrement_loading_counter, increment_loading_counter};
 use komotool_utils::startup_schedule::PreUpdateStartup;
 use remove_watcher::{check_file_events, setup_file_watcher};
 use std::{
@@ -33,8 +35,6 @@ use std::{
     env, fs,
     path::{Path, PathBuf},
 };
-use komotool_utils::callbacklabels::{OnPostUpdate, OnPreUpdate, OnUpdate};
-use komotool_utils::loading_systems::{decrement_loading_counter, increment_loading_counter};
 
 #[derive(States, Default, Debug, Clone, Eq, PartialEq, Hash)]
 pub enum ScriptLoadState {

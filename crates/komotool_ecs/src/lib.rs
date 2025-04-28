@@ -6,12 +6,11 @@ pub mod systems;
 
 pub mod prelude {
     pub use super::*;
-    pub use register_komorebi_types::*;
     pub use components::*;
+    pub use register_komorebi_types::*;
     pub use relations::*;
     pub use resources::*;
     pub use systems::*;
-
 }
 
 use bevy_app::{App, First, Last, Plugin};

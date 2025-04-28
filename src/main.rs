@@ -1,8 +1,8 @@
 use bevy_app::{App, AppExit, ScheduleRunnerPlugin};
 use bevy_core::{FrameCountPlugin, TaskPoolPlugin, TypeRegistrationPlugin};
 use bevy_mod_scripting::ScriptFunctionsPlugin;
-use bevy_mod_scripting::core::bindings::{AllocatorDiagnosticPlugin, CoreScriptGlobalsPlugin};
 use bevy_mod_scripting::core::BMSScriptingInfrastructurePlugin;
+use bevy_mod_scripting::core::bindings::{AllocatorDiagnosticPlugin, CoreScriptGlobalsPlugin};
 use bevy_state::app::StatesPlugin;
 use bevy_time::TimePlugin;
 use komotool_assets::KomotoolAssetsPlugin;
@@ -35,8 +35,8 @@ fn main() -> AppExit {
         .add_plugins(ScriptFunctionsPlugin)
         .add_plugins(CoreScriptGlobalsPlugin::default())
         .add_plugins(BMSScriptingInfrastructurePlugin)
+        .add_plugins(KomoToolKomorebicPlugin)
         .add_plugins(KomoToolLuaPlugin)
         .add_plugins(KomoToolRhaiPlugin)
-        .add_plugins(KomoToolKomorebicPlugin)
         .run()
 }
