@@ -1168,7 +1168,9 @@ version = "0.15.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "028630ddc355563bd567df1076db3515858aa26715ddf7467d2086f9b40e5ab1"
 dependencies = [
+ "async-channel",
  "async-executor",
+ "concurrent-queue",
  "futures-channel",
  "futures-lite",
  "pin-project",
