@@ -1,4 +1,9 @@
-mod remove_watcher;
+pub mod remove_watcher;
+
+pub mod prelude {
+    pub use super::*;
+    pub use remove_watcher::*;
+}
 
 use bevy_app::{App, Plugin, PreStartup, PreUpdate, Startup};
 use bevy_asset::{
@@ -21,14 +26,15 @@ use bevy_state::app::AppExtStates;
 use bevy_state::condition::in_state;
 use bevy_state::state::{NextState, OnEnter, OnExit, States};
 use komotool_utils::handler::{KomoToolScriptStore, KomoToolScriptStoreAll, ScriptFunctionChecker};
-use komotool_utils::prelude::*;
 use komotool_utils::startup_schedule::PreUpdateStartup;
-pub use remove_watcher::{check_file_events, setup_file_watcher};
+use remove_watcher::{check_file_events, setup_file_watcher};
 use std::{
     collections::HashMap,
     env, fs,
     path::{Path, PathBuf},
 };
+use komotool_utils::callbacklabels::{OnPostUpdate, OnPreUpdate, OnUpdate};
+use komotool_utils::loading_systems::{decrement_loading_counter, increment_loading_counter};
 
 #[derive(States, Default, Debug, Clone, Eq, PartialEq, Hash)]
 pub enum ScriptLoadState {
@@ -50,6 +56,7 @@ pub struct ScriptEntityMapping {
 
 /// The KomotoolAssetsPlugin, which registers `.config\Komotool`
 /// as a custom asset source and ensures the `AssetPlugin` is added afterward.
+#[derive(Default)]
 pub struct KomotoolAssetsPlugin;
 
 impl Plugin for KomotoolAssetsPlugin {
@@ -110,7 +117,7 @@ pub fn get_or_create_komotool_config_path() -> std::io::Result<PathBuf> {
 }
 
 /// Function to load all scripts from the "scripts" folder
-fn load_scripts(asset_server: Res<AssetServer>, mut commands: Commands) {
+pub fn load_scripts(asset_server: Res<AssetServer>, mut commands: Commands) {
     if let Ok(komotool_config_path) = get_or_create_komotool_config_path() {
         let path = komotool_config_path.join("scripts");
         if !path.exists() {

@@ -6,6 +6,7 @@ use komorebi_client::*;
 #[derive(Reflect)]
 struct Komorebic;
 
+#[derive(Default)]
 pub struct KomoToolKomorebicPlugin;
 
 impl Plugin for KomoToolKomorebicPlugin {

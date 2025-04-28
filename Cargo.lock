@@ -3283,7 +3283,7 @@ checksum = "e2db585e1d738fc771bf08a151420d3ed193d9d895a36df7f6f8a9456b911ddc"
 [[package]]
 name = "komorebi"
 version = "0.1.35"
-source = "git+https://github.com/pro470/komorebi?branch=komotool#8062b1043ef69162d617e5b9d7ce0fa1cbb4a117"
+source = "git+https://github.com/pro470/komorebi?rev=8062b10#8062b1043ef69162d617e5b9d7ce0fa1cbb4a117"
 dependencies = [
  "bevy_asset",
  "bevy_ecs",
@@ -3333,7 +3333,7 @@ dependencies = [
 [[package]]
 name = "komorebi-client"
 version = "0.1.35"
-source = "git+https://github.com/pro470/komorebi?branch=komotool#8062b1043ef69162d617e5b9d7ce0fa1cbb4a117"
+source = "git+https://github.com/pro470/komorebi?rev=8062b10#8062b1043ef69162d617e5b9d7ce0fa1cbb4a117"
 dependencies = [
  "komorebi",
  "serde_json_lenient",
@@ -3343,7 +3343,7 @@ dependencies = [
 [[package]]
 name = "komorebi-themes"
 version = "0.1.35"
-source = "git+https://github.com/pro470/komorebi?branch=komotool#8062b1043ef69162d617e5b9d7ce0fa1cbb4a117"
+source = "git+https://github.com/pro470/komorebi?rev=8062b10#8062b1043ef69162d617e5b9d7ce0fa1cbb4a117"
 dependencies = [
  "base16-egui-themes",
  "bevy_ecs",
@@ -3448,6 +3448,17 @@ name = "komotool_lib"
 version = "0.1.0"
 dependencies = [
  "bevy_app",
+ "bevy_mod_scripting",
+ "komorebi-client",
+ "komotool_assets",
+ "komotool_ecs",
+ "komotool_framepace",
+ "komotool_komorebic",
+ "komotool_lua",
+ "komotool_pipe",
+ "komotool_rhai",
+ "komotool_utils",
+ "komotoolc_pipe",
 ]
 
 [[package]]

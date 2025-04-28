@@ -1,8 +1,10 @@
+use bevy_ecs::query::With;
+use bevy_ecs::system::{Query, Res};
+use bevy_ecs::world::World;
 use crate::KomorebiState;
 use crate::components::{FloatingWindow, Focused, MaximizedWindow, MonocleContainer};
 use crate::relations::registry::RelationRegistry;
 use crate::resources::{AppState, KomotoolState};
-use bevy_ecs::prelude::*;
 use komorebi_client::{
     Container, Monitor, Ring, SocketMessage, State, Window, Workspace, send_message,
 };

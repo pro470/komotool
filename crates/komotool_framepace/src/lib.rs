@@ -7,7 +7,7 @@ use bevy_reflect::Reflect;
 use bevy_state::condition::in_state;
 use bevy_time::{Fixed, Time, Timer, TimerMode};
 use bevy_utils::{Duration, Instant};
-use komotool_utils::GlobalLoadingState;
+use komotool_utils::loading_systems::loading::GlobalLoadingState;
 use komotool_utils::startup_schedule::UpdateStartup;
 
 /// Adds framepacing and framelimiting functionality to your [`App`]

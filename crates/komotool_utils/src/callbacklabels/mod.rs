@@ -1,3 +1,3 @@
-mod callbacklabels;
+pub mod callbacklabel;
 
-pub use callbacklabels::*;
+pub use callbacklabel::*;

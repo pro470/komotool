@@ -4,10 +4,14 @@ use bevy_ecs::system::Commands;
 use bevy_mod_scripting::lua::LuaScriptingPlugin;
 use bevy_state::condition::in_state;
 use komotool_assets::{check_scripts_loaded, handle_script_store_updates};
+use komotool_utils::callbacklabels::{OnPostStartUp, OnPreStartUp, OnStartUp};
 use komotool_utils::handler::{KomoToolScriptStore, komotool_event_handler};
 use komotool_utils::startup_schedule::{PostUpdateStartup, PreUpdateStartup, UpdateStartup};
-use komotool_utils::{prelude::*, send_event_systems::*};
+use komotool_utils::loading_systems::GlobalLoadingState;
+use komotool_utils::send_event_systems::{advance_to_all_done, send_post_startup_events, send_pre_startup_events, send_startup_events};
 
+/// Adds Lua Scripting functionality to your [`App`]
+#[derive(Default)]
 pub struct KomoToolLuaPlugin;
 
 impl Plugin for KomoToolLuaPlugin {

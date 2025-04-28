@@ -1,9 +1,17 @@
-mod callbacklabels;
+pub mod callbacklabels;
 pub mod handler;
-mod loading_systems;
-pub mod prelude;
+pub mod loading_systems;
 pub mod send_event_systems;
 pub mod startup_schedule;
+
+pub mod prelude {
+    pub use super::*;
+    pub use callbacklabels::*;
+    pub use handler::*;
+    pub use loading_systems::*;
+    pub use send_event_systems::*;
+    pub use startup_schedule::*;
+}
 
 use bevy_app::{App, Last, MainScheduleOrder, Plugin, PostUpdate};
 use bevy_ecs::prelude::{not, resource_added, resource_changed};
@@ -12,12 +20,12 @@ use bevy_state::app::AppExtStates;
 use bevy_state::condition::in_state;
 use handler::KomoToolScriptStoreAll;
 use handler::insert_komotool_handlers;
-pub use loading_systems::*;
-pub use prelude::*;
-use send_event_systems::*;
+use loading_systems::*;
+use prelude::*;
 use startup_schedule::configure_single_threaded_schedules;
 use startup_schedule::{PostUpdateStartup, PreUpdateStartup, UpdateStartup};
 
+#[derive(Default)]
 pub struct KomoToolUtilsPlugin;
 
 impl Plugin for KomoToolUtilsPlugin {

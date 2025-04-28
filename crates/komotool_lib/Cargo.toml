@@ -1,0 +1,23 @@
+[package]
+name = "komotool_lib"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bevy_app = { workspace = true }
+komotool_pipe = { path = "../komotool_pipe" }
+komotool_lua = { path = "../komotool_lua" }
+komotool_komorebic = { path = "../komotool_komorebic" }
+komotool_rhai = { path = "../komotool_rhai" }
+komotool_utils = { path = "../komotool_utils" }
+#komotool_windows = {path = "../komotool_windows"}
+komotoolc_pipe = { path = "../komotoolc_pipe" }
+komotool_ecs = { path = "../komotool_ecs" }
+komotool_assets = { path = "../komotool_assets" }
+komotool_framepace = { path = "../komotool_framepace" }
+bevy_mod_scripting = { workspace = true }
+komorebi-client = {workspace = true}
+
+
+[lints]
+workspace = true

@@ -11,6 +11,7 @@ use std::io::{BufReader, Read};
 use std::thread;
 use std::time::Duration;
 
+#[derive(Default)]
 pub struct KomoToolPipePlugin;
 
 #[derive(Event, Reflect)]
@@ -42,7 +43,7 @@ impl Plugin for KomoToolPipePlugin {
     }
 }
 
-fn run_pipe_listener(sender: &Sender<Notification>) -> Result<()> {
+pub fn run_pipe_listener(sender: &Sender<Notification>) -> Result<()> {
     const NAME: &str = "komotool";
 
     println!("Connecting to named pipe: {}", NAME);
