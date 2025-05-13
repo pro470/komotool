@@ -10,15 +10,15 @@ use bevy_state::state::NextState;
 
 // Startup events
 pub fn send_pre_startup_events(mut writer: EventWriter<ScriptCallbackEvent>) {
-    writer.send(ScriptCallbackEvent::new_for_all(OnPreStartUp, vec![]));
+    writer.write(ScriptCallbackEvent::new_for_all(OnPreStartUp, vec![]));
 }
 
 pub fn send_startup_events(mut writer: EventWriter<ScriptCallbackEvent>) {
-    writer.send(ScriptCallbackEvent::new_for_all(OnStartUp, vec![]));
+    writer.write(ScriptCallbackEvent::new_for_all(OnStartUp, vec![]));
 }
 
 pub fn send_post_startup_events(mut writer: EventWriter<ScriptCallbackEvent>) {
-    writer.send(ScriptCallbackEvent::new_for_all(OnPostStartUp, vec![]));
+    writer.write(ScriptCallbackEvent::new_for_all(OnPostStartUp, vec![]));
 }
 
 pub fn advance_to_clean_up_done(mut next_state: ResMut<NextState<GlobalLoadingState>>) {
@@ -31,15 +31,15 @@ pub fn advance_to_all_done(mut next_state: ResMut<NextState<GlobalLoadingState>>
 
 // Per-frame events
 pub fn send_pre_update_events(mut writer: EventWriter<ScriptCallbackEvent>) {
-    writer.send(ScriptCallbackEvent::new_for_all(OnPreUpdate, vec![]));
+    writer.write(ScriptCallbackEvent::new_for_all(OnPreUpdate, vec![]));
 }
 
 pub fn send_update_events(mut writer: EventWriter<ScriptCallbackEvent>) {
-    writer.send(ScriptCallbackEvent::new_for_all(OnUpdate, vec![]));
+    writer.write(ScriptCallbackEvent::new_for_all(OnUpdate, vec![]));
 }
 
 pub fn send_post_update_events(mut writer: EventWriter<ScriptCallbackEvent>) {
-    writer.send(ScriptCallbackEvent::new_for_all(OnPostUpdate, vec![]));
+    writer.write(ScriptCallbackEvent::new_for_all(OnPostUpdate, vec![]));
 }
 
 pub fn insert_event_sending_systems(mut schedule: ResMut<Schedules>) {

@@ -1,6 +1,6 @@
 use bevy_ecs::component::ComponentId;
 use bevy_ecs::entity::Entity;
-use bevy_ecs::system::Resource;
+use bevy_ecs::resource::Resource;
 use bevy_reflect::Reflect;
 use komorebi_client::{
     FocusFollowsMouseImplementation, MoveBehaviour, OperationBehaviour, Rect, StaticConfig,

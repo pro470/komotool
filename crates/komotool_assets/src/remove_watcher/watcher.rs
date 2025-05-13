@@ -2,7 +2,8 @@ use super::super::get_or_create_komotool_config_path;
 use crate::create_komotool_asset_path;
 use bevy_asset::{AssetEvent, AssetServer};
 use bevy_ecs::event::EventWriter;
-use bevy_ecs::system::{Commands, Res, Resource};
+use bevy_ecs::resource::Resource;
+use bevy_ecs::system::{Commands, Res};
 use bevy_mod_scripting::core::asset::{Language, ScriptAsset, ScriptAssetSettings};
 use crossbeam_channel::Receiver;
 use notify::{Config, Event as NotifyEvent, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
@@ -75,7 +76,7 @@ pub fn check_file_events(
                         let typed_id = id.try_typed::<ScriptAsset>();
                         match typed_id {
                             Ok(typed) => {
-                                event.send(AssetEvent::Removed { id: typed });
+                                event.write(AssetEvent::Removed { id: typed });
                             }
                             Err(e) => {
                                 println!("Failed to get typed id: {}", e);

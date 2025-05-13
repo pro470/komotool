@@ -10,7 +10,7 @@ bevy_app = { workspace = true }
 bevy_ecs = { workspace = true }
 bevy_state = { workspace = true }
 bevy_reflect = { workspace = true }
-bevy_log = "0.15.3"
+bevy_log = "0.16.0"
 indexmap = { workspace = true }
 full_moon = "2.0.0"
 profiling = "1.0.16"

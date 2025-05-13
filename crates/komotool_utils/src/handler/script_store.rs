@@ -1,5 +1,5 @@
 use super::ScriptFunctionChecker;
-use bevy_ecs::system::Resource;
+use bevy_ecs::resource::Resource;
 use bevy_mod_scripting::core::IntoScriptPluginParams;
 use bevy_mod_scripting::core::event::IntoCallbackLabel;
 use bevy_mod_scripting::core::script::ScriptId;

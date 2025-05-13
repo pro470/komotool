@@ -1,5 +1,5 @@
 use bevy_ecs::entity::Entity;
-use bevy_ecs::system::Resource;
+use bevy_ecs::resource::Resource;
 use bevy_reflect::Reflect;
 use indexmap::IndexSet;
 use std::borrow::Borrow;

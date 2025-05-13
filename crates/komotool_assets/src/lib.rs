@@ -13,8 +13,9 @@ use bevy_asset::{
 };
 use bevy_ecs::entity::Entity;
 use bevy_ecs::event::EventReader;
-use bevy_ecs::schedule::IntoSystemConfigs;
-use bevy_ecs::system::{Commands, Res, ResMut, Resource};
+use bevy_ecs::resource::Resource;
+use bevy_ecs::schedule::IntoScheduleConfigs;
+use bevy_ecs::system::{Commands, Res, ResMut};
 use bevy_mod_scripting::core::asset::{Language, ScriptAsset, ScriptMetadataStore};
 use bevy_mod_scripting::core::event::IntoCallbackLabel;
 use bevy_mod_scripting::core::script::{ScriptComponent, ScriptId};

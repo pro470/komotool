@@ -1,7 +1,8 @@
 use crate::{PostUpdateStartup, PreUpdateStartup, UpdateStartup};
 use bevy_ecs::change_detection::DetectChanges;
+use bevy_ecs::resource::Resource;
 use bevy_ecs::schedule::Schedules;
-use bevy_ecs::system::{Res, ResMut, Resource};
+use bevy_ecs::system::{Res, ResMut};
 use bevy_reflect::Reflect;
 use bevy_state::state::{NextState, State, States};
 

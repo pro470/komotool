@@ -1,5 +1,6 @@
+use bevy_app::TaskPoolPlugin;
 use bevy_app::{App, AppExit, ScheduleRunnerPlugin};
-use bevy_core::{FrameCountPlugin, TaskPoolPlugin, TypeRegistrationPlugin};
+use bevy_diagnostic::FrameCountPlugin;
 use bevy_mod_scripting::ScriptFunctionsPlugin;
 use bevy_mod_scripting::core::BMSScriptingInfrastructurePlugin;
 use bevy_mod_scripting::core::bindings::{AllocatorDiagnosticPlugin, CoreScriptGlobalsPlugin};
@@ -20,7 +21,6 @@ fn main() -> AppExit {
     App::new()
         .add_plugins(StatesPlugin)
         .add_plugins(TaskPoolPlugin::default())
-        .add_plugins(TypeRegistrationPlugin)
         .add_plugins(FrameCountPlugin)
         .add_plugins(TimePlugin)
         .add_plugins(ScheduleRunnerPlugin::default())

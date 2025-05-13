@@ -1,7 +1,7 @@
 use crate::resources::KomorebiState;
 use bevy_ecs::event::EventReader;
 use bevy_ecs::system::ResMut;
-use bevy_utils::Instant;
+use bevy_platform::time::Instant;
 use komotool_framepace::IdleFramePaceState;
 use komotool_pipe::PipeNotificationEvent;
 

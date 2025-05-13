@@ -113,7 +113,7 @@ pub fn import_komorebi_workspace_state(
                                 true // Keep in map
                             }
                             QueryEntityError::QueryDoesNotMatch(_, _)
-                            | QueryEntityError::NoSuchEntity(_) => {
+                            | QueryEntityError::EntityDoesNotExist(_) => {
                                 // Entity doesn't exist or lacks component, despite being in KeepAlive.
                                 // Clean up KeepAlive entry and remove from map.
                                 keep_alive_workspaces.0.remove(entity);
@@ -212,7 +212,7 @@ pub fn import_komorebi_monitor_state(
                                 true // Keep in map
                             }
                             QueryEntityError::QueryDoesNotMatch(_, _)
-                            | QueryEntityError::NoSuchEntity(_) => {
+                            | QueryEntityError::EntityDoesNotExist(_) => {
                                 // Entity doesn't exist or lacks component, despite being in KeepAlive.
                                 // Clean up KeepAlive entry and remove from map.
                                 keep_alive_monitors.0.remove(entity);
@@ -404,7 +404,7 @@ pub fn import_komorebi_window_state(
                             true // Keep in map
                         }
                         QueryEntityError::QueryDoesNotMatch(_, _)
-                        | QueryEntityError::NoSuchEntity(_) => {
+                        | QueryEntityError::EntityDoesNotExist(_) => {
                             // Entity doesn't have the component or doesn't exist. Despawn.
                             commands.entity(*entity).despawn();
                             false // Remove from map
@@ -562,7 +562,7 @@ pub fn import_komorebi_container_state(
                                 true // Keep in map
                             }
                             QueryEntityError::QueryDoesNotMatch(_, _)
-                            | QueryEntityError::NoSuchEntity(_) => {
+                            | QueryEntityError::EntityDoesNotExist(_) => {
                                 // Entity doesn't exist or lacks component, despite being in KeepAlive.
                                 // Clean up KeepAlive entry and remove from map.
                                 keep_alive_containers.0.remove(entity);

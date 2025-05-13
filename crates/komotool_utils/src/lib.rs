@@ -15,7 +15,7 @@ pub mod prelude {
 
 use bevy_app::{App, Last, MainScheduleOrder, Plugin, PostUpdate};
 use bevy_ecs::prelude::{not, resource_added, resource_changed};
-use bevy_ecs::schedule::{Condition, IntoSystemConfigs, Schedule};
+use bevy_ecs::schedule::{Condition, IntoScheduleConfigs, Schedule};
 use bevy_state::app::AppExtStates;
 use bevy_state::condition::in_state;
 use handler::KomoToolScriptStoreAll;

@@ -8,10 +8,10 @@ bevy_ecs = { workspace = true }
 bevy_app = { workspace = true }
 bevy_state = { workspace = true }
 bevy_time = { workspace = true }
-bevy_core = { workspace = true }
+bevy_platform = { workspace = true }
 komotool_utils = { path = "../komotool_utils" }
 bevy_reflect = { workspace = true }
-bevy_utils = "0.15.2"
+bevy_utils = "0.16.0"
 spin_sleep = "1.3.0"
 
 [lints]

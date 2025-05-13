@@ -1,5 +1,5 @@
 use bevy_app::{App, Plugin};
-use bevy_ecs::schedule::IntoSystemConfigs;
+use bevy_ecs::schedule::IntoScheduleConfigs;
 use bevy_ecs::system::Commands;
 use bevy_mod_scripting::rhai::RhaiScriptingPlugin;
 use bevy_state::condition::in_state;

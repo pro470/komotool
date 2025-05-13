@@ -122,6 +122,6 @@ pub fn handle_pipe_notifications(
     mut events: EventWriter<PipeNotificationEvent>,
 ) {
     for notification in receiver.try_iter() {
-        events.send(PipeNotificationEvent { notification });
+        events.write(PipeNotificationEvent { notification });
     }
 }

@@ -15,7 +15,7 @@ pub mod prelude {
 
 use bevy_app::{App, First, Last, Plugin};
 use bevy_ecs::prelude::resource_changed;
-use bevy_ecs::schedule::IntoSystemConfigs;
+use bevy_ecs::schedule::IntoScheduleConfigs;
 use components::*;
 use komorebi_client::{Container, Monitor, Window, Workspace};
 use register_komorebi_types::register_komorebi_types;

@@ -1,12 +1,14 @@
+use bevy_app::NonSendMarker;
 use bevy_app::{App, Last, Plugin, PreUpdate, Update};
-use bevy_core::NonSendMarker;
 use bevy_ecs::reflect::ReflectResource;
-use bevy_ecs::schedule::{IntoSystemConfigs, Schedules};
-use bevy_ecs::system::{Local, NonSend, Res, ResMut, Resource};
+use bevy_ecs::resource::Resource;
+use bevy_ecs::schedule::{IntoScheduleConfigs, Schedules};
+use bevy_ecs::system::{Local, NonSend, Res, ResMut};
+use bevy_platform::time::Instant;
 use bevy_reflect::Reflect;
 use bevy_state::condition::in_state;
 use bevy_time::{Fixed, Time, Timer, TimerMode};
-use bevy_utils::{Duration, Instant};
+use core::time::Duration;
 use komotool_utils::loading_systems::loading::GlobalLoadingState;
 use komotool_utils::startup_schedule::UpdateStartup;
 
