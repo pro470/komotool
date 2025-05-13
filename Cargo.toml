@@ -6,7 +6,6 @@ edition = "2024"
 [dependencies]
 bevy_app = { workspace = true }
 bevy_state = { workspace = true }
-bevy_core = { workspace = true }
 bevy_time = { workspace = true }
 komotool_pipe = { path = "crates/komotool_pipe" }
 komotool_lua = { path = "crates/komotool_lua" }
@@ -19,6 +18,7 @@ komotool_ecs = { path = "crates/komotool_ecs" }
 komotool_assets = { path = "crates/komotool_assets" }
 komotool_framepace = { path = "crates/komotool_framepace" }
 bevy_mod_scripting = { workspace = true }
+bevy_diagnostic = { workspace = true }
 
 [workspace]
 members = ["crates/*"]
@@ -26,19 +26,20 @@ exclude = ["crates/komotool_windows"]
 resolver = "2"
 
 [workspace.dependencies]
-bevy_ecs = "0.15.3"
-bevy_app = "0.15.3"
-bevy_reflect = "0.15.3"
-bevy_utils = "0.15.3"
-bevy_state = "0.15.3"
-bevy_core = "0.15.3"
-bevy_time = "0.15.3"
-bevy_asset = { version = "0.15.3", features = ["file_watcher", "multi_threaded"]}
+bevy_ecs = "0.16.0"
+bevy_app = "0.16.0"
+bevy_reflect = "0.16.0"
+bevy_utils = "0.16.0"
+bevy_state = "0.16.0"
+bevy_time = "0.16.0"
+bevy_asset = { version = "0.16.0", features = ["file_watcher", "multi_threaded"]}
+bevy_platform = "0.16.0"
+bevy_diagnostic = "0.16.0"
 anyhow = "1.0.98"
 serde_json = "1.0.140"
-komorebi-client  = { git = "https://github.com/pro470/komorebi", rev = "8062b10"}
+komorebi-client  = { git = "https://github.com/pro470/komorebi", branch = "komotool"}
 log = "0.4.27"
-bevy_mod_scripting = {version = "0.12.0", features = ["lua54", "rhai"]}
+bevy_mod_scripting = {git = "https://github.com/pro470/bevy_mod_scripting", branch = "temp-0.16", features = ["lua54", "rhai"]}
 indexmap = "2.9.0"
 crossbeam-channel = "0.5.15"
 
