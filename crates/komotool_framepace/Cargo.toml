@@ -13,6 +13,7 @@ komotool_utils = { path = "../komotool_utils" }
 bevy_reflect = { workspace = true }
 bevy_utils = "0.16.0"
 spin_sleep = "1.3.0"
+komotool_ecs = { path = "../komotool_ecs" }
 
 [lints]
 workspace = true

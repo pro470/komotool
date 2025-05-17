@@ -3470,6 +3470,7 @@ dependencies = [
  "bevy_reflect",
  "bevy_state",
  "crossbeam-channel",
+ "komotool_ecs",
  "komotool_utils",
  "notify 8.0.0",
 ]
@@ -3497,8 +3498,7 @@ dependencies = [
  "bevy_utils",
  "indexmap 2.9.0",
  "komorebi-client",
- "komotool_framepace",
- "komotool_pipe",
+ "komotool_utils",
 ]
 
 [[package]]
@@ -3512,6 +3512,7 @@ dependencies = [
  "bevy_state",
  "bevy_time",
  "bevy_utils",
+ "komotool_ecs",
  "komotool_utils",
  "spin_sleep",
 ]
@@ -3564,9 +3565,12 @@ dependencies = [
  "anyhow",
  "bevy_app",
  "bevy_ecs",
+ "bevy_platform",
  "bevy_reflect",
  "crossbeam-channel",
  "komorebi-client",
+ "komotool_ecs",
+ "komotool_framepace",
  "log",
  "serde_json",
 ]

@@ -6,7 +6,7 @@ pub mod prelude {
     pub use komotool_framepace::*;
     pub use komotool_komorebic::*;
     pub use komotool_lua::*;
-    pub use komotool_pipe::*;
+    pub use komotool_pipe::prelude::*;
     pub use komotool_rhai::*;
     pub use komotool_utils::prelude::*;
     pub use komotoolc_pipe::*;

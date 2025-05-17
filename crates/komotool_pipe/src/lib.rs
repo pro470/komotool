@@ -1,7 +1,15 @@
+pub mod fetch_state;
+
+pub mod prelude {
+    pub use super::*;
+    pub use fetch_state::*;
+}
+
+use crate::prelude::update_komorebi_state_from_notifications;
 use anyhow::Result;
 use bevy_app::{App, First, Plugin};
 use bevy_ecs::event::{Event, EventWriter};
-use bevy_ecs::system::NonSend;
+use bevy_ecs::system::{Commands, NonSend};
 use bevy_reflect::Reflect;
 use crossbeam_channel::{Receiver, Sender, unbounded};
 use komorebi_client::{
@@ -120,8 +128,16 @@ pub fn run_pipe_listener(sender: &Sender<Notification>) -> Result<()> {
 pub fn handle_pipe_notifications(
     receiver: NonSend<Receiver<Notification>>,
     mut events: EventWriter<PipeNotificationEvent>,
+    mut commands: Commands,
 ) {
-    for notification in receiver.try_iter() {
-        events.write(PipeNotificationEvent { notification });
+    let mut iter = receiver.try_iter();
+    if let Some(first) = iter.next() {
+        events.write(PipeNotificationEvent {
+            notification: first,
+        });
+        for notification in iter {
+            events.write(PipeNotificationEvent { notification });
+        }
+        commands.run_system_cached(update_komorebi_state_from_notifications);
     }
 }

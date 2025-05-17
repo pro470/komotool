@@ -11,8 +11,7 @@ bevy_utils = { workspace = true }
 bevy_platform = { workspace = true }
 komorebi-client = { workspace = true }
 indexmap = { workspace = true }
-komotool_framepace = { path = "../komotool_framepace" }
-komotool_pipe = { path = "../komotool_pipe" }
+komotool_utils = {path = "../komotool_utils" }
 bevy_mod_scripting = { workspace = true }
 
 [lints]

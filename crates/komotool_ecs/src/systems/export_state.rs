@@ -1,13 +1,18 @@
 use crate::KomorebiState;
 use crate::components::{FloatingWindow, Focused, MaximizedWindow, MonocleContainer};
 use crate::relations::registry::RelationRegistry;
-use crate::resources::{AppState, KomotoolState};
+use crate::resources::{AppState, KomotoolCommandQueue, KomotoolState};
+use bevy_ecs::error::{HandleError, warn};
 use bevy_ecs::query::With;
-use bevy_ecs::system::{Query, Res};
-use bevy_ecs::world::World;
+use bevy_ecs::system::command::run_system_cached;
+use bevy_ecs::system::{Query, Res, ResMut};
+use bevy_ecs::world::{CommandQueue, World};
 use komorebi_client::{
-    Container, Monitor, Ring, SocketMessage, State, Window, Workspace, send_message,
+    Container, Monitor, MoveBehaviour, OperationBehaviour, Ring, SocketMessage, State, Window,
+    WindowContainerBehaviour, Workspace, send_message,
 };
+use komotool_utils::startup_schedule::remove_komotool_startup_schedule;
+use std::collections::HashMap;
 
 #[allow(clippy::too_many_arguments)]
 pub fn export_state(
@@ -241,31 +246,12 @@ pub fn export_state(
     }
 }
 pub fn export_state_to_komorebi(world: &mut World) {
-    let mut komotool_state_is_some = false;
-
-    // Step 1: Check KomotoolState.current in a scope
-    {
-        let komotool_state_res = world.get_resource::<KomotoolState>();
-        if let Some(state_res) = komotool_state_res {
-            if state_res.current.is_some() {
-                komotool_state_is_some = true;
-            }
-        }
-        // Implicitly drop the borrow of komotool_state_res here
+    let mut queue = CommandQueue::default();
+    if let Some(mut komotool_commmad_queue) = world.get_resource_mut::<KomotoolCommandQueue>() {
+        queue.append(&mut komotool_commmad_queue.0)
     }
+    queue.apply(world);
 
-    // Step 2: Conditional Flush
-    if komotool_state_is_some {
-        // Only flush if KomotoolState.current was Some initially
-        world.flush(); // Apply any queued commands
-    } else {
-        // KomotoolState.current was None, nothing to flush or send.
-        // println!("KomotoolState.current is None initially, skipping flush and send.");
-        return;
-    }
-
-    // Step 3: Comparison and Send (after potential flush)
-    // Re-fetch resources after flush
     let komorebi_state_res = world.get_resource::<KomorebiState>();
     let komotool_state_res = world.get_resource::<KomotoolState>();
 
@@ -290,16 +276,48 @@ pub fn export_state_to_komorebi(world: &mut World) {
                 }
             } else {
                 // States are the same, do nothing
-                // println!("Komotool state matches Komorebi state after flush, skipping send.");
+                println!("Komotool state matches Komorebi state after flush, skipping send.");
             }
         } else {
             // At least one of the inner Option<&State> was None, do nothing.
             // This covers cases where KomorebiState exists but komorebi is None,
             // or KomotoolState exists but current is None (e.g., after flush).
-            // println!("Either Komorebi or Komotool state content is None after flush, skipping send.");
+            println!(
+                "Either Komorebi or Komotool state content is None after flush, skipping send."
+            );
         }
+
+        if let Some(mut komotoolstate) = world.get_resource_mut::<KomotoolState>() {
+            komotoolstate.current = None;
+        };
     } else {
         // At least one of the resources (KomorebiState or KomotoolState) doesn't exist, do nothing.
-        // println!("KomorebiState or KomotoolState resource missing after flush, skipping send.");
+        println!("KomorebiState or KomotoolState resource missing after flush, skipping send.");
     }
+}
+
+pub fn make_komotool_state_some(mut komotool_state: ResMut<KomotoolState>) {
+    println!("Initializing komotool state for removing KomotoolStartUp schedule");
+    komotool_state.current = Some(State {
+        monitors: Ring::default(),
+        is_paused: true,
+        monitor_usr_idx_map: HashMap::new(),
+        resize_delta: 0,
+        float_override: false,
+        new_window_behaviour: WindowContainerBehaviour::Append,
+        cross_monitor_move_behaviour: MoveBehaviour::Insert,
+        unmanaged_window_operation_behaviour: OperationBehaviour::Op,
+        work_area_offset: None,
+        focus_follows_mouse: None,
+        mouse_follows_focus: false,
+        has_pending_raise_op: false,
+    });
+}
+pub fn commands_remove_komotool_startup_schedule(
+    mut komotool_command_queue: ResMut<KomotoolCommandQueue>,
+) {
+    komotool_command_queue
+        .0
+        .push(run_system_cached(remove_komotool_startup_schedule).handle_error_with(warn));
+    println!("queueing for removal of startup schedule");
 }

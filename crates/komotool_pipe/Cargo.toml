@@ -7,11 +7,14 @@ edition = "2024"
 bevy_app = { workspace = true }
 bevy_ecs = { workspace = true }
 bevy_reflect = { workspace = true }
+bevy_platform = { workspace = true }
 anyhow = { workspace = true }
 serde_json = { workspace = true }
 komorebi-client = { workspace = true }
 log = { workspace = true }
 crossbeam-channel = { workspace = true }
+komotool_ecs = { path = "../komotool_ecs" }
+komotool_framepace = { path = "../komotool_framepace" }
 
 [lints]
 workspace = true

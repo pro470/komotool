@@ -13,15 +13,17 @@ pub mod prelude {
     pub use systems::*;
 }
 
-use bevy_app::{App, First, Last, Plugin};
-use bevy_ecs::prelude::resource_changed;
+use crate::systems::{
+    commands_remove_komotool_startup_schedule, export_state_to_komorebi, make_komotool_state_some,
+};
+use bevy_app::{App, Plugin};
 use bevy_ecs::schedule::IntoScheduleConfigs;
 use components::*;
 use komorebi_client::{Container, Monitor, Window, Workspace};
+use komotool_utils::startup_schedule::KomoToolStartUpFinished;
 use register_komorebi_types::register_komorebi_types;
 use relations::*;
 use resources::*;
-use systems::*;
 
 #[derive(Default)]
 pub struct KomoToolEcsPlugin;
@@ -42,6 +44,7 @@ impl Plugin for KomoToolEcsPlugin {
             .init_resource::<KeepAliveMonitors>()
             .init_resource::<KeepAliveWorkspaces>()
             .init_resource::<KeepAliveContainers>()
+            .init_resource::<KomotoolCommandQueue>()
             .register_type::<Monitor>()
             .register_type::<Window>()
             .register_type::<Container>()
@@ -53,30 +56,17 @@ impl Plugin for KomoToolEcsPlugin {
             .register_type::<MaximizedWindow>()
             .register_type::<LastFocused>()
             .add_systems(
-                First,
-                (
-                    // Process notifications first
-                    update_komorebi_state_from_notifications
-                        .after(komotool_pipe::handle_pipe_notifications),
-                    // Then run all imports in parallel
-                    (
-                        (
-                            import_komorebi_window_state,
-                            import_komorebi_container_state,
-                            import_komorebi_workspace_state,
-                            import_komorebi_monitor_state,
-                        )
-                            .before(build_relation_registry),
-                        import_komorebi_appstate_state,
-                        build_relation_registry,
-                    )
-                        .after(update_komorebi_state_from_notifications)
-                        .run_if(resource_changed::<KomorebiState>),
-                ),
+                KomoToolStartUpFinished,
+                export_state_to_komorebi
+                    .before_ignore_deferred(commands_remove_komotool_startup_schedule),
             )
             .add_systems(
-                Last,
-                export_state_to_komorebi.before(komotool_framepace::framerate_limiter),
+                KomoToolStartUpFinished,
+                make_komotool_state_some.after_ignore_deferred(export_state_to_komorebi),
+            )
+            .add_systems(
+                KomoToolStartUpFinished,
+                commands_remove_komotool_startup_schedule,
             );
         register_container_types(app);
         register_monitor_types(app);

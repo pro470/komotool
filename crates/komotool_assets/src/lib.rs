@@ -23,26 +23,19 @@ use bevy_mod_scripting::core::{IntoScriptPluginParams, ScriptingSystemSet};
 use bevy_mod_scripting::lua::LuaScriptingPlugin;
 use bevy_mod_scripting::rhai::RhaiScriptingPlugin;
 use bevy_reflect::Reflect;
-use bevy_state::app::AppExtStates;
-use bevy_state::condition::in_state;
-use bevy_state::state::{NextState, OnEnter, OnExit, States};
-use komotool_utils::callbacklabels::{OnPostUpdate, OnPreUpdate, OnUpdate};
+use komotool_utils::callbacklabels::{
+    OnPostStartUp, OnPostUpdate, OnPreStartUp, OnPreUpdate, OnStartUp, OnUpdate,
+};
 use komotool_utils::handler::{KomoToolScriptStore, KomoToolScriptStoreAll, ScriptFunctionChecker};
-use komotool_utils::loading_systems::{decrement_loading_counter, increment_loading_counter};
-use komotool_utils::startup_schedule::PreUpdateStartup;
+use komotool_utils::startup_schedule::{
+    KomoToolStartUp, KomoToolStartUpFinished, PostUpdateStartup, PreUpdateStartup, UpdateStartup,
+};
 use remove_watcher::{check_file_events, setup_file_watcher};
 use std::{
     collections::HashMap,
     env, fs,
     path::{Path, PathBuf},
 };
-
-#[derive(States, Default, Debug, Clone, Eq, PartialEq, Hash)]
-pub enum ScriptLoadState {
-    #[default]
-    Loading,
-    Loaded,
-}
 
 #[derive(Resource, Reflect)]
 pub struct ScriptLoadTracker {
@@ -75,20 +68,20 @@ impl Plugin for KomotoolAssetsPlugin {
         });
 
         // Add general script loading functionality
-        app.init_state::<ScriptLoadState>()
-            .init_resource::<ScriptEntityMapping>()
-            .add_systems(OnEnter(ScriptLoadState::Loading), increment_loading_counter)
-            .add_systems(OnExit(ScriptLoadState::Loading), decrement_loading_counter)
+        app.init_resource::<ScriptEntityMapping>()
             .add_systems(Startup, setup_file_watcher)
             .add_systems(PreUpdate, check_file_events)
             .add_systems(PreStartup, load_scripts)
+            .add_systems(KomoToolStartUp, check_scripts_loaded)
             .add_systems(
-                PreUpdateStartup,
-                check_scripts_loaded.run_if(in_state(ScriptLoadState::Loading)),
+                PreUpdate,
+                handle_script_store_updates_all::<OnPreUpdate, OnUpdate, OnPostUpdate>
+                    .in_set(ScriptingSystemSet::ScriptCommandDispatch),
             )
             .add_systems(
                 PreUpdate,
-                handle_script_store_updates_all.in_set(ScriptingSystemSet::ScriptCommandDispatch),
+                handle_script_store_updates_all::<OnPreStartUp, OnStartUp, OnPostStartUp>
+                    .in_set(ScriptingSystemSet::ScriptCommandDispatch),
             );
     }
 }
@@ -142,13 +135,16 @@ pub fn load_scripts(asset_server: Res<AssetServer>, mut commands: Commands) {
 pub fn check_scripts_loaded(
     asset_server: Res<AssetServer>,
     tracker: Res<ScriptLoadTracker>,
-    mut next_state: ResMut<NextState<ScriptLoadState>>,
+    mut commands: Commands,
 ) {
     if let Some(RecursiveDependencyLoadState::Loaded) =
         asset_server.get_recursive_dependency_load_state(&tracker.handle)
     {
         println!("Scripts loaded");
-        next_state.set(ScriptLoadState::Loaded);
+        commands.run_schedule(PreUpdateStartup);
+        commands.run_schedule(UpdateStartup);
+        commands.run_schedule(PostUpdateStartup);
+        commands.run_schedule(KomoToolStartUpFinished);
     }
     if let Some(RecursiveDependencyLoadState::Failed(e)) =
         asset_server.get_recursive_dependency_load_state(&tracker.handle)
@@ -411,14 +407,18 @@ pub fn is_in_script_folder(file_path: &str, komotool_path: &Path) -> bool {
     file_path.starts_with(&scripts_path)
 }
 
-pub fn handle_script_store_updates_all(
+pub fn handle_script_store_updates_all<
+    L0: IntoCallbackLabel + Default + Send + Sync,
+    L1: IntoCallbackLabel + Default + Send + Sync,
+    L2: IntoCallbackLabel + Default + Send + Sync,
+>(
     mut events: EventReader<AssetEvent<ScriptAsset>>,
     assets: Res<Assets<ScriptAsset>>,
     asset_server: Res<AssetServer>,
     metadata_store: Res<ScriptMetadataStore>,
-    mut update: ResMut<KomoToolScriptStoreAll<OnUpdate>>,
-    mut preupdate: ResMut<KomoToolScriptStoreAll<OnPreUpdate>>,
-    mut postupdate: ResMut<KomoToolScriptStoreAll<OnPostUpdate>>,
+    mut preupdate: ResMut<KomoToolScriptStoreAll<L0>>,
+    mut update: ResMut<KomoToolScriptStoreAll<L1>>,
+    mut postupdate: ResMut<KomoToolScriptStoreAll<L2>>,
 ) {
     // Process asset events
     for event in events.read() {
@@ -445,19 +445,31 @@ pub fn handle_script_store_updates_all(
                     );
 
                     // Check and update each store
-                    if script_functions.contains(OnUpdate::into_callback_label().as_ref()) {
+                    if script_functions.contains(L1::into_callback_label().as_ref()) {
                         update.scripts.insert(script_id.clone());
-                        println!("Added to OnUpdate: {}", script_id);
+                        println!(
+                            "Added to {}: {}",
+                            L1::into_callback_label().as_ref(),
+                            script_id
+                        );
                     }
 
-                    if script_functions.contains(OnPreUpdate::into_callback_label().as_ref()) {
+                    if script_functions.contains(L0::into_callback_label().as_ref()) {
                         preupdate.scripts.insert(script_id.clone());
-                        println!("Added to OnPreUpdate: {}", script_id);
+                        println!(
+                            "Added to {}: {}",
+                            L0::into_callback_label().as_ref(),
+                            script_id
+                        );
                     }
 
-                    if script_functions.contains(OnPostUpdate::into_callback_label().as_ref()) {
+                    if script_functions.contains(L2::into_callback_label().as_ref()) {
                         postupdate.scripts.insert(script_id.clone());
-                        println!("Added to OnPostUpdate: {}", script_id);
+                        println!(
+                            "Added to {}: {}",
+                            L2::into_callback_label().as_ref(),
+                            script_id
+                        );
                     }
 
                     println!(

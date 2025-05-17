@@ -8,7 +8,7 @@ use indexmap::IndexSet;
 use std::marker::PhantomData;
 
 /// Type-parameterized script storage for tracking active scripts
-#[derive(Resource, Default)]
+#[derive(Resource, Default, Reflect)]
 pub struct KomoToolScriptStore<P, L>
 where
     P: IntoScriptPluginParams
@@ -20,6 +20,7 @@ where
     L: IntoCallbackLabel + Send + Sync + 'static + std::default::Default,
 {
     /// Set of active script identifiers
+    #[reflect(ignore)]
     pub scripts: IndexSet<ScriptId>,
     _phantom: PhantomData<(L, P)>,
 }

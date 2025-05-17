@@ -7,3 +7,7 @@ pub struct PreUpdateStartup;
 pub struct UpdateStartup;
 #[derive(ScheduleLabel, Debug, Hash, PartialEq, Eq, Clone)]
 pub struct PostUpdateStartup;
+#[derive(ScheduleLabel, Debug, Hash, PartialEq, Eq, Clone)]
+pub struct KomoToolStartUpFinished;
+#[derive(ScheduleLabel, Debug, Hash, PartialEq, Eq, Clone)]
+pub struct KomoToolStartUp;
