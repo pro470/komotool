@@ -13,7 +13,7 @@ bevy_reflect = { workspace = true }
 bevy_log = "0.16.0"
 indexmap = { workspace = true }
 full_moon = "2.0.0"
-profiling = "1.0.16"
+profiling = { workspace = true }
 
 [lints]
 workspace = true

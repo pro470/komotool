@@ -86,10 +86,6 @@ impl Plugin for KomoToolUtilsPlugin {
             configure_single_threaded_schedules.run_if(in_state(GlobalLoadingState::CleanupDone)),
         )
         .add_systems(
-            PreUpdateStartup,
-            insert_event_sending_systems.run_if(in_state(GlobalLoadingState::CleanupDone)),
-        )
-        .add_systems(
             UpdateStartup,
             insert_komotool_handlers.run_if(in_state(GlobalLoadingState::CleanupDone)),
         );

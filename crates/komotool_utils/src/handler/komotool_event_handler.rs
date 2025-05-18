@@ -22,6 +22,7 @@ use bevy_mod_scripting::lua::LuaScriptingPlugin;
 use bevy_mod_scripting::rhai::RhaiScriptingPlugin;
 use indexmap::IndexSet;
 use std::marker::PhantomData;
+use std::ops::{Deref, DerefMut};
 
 #[derive(SystemParam)]
 pub struct HandlerContexts<'s> {
@@ -44,11 +45,24 @@ pub type KomoToolEventHandlerSystemState<'w, 's, P, L> = SystemState<(
 #[allow(deprecated)]
 pub type KomoToolEventHandlerSystemStateAll<'w, 's, L> = SystemState<(
     SystemResScopeAll<'w, L>,
-    bevy_mod_scripting::core::extractors::EventReaderScope<'s, ScriptCallbackEvent>,
     WithWorldGuard<'w, 's, HandlerContexts<'s>>,
 )>;
 
 pub(crate) struct ResScope<'w, T: Resource + Default>(pub &'w mut T);
+
+impl<T: Resource + Default> Deref for ResScope<'_, T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        self.0
+    }
+}
+
+impl<T: Resource + Default> DerefMut for ResScope<'_, T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.0
+    }
+}
 
 pub struct ResourceState<T: Resource + Default> {
     marker: PhantomData<T>,
@@ -248,15 +262,14 @@ pub fn komotool_event_handler_all<
     // We wrap the inner event handler so we can immediately re-insert all the resources back.
     // Otherwise, this would happen in the next schedule
     {
-        let (script_store_query, script_events, handler_ctxt) = state.get_mut(world);
+        let (script_store_query, handler_ctxt) = state.get_mut(world);
         komotool_event_handler_inner_all::<L>(
             L::into_callback_label(),
             script_store_query,
-            script_events,
             handler_ctxt,
         );
     }
-    state.apply(world);
+    //state.apply(world);
 }
 
 #[profiling::function]
@@ -266,93 +279,72 @@ fn komotool_event_handler_inner_all<
 >(
     callback_label: CallbackLabel,
     script_store_query: SystemResScopeAll<L>,
-    mut script_events: bevy_mod_scripting::core::extractors::EventReaderScope<ScriptCallbackEvent>,
     mut handler_ctxt: WithWorldGuard<HandlerContexts>,
 ) {
-    if script_store_query.store.0.scripts.is_empty() {
+    if script_store_query.store.scripts.is_empty() {
         return;
     }
 
     let (guard, handler_ctxt) = handler_ctxt.get_mut();
     let mut errors = Vec::default();
+    let entity = Entity::from_raw(0);
 
-    // Get the script store
-    let script_store = script_store_query.store.0;
-
-    // Process each event
-    for event in script_events
-        .read()
-        .filter(|&e| e.label == callback_label)
-        .cloned()
-    {
-        // Determine which scripts to process
-        let scripts_to_process: IndexSet<_> = match &event.recipients {
-            Recipients::Script(target_script_id)
-                if script_store.scripts.contains(target_script_id) =>
-            {
-                // If the target script exists in the store, only process that one (Create a new HashSet for O(1) iteration)
-                std::iter::once(target_script_id.clone()).collect()
-            }
-            _ => {
-                // Otherwise, process all scripts (return a reference to the full HashSet)
-                script_store.scripts.clone()
-            }
+    for script_id in script_store_query.store.scripts.iter() {
+        let language = script_store_query
+            .settings
+            .0
+            .select_script_language(&AssetPath::parse(script_id.as_ref()));
+        let call_result = match language {
+            Language::Rhai => handler_ctxt.rhai.call_dynamic_label(
+                &callback_label,
+                script_id,
+                entity,
+                Vec::new(),
+                guard.clone(),
+            ),
+            Language::Lua => handler_ctxt.lua.call_dynamic_label(
+                &callback_label,
+                script_id,
+                entity,
+                Vec::new(),
+                guard.clone(),
+            ),
+            Language::Rune => continue,
+            Language::External(_) => continue,
+            Language::Unknown => continue,
         };
 
-        for script_id in scripts_to_process {
-            let language = script_store_query
-                .settings
-                .0
-                .select_script_language(&AssetPath::parse(script_id.as_ref()));
-            let entity = Entity::from_raw(0);
-            let call_result = match language {
-                Language::Rhai => handler_ctxt.rhai.call_dynamic_label(
-                    &callback_label,
-                    &script_id,
-                    entity,
-                    event.args.clone(),
-                    guard.clone(),
-                ),
-                Language::Lua => handler_ctxt.lua.call_dynamic_label(
-                    &callback_label,
-                    &script_id,
-                    entity,
-                    event.args.clone(),
-                    guard.clone(),
-                ),
-                Language::Rune => continue,
-                Language::External(_) => continue,
-                Language::Unknown => continue,
-            };
-
-            match call_result {
-                Ok(_) => {}
-                Err(e) => {
-                    match e.downcast_interop_inner() {
-                        Some(InteropErrorInner::MissingScript { script_id }) => {
-                            trace_once!(
-                                "{}: Script `{}` on entity `{:?}` is either still loading, doesn't exist, or is for another language, ignoring until the corresponding script is loaded.",
-                                &language,
-                                script_id,
-                                entity
-                            );
-                            continue;
-                        }
-                        Some(InteropErrorInner::MissingContext { .. }) => {
-                            // if we don't have a context for the script, it's either:
-                            // 1. a script for a different language, in which case we ignore it
-                            // 2. something went wrong. This should not happen though, and it's best we ignore this
-                            continue;
-                        }
-                        _ => {}
+        match call_result {
+            Ok(_) => {}
+            Err(e) => {
+                match e.downcast_interop_inner() {
+                    Some(InteropErrorInner::MissingScript { script_id }) => {
+                        trace_once!(
+                            "{}: Script `{}` on entity `{:?}` is either still loading, doesn't exist, or is for another language, ignoring until the corresponding script is loaded.",
+                            &language,
+                            script_id,
+                            entity
+                        );
+                        println!("Missing script: {}", script_id);
+                        continue;
                     }
-                    let e = e
-                        .with_script(script_id.clone())
-                        .with_context(format!("Event handling for: Language: {}", &language));
-                    push_err_and_continue!(errors, Err(e));
+                    Some(InteropErrorInner::MissingContext { .. }) => {
+                        // if we don't have a context for the script, it's either:
+                        // 1. a script for a different language, in which case we ignore it
+                        // 2. something went wrong. This should not happen though, and it's best we ignore this
+                        println!("Missing context: {}", script_id);
+                        continue;
+                    }
+                    _ => {
+                        println!("Unknown error: {}", script_id);
+                    }
                 }
-            };
-        }
+                let e = e
+                    .with_script(script_id.clone())
+                    .with_context(format!("Event handling for: Language: {}", &language));
+                push_err_and_continue!(errors, Err(e));
+            }
+        };
     }
 
     handle_script_errors(guard, errors.into_iter());

@@ -18,8 +18,8 @@ use komotool_framepace::KomotoolFramepacePlugin;
 use komotoolc_pipe::KomoToolcPipePlugin;
 
 fn main() -> AppExit {
-    App::new()
-        .add_plugins(StatesPlugin)
+    let mut app = App::new();
+    app.add_plugins(StatesPlugin)
         .add_plugins(TaskPoolPlugin::default())
         .add_plugins(FrameCountPlugin)
         .add_plugins(TimePlugin)
@@ -37,6 +37,15 @@ fn main() -> AppExit {
         .add_plugins(BMSScriptingInfrastructurePlugin)
         .add_plugins(KomoToolKomorebicPlugin)
         .add_plugins(KomoToolLuaPlugin)
-        .add_plugins(KomoToolRhaiPlugin)
-        .run()
+        .add_plugins(KomoToolRhaiPlugin);
+    #[cfg(feature = "tracing_profile")]
+    {
+        app.add_plugins((
+            bevy_log::LogPlugin::default(),
+            bevy_internal::render::RenderPlugin::default(),
+            bevy_internal::window::WindowPlugin::default(),
+            bevy_internal::prelude::ImagePlugin::default(),
+        ));
+    }
+    app.run()
 }
