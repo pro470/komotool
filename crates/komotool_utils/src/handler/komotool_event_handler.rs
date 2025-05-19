@@ -13,6 +13,7 @@ use bevy_mod_scripting::core::error::InteropErrorInner;
 use bevy_mod_scripting::core::event::{CallbackLabel, Recipients};
 use bevy_mod_scripting::core::extractors::HandlerContext;
 use bevy_mod_scripting::core::handler::handle_script_errors;
+use bevy_mod_scripting::core::script::ScriptId;
 use bevy_mod_scripting::core::{
     IntoScriptPluginParams,
     event::{IntoCallbackLabel, ScriptCallbackEvent},
@@ -44,11 +45,12 @@ pub type KomoToolEventHandlerSystemState<'w, 's, P, L> = SystemState<(
 
 #[allow(deprecated)]
 pub type KomoToolEventHandlerSystemStateAll<'w, 's, L> = SystemState<(
-    SystemResScopeAll<'w, L>,
+    ResScope<'w, KomoToolScriptStoreAll<L>>,
+    ResScope<'w, ScriptAssetSettings>,
     WithWorldGuard<'w, 's, HandlerContexts<'s>>,
 )>;
 
-pub(crate) struct ResScope<'w, T: Resource + Default>(pub &'w mut T);
+pub struct ResScope<'w, T: Resource + Default>(pub &'w mut T);
 
 impl<T: Resource + Default> Deref for ResScope<'_, T> {
     type Target = T;
@@ -69,14 +71,12 @@ pub struct ResourceState<T: Resource + Default> {
 }
 
 unsafe impl<T: Resource + Default + 'static> SystemParam for ResScope<'_, T> {
-    type State = ResourceState<T>;
+    type State = T;
     type Item<'world, 'state> = ResScope<'world, T>;
 
     fn init_state(world: &mut World, _system_meta: &mut SystemMeta) -> Self::State {
         world.init_resource::<T>();
-        ResourceState {
-            marker: PhantomData,
-        }
+        T::default()
     }
 
     unsafe fn get_param<'world, 'state>(
@@ -102,7 +102,8 @@ unsafe impl<T: Resource + Default + 'static> SystemParam for ResScope<'_, T> {
             let raw_ptr = ptr.as_mut() as *mut T;
             unsafe { &mut *raw_ptr }
         } else {
-            unreachable!()
+            let raw_ptr = &mut T::default() as *mut T;
+            unsafe { &mut *raw_ptr }
         };
 
         ResScope(resource_ref)
@@ -116,15 +117,6 @@ pub struct SystemResScope<
     L: IntoCallbackLabel + Send + Sync + 'static + std::default::Default,
 > {
     pub(crate) store: ResScope<'w, KomoToolScriptStore<P, L>>,
-}
-
-#[derive(SystemParam)]
-pub struct SystemResScopeAll<
-    'w,
-    L: IntoCallbackLabel + Send + Sync + 'static + std::default::Default,
-> {
-    pub(crate) store: ResScope<'w, KomoToolScriptStoreAll<L>>,
-    pub(crate) settings: ResScope<'w, ScriptAssetSettings>,
 }
 
 macro_rules! push_err_and_continue {
@@ -262,10 +254,11 @@ pub fn komotool_event_handler_all<
     // We wrap the inner event handler so we can immediately re-insert all the resources back.
     // Otherwise, this would happen in the next schedule
     {
-        let (script_store_query, handler_ctxt) = state.get_mut(world);
+        let (script_store_query, settings, handler_ctxt) = state.get_mut(world);
         komotool_event_handler_inner_all::<L>(
             L::into_callback_label(),
             script_store_query,
+            settings,
             handler_ctxt,
         );
     }
@@ -278,20 +271,24 @@ fn komotool_event_handler_inner_all<
     L: IntoCallbackLabel + Send + Sync + 'static + std::default::Default,
 >(
     callback_label: CallbackLabel,
-    script_store_query: SystemResScopeAll<L>,
+    script_store_query: ResScope<KomoToolScriptStoreAll<L>>,
+    settings: ResScope<ScriptAssetSettings>,
     mut handler_ctxt: WithWorldGuard<HandlerContexts>,
 ) {
-    if script_store_query.store.scripts.is_empty() {
+    if script_store_query.scripts.is_empty() {
         return;
     }
 
     let (guard, handler_ctxt) = handler_ctxt.get_mut();
     let mut errors = Vec::default();
     let entity = Entity::from_raw(0);
+    let store: IndexSet<ScriptId>;
+    {
+        store = script_store_query.scripts.clone();
+    }
 
-    for script_id in script_store_query.store.scripts.iter() {
-        let language = script_store_query
-            .settings
+    for script_id in store.iter() {
+        let language = settings
             .0
             .select_script_language(&AssetPath::parse(script_id.as_ref()));
         let call_result = match language {

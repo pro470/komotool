@@ -1,6 +1,4 @@
-use crate::{
-    GlobalLoadingState, OnPostStartUp, OnPreStartUp,  OnStartUp, 
-};
+use crate::{GlobalLoadingState, OnPostStartUp, OnPreStartUp, OnStartUp};
 use bevy_ecs::event::EventWriter;
 use bevy_ecs::system::ResMut;
 use bevy_mod_scripting::core::event::ScriptCallbackEvent;
