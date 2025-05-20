@@ -15,7 +15,7 @@ use bevy_ecs::entity::Entity;
 use bevy_ecs::event::EventReader;
 use bevy_ecs::resource::Resource;
 use bevy_ecs::schedule::IntoScheduleConfigs;
-use bevy_ecs::system::{Commands, Res, ResMut};
+use bevy_ecs::system::{Commands, Local, Res, ResMut};
 use bevy_mod_scripting::core::asset::{Language, ScriptAsset, ScriptMetadataStore};
 use bevy_mod_scripting::core::event::IntoCallbackLabel;
 use bevy_mod_scripting::core::script::{ScriptComponent, ScriptId};
@@ -135,8 +135,12 @@ pub fn load_scripts(asset_server: Res<AssetServer>, mut commands: Commands) {
 pub fn check_scripts_loaded(
     asset_server: Res<AssetServer>,
     tracker: Res<ScriptLoadTracker>,
+    mut has_run: Local<bool>,
     mut commands: Commands,
 ) {
+    if *has_run {
+        return;
+    }
     if let Some(RecursiveDependencyLoadState::Loaded) =
         asset_server.get_recursive_dependency_load_state(&tracker.handle)
     {
@@ -145,6 +149,7 @@ pub fn check_scripts_loaded(
         commands.run_schedule(UpdateStartup);
         commands.run_schedule(PostUpdateStartup);
         commands.run_schedule(KomoToolStartUpFinished);
+        *has_run = true;
     }
     if let Some(RecursiveDependencyLoadState::Failed(e)) =
         asset_server.get_recursive_dependency_load_state(&tracker.handle)

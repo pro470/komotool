@@ -13,9 +13,7 @@ pub mod prelude {
     pub use systems::*;
 }
 
-use crate::systems::{
-    commands_remove_komotool_startup_schedule, export_state_to_komorebi, make_komotool_state_some,
-};
+use crate::systems::{commands_remove_komotool_startup_schedule, export_state_to_komorebi};
 use bevy_app::{App, Plugin};
 use bevy_ecs::schedule::IntoScheduleConfigs;
 use components::*;
@@ -59,10 +57,6 @@ impl Plugin for KomoToolEcsPlugin {
                 KomoToolStartUpFinished,
                 export_state_to_komorebi
                     .before_ignore_deferred(commands_remove_komotool_startup_schedule),
-            )
-            .add_systems(
-                KomoToolStartUpFinished,
-                make_komotool_state_some.after_ignore_deferred(export_state_to_komorebi),
             )
             .add_systems(
                 KomoToolStartUpFinished,

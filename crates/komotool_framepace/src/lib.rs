@@ -3,12 +3,11 @@ use bevy_app::{NonSendMarker, PostStartup};
 use bevy_ecs::reflect::ReflectResource;
 use bevy_ecs::resource::Resource;
 use bevy_ecs::schedule::Schedules;
-use bevy_ecs::system::{Commands, Local, NonSend, Res, ResMut};
+use bevy_ecs::system::{Local, NonSend, Res, ResMut};
 use bevy_platform::time::Instant;
 use bevy_reflect::Reflect;
 use bevy_time::{Fixed, Time, Timer, TimerMode};
 use core::time::Duration;
-use komotool_ecs::prelude::{KomotoolState, export_state_to_komorebi};
 use komotool_utils::startup_schedule::KomoToolStartUpFinished;
 
 /// Adds framepacing and framelimiting functionality to your [`App`]
@@ -119,14 +118,8 @@ pub fn framerate_limiter(
     idle_state: Res<IdleFramePaceState>,
     mut fixedtime: ResMut<Time<Fixed>>,
     _main_thread_marker: Option<NonSend<NonSendMarker>>,
-    komotool_state: Res<KomotoolState>,
-    mut commands: Commands,
 ) {
     let now = Instant::now();
-
-    if komotool_state.current.is_some() {
-        commands.run_system_cached(export_state_to_komorebi);
-    }
 
     if let Some(last_frame) = timer.last_frame {
         let frame_time = now - last_frame;

@@ -1,3 +1,4 @@
+use crate::komotool_schedule::{KomoToolPostUpdate, KomoToolPreUpdate, KomoToolUpdate};
 use bevy_app::{
     First, FixedFirst, FixedLast, FixedPostUpdate, FixedPreUpdate, FixedUpdate, Last, PostUpdate,
     PreUpdate, SpawnScene, Update,
@@ -42,16 +43,19 @@ pub fn configure_single_threaded_schedules(mut schedules: ResMut<Schedules>) {
 
     // FixedLast schedule
     setup_single_threaded_schedules(FixedLast, schedules.reborrow());
+
+    setup_single_threaded_schedules(KomoToolPreUpdate, schedules.reborrow());
+
+    setup_single_threaded_schedules(KomoToolUpdate, schedules.reborrow());
+
+    setup_single_threaded_schedules(KomoToolPostUpdate, schedules.reborrow());
 }
 
 pub fn setup_single_threaded_schedules(label: impl ScheduleLabel, mut schedules: Mut<Schedules>) {
     if let Some(schedule) = schedules.get_mut(label.intern()) {
         schedule.set_executor_kind(bevy_ecs::schedule::ExecutorKind::SingleThreaded);
     } else {
-        println!(
-            "{:#?} schedule not found, initializing it",
-            label
-        );
+        println!("{:#?} schedule not found, initializing it", label);
 
         if schedules.insert(Schedule::new(label.intern())).is_some() {
             println!(

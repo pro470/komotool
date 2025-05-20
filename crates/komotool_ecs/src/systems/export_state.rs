@@ -1,5 +1,5 @@
 use crate::KomorebiState;
-use crate::components::{FloatingWindow, Focused, MaximizedWindow, MonocleContainer};
+use crate::components::{FloatingWindow, Focused};
 use crate::relations::registry::RelationRegistry;
 use crate::resources::{AppState, KomotoolCommandQueue, KomotoolState};
 use bevy_ecs::error::{HandleError, warn};
@@ -8,11 +8,9 @@ use bevy_ecs::system::command::run_system_cached;
 use bevy_ecs::system::{Query, Res, ResMut};
 use bevy_ecs::world::{CommandQueue, World};
 use komorebi_client::{
-    Container, Monitor, MoveBehaviour, OperationBehaviour, Ring, SocketMessage, State, Window,
-    WindowContainerBehaviour, Workspace, send_message,
+    Container, Monitor, Ring, SocketMessage, State, Window, Workspace, send_message,
 };
 use komotool_utils::startup_schedule::remove_komotool_startup_schedule;
-use std::collections::HashMap;
 
 #[allow(clippy::too_many_arguments)]
 pub fn export_state(
@@ -296,23 +294,6 @@ pub fn export_state_to_komorebi(world: &mut World) {
     }
 }
 
-pub fn make_komotool_state_some(mut komotool_state: ResMut<KomotoolState>) {
-    println!("Initializing komotool state for removing KomotoolStartUp schedule");
-    komotool_state.current = Some(State {
-        monitors: Ring::default(),
-        is_paused: true,
-        monitor_usr_idx_map: HashMap::new(),
-        resize_delta: 0,
-        float_override: false,
-        new_window_behaviour: WindowContainerBehaviour::Append,
-        cross_monitor_move_behaviour: MoveBehaviour::Insert,
-        unmanaged_window_operation_behaviour: OperationBehaviour::Op,
-        work_area_offset: None,
-        focus_follows_mouse: None,
-        mouse_follows_focus: false,
-        has_pending_raise_op: false,
-    });
-}
 pub fn commands_remove_komotool_startup_schedule(
     mut komotool_command_queue: ResMut<KomotoolCommandQueue>,
 ) {
