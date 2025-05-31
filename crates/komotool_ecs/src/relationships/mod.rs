@@ -33,9 +33,9 @@ use indexmap::set::{self, IndexSet};
 pub use monitor::*;
 pub use window::*;
 pub use workspace::*;
-use crate::components::{insert_monitor_marker_component, insert_workspace_marker_component};
+use crate::components::{insert_monitor_marker_component, insert_workspace_marker_component, insert_container_marker_component};
 use crate::prelude::MonitorExtendedMarkerMap;
-use crate::resources::WorkspaceExtendedMarkerMap;
+use crate::resources::{WorkspaceExtendedMarkerMap, ContainerExtendedMarkerMap};
 
 #[derive(Component, Reflect)]
 pub struct RelationshipIndexSet(IndexSet<Entity, EntityHash>);
@@ -83,6 +83,39 @@ impl RelationshipSourceCollection for RelationshipIndexSet {
 
     fn extend_from_iter(&mut self, entities: impl IntoIterator<Item = Entity>) {
         self.extend(entities);
+    }
+}
+
+/// Setzt Container-Marker für einen Container und rekursiv für alle Fenster darunter.
+pub fn apply_container_markers_to_hierarchy(
+    mut deferred_world: DeferredWorld,
+    container_entity: Entity, // Die Container-Entität, für die und deren Kinder Marker gesetzt werden
+    container_index: usize,   // Der Index dieses Containers (relevant für die Marker-Komponente)
+    marker_map: &ContainerExtendedMarkerMap,
+) {
+    // Marker für die Container-Entität selbst setzen
+    insert_container_marker_component(
+        container_index,
+        container_entity,
+        deferred_world.commands(),
+        marker_map,
+    );
+
+    // Fenster-Kinder des Containers sammeln
+    // ContainerChildren enthält die Window-Entitäten eines Containers
+    let window_entities: Vec<Entity> = deferred_world
+        .entity(container_entity)
+        .get::<ContainerChildren>() // Kinder eines Containers sind Fenster, gespeichert in ContainerChildren
+        .map_or_else(Vec::new, |children| children.0.iter().copied().collect());
+
+    for window_entity in window_entities {
+        // Marker für jede Window-Entität setzen
+        insert_container_marker_component(
+            container_index, // Der Index des übergeordneten Containers wird weitergegeben
+            window_entity,
+            deferred_world.commands(),
+            marker_map,
+        );
     }
 }
 impl RelationshipIndexSet {
