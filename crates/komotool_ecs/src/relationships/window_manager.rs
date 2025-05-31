@@ -1,16 +1,18 @@
 use super::{
-    ContainerChildren, MonitorChildren, RelationshipIndexSet, bevy_on_insert, bevy_on_remove,
-    relationships_hook,
+    bevy_on_insert, bevy_on_remove, relationships_hook, ContainerChildren, MonitorChildren,
+    RelationshipIndexSet,
 };
-use crate::components::{WindowManager, insert_monitor_marker_component};
+use crate::components::{insert_monitor_marker_component, WindowManager};
 use crate::prelude::WorkspaceChildren;
 use crate::resources::MonitorExtendedMarkerMap;
 use bevy_ecs::component::{Component, HookContext};
 use bevy_ecs::entity::Entity;
 use bevy_ecs::relationship::{Relationship, RelationshipTarget};
 use bevy_ecs::world::DeferredWorld;
+use bevy_log::warn;
 use bevy_reflect::Reflect;
 use komorebi_client::Monitor;
+use crate::relationships;
 
 #[derive(Component)]
 #[component(immutable)]
@@ -55,14 +57,21 @@ impl Relationship for WindowManagerChildOf {
             let window_manager_entity = target_relationship.get();
             if let Some(window_manager_children) = world.entity(window_manager_entity).get::<Self::RelationshipTarget>() {
                 if let Some(monitor_index_in_manager_list) = window_manager_children.0.get_index_of(&entity) {
-                    // Klone die Ressource, um die Borrow zu beenden, bevor wir world mut borrowen
                     let marker_map_clone = world.get_resource::<MonitorExtendedMarkerMap>().cloned();
                     if let Some(cloned_map) = marker_map_clone {
-                        apply_monitor_markers_to_hierarchy(
+                        relationships::apply_monitor_markers_to_hierarchy(
                             world.reborrow(),
                             entity,
                             monitor_index_in_manager_list,
                             &cloned_map,
+                        );
+                    } else {
+                        warn!("Failed to get MonitorExtendedMarkerMap. Markers over the default threeshold will not be applied.");
+                        relationships::apply_monitor_markers_to_hierarchy(
+                            world.reborrow(),
+                            entity,
+                            monitor_index_in_manager_list,
+                            &MonitorExtendedMarkerMap::default(),
                         );
                     }
                 }
@@ -92,46 +101,6 @@ impl Relationship for WindowManagerChildOf {
                 component_id,
             },
         );
-    }
-}
-
-fn apply_monitor_markers_to_hierarchy(
-    mut deferred_world: DeferredWorld,
-    monitor_entity: Entity,
-    monitor_index: usize,
-    marker_map: &MonitorExtendedMarkerMap,
-) {
-    // Marker für die Monitor-Entität selbst setzen
-    insert_monitor_marker_component(monitor_index, monitor_entity, deferred_world.commands(), marker_map);
-
-    // Kinder des Monitors (Workspaces) sammeln, bevor Commands verwendet werden
-    let workspace_entities: Vec<Entity> = deferred_world
-        .entity(monitor_entity)
-        .get::<MonitorChildren>()
-        .map_or_else(Vec::new, |children| children.0.iter().copied().collect());
-
-    for workspace_entity in workspace_entities {
-        insert_monitor_marker_component(monitor_index, workspace_entity, deferred_world.commands(), marker_map);
-
-        // Kinder des Workspaces (Container) sammeln
-        let container_entities: Vec<Entity> = deferred_world
-            .entity(workspace_entity)
-            .get::<WorkspaceChildren>()
-            .map_or_else(Vec::new, |children| children.0.iter().copied().collect());
-
-        for container_entity in container_entities {
-            insert_monitor_marker_component(monitor_index, container_entity, deferred_world.commands(), marker_map);
-
-            // Kinder des Containers (Windows) sammeln
-            let window_entities: Vec<Entity> = deferred_world
-                .entity(container_entity)
-                .get::<ContainerChildren>()
-                .map_or_else(Vec::new, |children| children.0.iter().copied().collect());
-
-            for window_entity in window_entities {
-                insert_monitor_marker_component(monitor_index, window_entity, deferred_world.commands(), marker_map);
-            }
-        }
     }
 }
 

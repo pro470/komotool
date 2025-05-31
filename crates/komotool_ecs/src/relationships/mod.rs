@@ -33,6 +33,8 @@ use indexmap::set::{self, IndexSet};
 pub use monitor::*;
 pub use window::*;
 pub use workspace::*;
+use crate::components::insert_monitor_marker_component;
+use crate::prelude::MonitorExtendedMarkerMap;
 
 #[derive(Component, Reflect)]
 pub struct RelationshipIndexSet(IndexSet<Entity, EntityHash>);
@@ -965,6 +967,42 @@ pub fn relationships_hook<BevyRelatonship: Relationship>(
                 return false;
             }
             boolean
+        }
+    }
+}
+
+fn apply_monitor_markers_to_hierarchy(
+    mut deferred_world: DeferredWorld,
+    monitor_entity: Entity,
+    monitor_index: usize,
+    marker_map: &MonitorExtendedMarkerMap,
+) {
+    insert_monitor_marker_component(monitor_index, monitor_entity, deferred_world.commands(), marker_map);
+
+    let workspace_entities: Vec<Entity> = deferred_world
+        .entity(monitor_entity)
+        .get::<MonitorChildren>()
+        .map_or_else(Vec::new, |children| children.0.iter().copied().collect());
+
+    for workspace_entity in workspace_entities {
+        insert_monitor_marker_component(monitor_index, workspace_entity, deferred_world.commands(), marker_map);
+
+        let container_entities: Vec<Entity> = deferred_world
+            .entity(workspace_entity)
+            .get::<WorkspaceChildren>()
+            .map_or_else(Vec::new, |children| children.0.iter().copied().collect());
+
+        for container_entity in container_entities {
+            insert_monitor_marker_component(monitor_index, container_entity, deferred_world.commands(), marker_map);
+
+            let window_entities: Vec<Entity> = deferred_world
+                .entity(container_entity)
+                .get::<ContainerChildren>()
+                .map_or_else(Vec::new, |children| children.0.iter().copied().collect());
+
+            for window_entity in window_entities {
+                insert_monitor_marker_component(monitor_index, window_entity, deferred_world.commands(), marker_map);
+            }
         }
     }
 }
