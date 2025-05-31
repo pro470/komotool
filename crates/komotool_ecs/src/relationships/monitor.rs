@@ -49,12 +49,35 @@ impl Relationship for MonitorChildOf {
             return;
         }
 
-        if let Some(target) = world.entity(entity).get::<Self>() {
-            if let Some(children) = world.entity(target.get()).get::<Self::RelationshipTarget>() {
-                if let Some(index) = children.0.get_index_of(&entity) {
-                    if let Some(marker) = world.get_resource::<WorkspaceExtendedMarkerMap>() {
-                        let marker = marker.clone();
-                        insert_workspace_marker_component(index, entity, world.commands(), &marker);
+        // In MonitorChildOf::on_insert, `entity` ist die Workspace-Entität.
+        // `target_relationship.get()` gibt die übergeordnete Monitor-Entität zurück.
+        // `Self::RelationshipTarget` ist `MonitorChildren`.
+        // `workspace_idx_in_monitor_list` ist der Index der `entity` (Workspace)
+        // innerhalb der Kinderliste des Monitors.
+        if let Some(target_relationship) = world.entity(entity).get::<Self>() {
+            let parent_monitor_entity = target_relationship.get();
+            if let Some(monitor_children) = world.entity(parent_monitor_entity).get::<Self::RelationshipTarget>() {
+                if let Some(workspace_idx_in_monitor_list) = monitor_children.0.get_index_of(&entity) {
+                    // Klone die Ressourcen-Map, um die immutable Leihe von `world` aufzuheben.
+                    let marker_map_clone = world.get_resource::<WorkspaceExtendedMarkerMap>().cloned();
+
+                    if let Some(cloned_map) = marker_map_clone {
+                        // Rufe die neue Hilfsfunktion auf.
+                        // `entity` (der Workspace) ist der Startpunkt dieser Hierarchie.
+                        crate::relationships::apply_workspace_markers_to_hierarchy(
+                            world.reborrow(),
+                            entity,
+                            workspace_idx_in_monitor_list,
+                            &cloned_map,
+                        );
+                    } else {
+                        warn!("Failed to get WorkspaceExtendedMarkerMap. Markers over the default threshold will not be applied.");
+                        crate::relationships::apply_workspace_markers_to_hierarchy(
+                            world.reborrow(),
+                            entity,
+                            workspace_idx_in_monitor_list,
+                            &WorkspaceExtendedMarkerMap::default(),
+                        );
                     }
                 }
             }
