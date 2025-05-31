@@ -1006,3 +1006,51 @@ fn apply_monitor_markers_to_hierarchy(
         }
     }
 }
+
+/// Setzt Workspace-Marker für einen Workspace und rekursiv für alle Container und Fenster darunter.
+pub fn apply_workspace_markers_to_hierarchy(
+    mut deferred_world: DeferredWorld,
+    workspace_entity: Entity,
+    workspace_index: usize,
+    marker_map: &WorkspaceExtendedMarkerMap,
+) {
+    // Marker für den Workspace selbst setzen
+    insert_workspace_marker_component(
+        workspace_index,
+        workspace_entity,
+        deferred_world.commands(),
+        marker_map,
+    );
+
+    // Container-Kinder des Workspaces
+    let container_entities: Vec<Entity> = deferred_world
+        .entity(workspace_entity)
+        .get::<WorkspaceChildren>()
+        .map_or_else(Vec::new, |children| children.0.iter().copied().collect());
+
+    for container_entity in container_entities {
+        // Marker für Container setzen
+        insert_workspace_marker_component(
+            workspace_index,
+            container_entity,
+            deferred_world.commands(),
+            marker_map,
+        );
+
+        // Fenster-Kinder des Containers
+        let window_entities: Vec<Entity> = deferred_world
+            .entity(container_entity)
+            .get::<ContainerChildren>()
+            .map_or_else(Vec::new, |children| children.0.iter().copied().collect());
+
+        for window_entity in window_entities {
+            // Marker für Fenster setzen
+            insert_workspace_marker_component(
+                workspace_index,
+                window_entity,
+                deferred_world.commands(),
+                marker_map,
+            );
+        }
+    }
+}
