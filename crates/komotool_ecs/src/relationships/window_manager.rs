@@ -51,51 +51,17 @@ impl Relationship for WindowManagerChildOf {
             return;
         }
 
-        if let Some(target) = world.entity(entity).get::<Self>() {
-            if let Some(children) = world.entity(target.get()).get::<Self::RelationshipTarget>() {
-                if let Some(index) = children.0.get_index_of(&entity) {
-                    if let Some(marker) = world.get_resource::<MonitorExtendedMarkerMap>() {
-                        let marker = marker.clone();
-                        insert_monitor_marker_component(index, entity, world.commands(), &marker);
-                        if let Some(monitor_children) =
-                            world.entity(entity).get::<MonitorChildren>()
-                        {
-                            for monitor_child in monitor_children.0.clone().iter() {
-                                insert_monitor_marker_component(
-                                    index,
-                                    *monitor_child,
-                                    world.commands(),
-                                    &marker,
-                                );
-                                if let Some(workspace_children) =
-                                    world.entity(*monitor_child).get::<WorkspaceChildren>()
-                                {
-                                    for workspace_child in workspace_children.0.clone().iter() {
-                                        insert_monitor_marker_component(
-                                            index,
-                                            *workspace_child,
-                                            world.commands(),
-                                            &marker,
-                                        );
-                                        if let Some(container_children) = world
-                                            .entity(*workspace_child)
-                                            .get::<ContainerChildren>()
-                                        {
-                                            for container_child in
-                                                container_children.0.clone().iter()
-                                            {
-                                                insert_monitor_marker_component(
-                                                    index,
-                                                    *container_child,
-                                                    world.commands(),
-                                                    &marker,
-                                                );
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
+        if let Some(target_relationship) = world.entity(entity).get::<Self>() {
+            let window_manager_entity = target_relationship.get();
+            if let Some(window_manager_children) = world.entity(window_manager_entity).get::<Self::RelationshipTarget>() {
+                if let Some(monitor_index_in_manager_list) = window_manager_children.0.get_index_of(&entity) {
+                    if let Some(monitor_marker_map_resource) = world.get_resource::<MonitorExtendedMarkerMap>() {
+                        apply_monitor_markers_to_hierarchy(
+                            &mut world,
+                            entity,
+                            monitor_index_in_manager_list,
+                            monitor_marker_map_resource,
+                        );
                     }
                 }
             }
@@ -124,6 +90,38 @@ impl Relationship for WindowManagerChildOf {
                 component_id,
             },
         );
+    }
+}
+
+// Hilfsfunktion zum rekursiven/kaskadierenden Setzen der Monitor-Marker-Komponenten
+fn apply_monitor_markers_to_hierarchy(
+    deferred_world: &mut DeferredWorld,
+    monitor_entity: Entity,
+    monitor_index: usize,
+    marker_map: &MonitorExtendedMarkerMap,
+) {
+    // Marker für die Monitor-Entität selbst setzen
+    insert_monitor_marker_component(monitor_index, monitor_entity, deferred_world.commands(), marker_map);
+
+    // Kinder des Monitors durchgehen (Workspaces)
+    if let Some(monitor_children) = deferred_world.entity(monitor_entity).get::<MonitorChildren>() {
+        for &workspace_entity in monitor_children.0.iter() {
+            insert_monitor_marker_component(monitor_index, workspace_entity, deferred_world.commands(), marker_map);
+
+            // Kinder des Workspaces durchgehen (Container)
+            if let Some(workspace_children) = deferred_world.entity(workspace_entity).get::<WorkspaceChildren>() {
+                for &container_entity in workspace_children.0.iter() {
+                    insert_monitor_marker_component(monitor_index, container_entity, deferred_world.commands(), marker_map);
+
+                    // Kinder des Containers durchgehen (Windows)
+                    if let Some(container_children) = deferred_world.entity(container_entity).get::<ContainerChildren>() {
+                        for &window_entity in container_children.0.iter() {
+                            insert_monitor_marker_component(monitor_index, window_entity, deferred_world.commands(), marker_map);
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
