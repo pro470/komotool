@@ -33,8 +33,9 @@ use indexmap::set::{self, IndexSet};
 pub use monitor::*;
 pub use window::*;
 pub use workspace::*;
-use crate::components::insert_monitor_marker_component;
+use crate::components::{insert_monitor_marker_component, insert_workspace_marker_component};
 use crate::prelude::MonitorExtendedMarkerMap;
+use crate::resources::WorkspaceExtendedMarkerMap;
 
 #[derive(Component, Reflect)]
 pub struct RelationshipIndexSet(IndexSet<Entity, EntityHash>);
