@@ -57,7 +57,7 @@ impl Relationship for WindowManagerChildOf {
                 if let Some(monitor_index_in_manager_list) = window_manager_children.0.get_index_of(&entity) {
                     if let Some(monitor_marker_map_resource) = world.get_resource::<MonitorExtendedMarkerMap>() {
                         apply_monitor_markers_to_hierarchy(
-                            &mut world,
+                            world.reborrow(),
                             entity,
                             monitor_index_in_manager_list,
                             monitor_marker_map_resource,
@@ -95,7 +95,7 @@ impl Relationship for WindowManagerChildOf {
 
 // Hilfsfunktion zum rekursiven/kaskadierenden Setzen der Monitor-Marker-Komponenten
 fn apply_monitor_markers_to_hierarchy(
-    deferred_world: &mut DeferredWorld,
+    mut deferred_world: DeferredWorld,
     monitor_entity: Entity,
     monitor_index: usize,
     marker_map: &MonitorExtendedMarkerMap,
