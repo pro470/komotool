@@ -55,12 +55,14 @@ impl Relationship for WindowManagerChildOf {
             let window_manager_entity = target_relationship.get();
             if let Some(window_manager_children) = world.entity(window_manager_entity).get::<Self::RelationshipTarget>() {
                 if let Some(monitor_index_in_manager_list) = window_manager_children.0.get_index_of(&entity) {
-                    if let Some(monitor_marker_map_resource) = world.get_resource::<MonitorExtendedMarkerMap>() {
+                    // Klone die Ressource, um die Borrow zu beenden, bevor wir world mut borrowen
+                    let marker_map_clone = world.get_resource::<MonitorExtendedMarkerMap>().cloned();
+                    if let Some(cloned_map) = marker_map_clone {
                         apply_monitor_markers_to_hierarchy(
                             world.reborrow(),
                             entity,
                             monitor_index_in_manager_list,
-                            monitor_marker_map_resource,
+                            &cloned_map,
                         );
                     }
                 }
@@ -93,7 +95,6 @@ impl Relationship for WindowManagerChildOf {
     }
 }
 
-// Hilfsfunktion zum rekursiven/kaskadierenden Setzen der Monitor-Marker-Komponenten
 fn apply_monitor_markers_to_hierarchy(
     mut deferred_world: DeferredWorld,
     monitor_entity: Entity,
@@ -103,23 +104,32 @@ fn apply_monitor_markers_to_hierarchy(
     // Marker für die Monitor-Entität selbst setzen
     insert_monitor_marker_component(monitor_index, monitor_entity, deferred_world.commands(), marker_map);
 
-    // Kinder des Monitors durchgehen (Workspaces)
-    if let Some(monitor_children) = deferred_world.entity(monitor_entity).get::<MonitorChildren>() {
-        for &workspace_entity in monitor_children.0.iter() {
-            insert_monitor_marker_component(monitor_index, workspace_entity, deferred_world.commands(), marker_map);
+    // Kinder des Monitors (Workspaces) sammeln, bevor Commands verwendet werden
+    let workspace_entities: Vec<Entity> = deferred_world
+        .entity(monitor_entity)
+        .get::<MonitorChildren>()
+        .map_or_else(Vec::new, |children| children.0.iter().copied().collect());
 
-            // Kinder des Workspaces durchgehen (Container)
-            if let Some(workspace_children) = deferred_world.entity(workspace_entity).get::<WorkspaceChildren>() {
-                for &container_entity in workspace_children.0.iter() {
-                    insert_monitor_marker_component(monitor_index, container_entity, deferred_world.commands(), marker_map);
+    for workspace_entity in workspace_entities {
+        insert_monitor_marker_component(monitor_index, workspace_entity, deferred_world.commands(), marker_map);
 
-                    // Kinder des Containers durchgehen (Windows)
-                    if let Some(container_children) = deferred_world.entity(container_entity).get::<ContainerChildren>() {
-                        for &window_entity in container_children.0.iter() {
-                            insert_monitor_marker_component(monitor_index, window_entity, deferred_world.commands(), marker_map);
-                        }
-                    }
-                }
+        // Kinder des Workspaces (Container) sammeln
+        let container_entities: Vec<Entity> = deferred_world
+            .entity(workspace_entity)
+            .get::<WorkspaceChildren>()
+            .map_or_else(Vec::new, |children| children.0.iter().copied().collect());
+
+        for container_entity in container_entities {
+            insert_monitor_marker_component(monitor_index, container_entity, deferred_world.commands(), marker_map);
+
+            // Kinder des Containers (Windows) sammeln
+            let window_entities: Vec<Entity> = deferred_world
+                .entity(container_entity)
+                .get::<ContainerChildren>()
+                .map_or_else(Vec::new, |children| children.0.iter().copied().collect());
+
+            for window_entity in window_entities {
+                insert_monitor_marker_component(monitor_index, window_entity, deferred_world.commands(), marker_map);
             }
         }
     }
