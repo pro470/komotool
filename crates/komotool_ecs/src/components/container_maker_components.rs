@@ -1,4 +1,4 @@
-use crate::resources::ExtendedMarkerMap;
+use crate::resources::ContainerExtendedMarkerMap;
 use bevy_app::App;
 use bevy_ecs::component::Component;
 use bevy_ecs::entity::Entity;
@@ -525,7 +525,7 @@ pub fn insert_container_marker_component(
     index: usize,
     entity: Entity,
     mut commands: Commands,
-    extended_marker_map: &ExtendedMarkerMap,
+    extended_marker_map: &ContainerExtendedMarkerMap,
 ) {
     match index {
         1 => {
@@ -927,7 +927,7 @@ pub fn despawn_container_marker_component(
     index: usize,
     entity: Entity,
     mut commands: Commands,
-    extended_marker_map: &ExtendedMarkerMap,
+    extended_marker_map: &ContainerExtendedMarkerMap,
 ) {
     match index {
         1 => {

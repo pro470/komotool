@@ -13,7 +13,8 @@ pub fn import_komorebi_workspace_state(
     komorebi_state: Res<KomorebiState>,
     mut workspace_map: ResMut<WorkspaceToEntityMap>,
     registry: Res<RelationRegistry>,
-    extended_marker_map: Res<ExtendedMarkerMap>,
+    workspace_extended_marker_map: Res<WorkspaceExtendedMarkerMap>,
+    monitor_extended_marker_map: Res<MonitorExtendedMarkerMap>,
     mut keep_alive_workspaces: ResMut<KeepAliveWorkspaces>,
 ) {
     let Some(state) = &komorebi_state.komorebi else {
@@ -44,7 +45,7 @@ pub fn import_komorebi_workspace_state(
                                 record.monitor,
                                 entity,
                                 commands.reborrow(),
-                                &extended_marker_map,
+                                &monitor_extended_marker_map,
                             );
                         }
                         // Despawn Workspace marker
@@ -53,7 +54,7 @@ pub fn import_komorebi_workspace_state(
                                 record.workspace,
                                 entity,
                                 commands.reborrow(),
-                                &extended_marker_map,
+                                &workspace_extended_marker_map,
                             );
                         }
                     }
@@ -90,7 +91,7 @@ pub fn import_komorebi_workspace_state(
                                     record.monitor,
                                     *entity,
                                     commands.reborrow(),
-                                    &extended_marker_map,
+                                    &monitor_extended_marker_map,
                                 );
                             }
                             // Despawn Workspace marker
@@ -99,7 +100,7 @@ pub fn import_komorebi_workspace_state(
                                     record.workspace,
                                     *entity,
                                     commands.reborrow(),
-                                    &extended_marker_map,
+                                    &workspace_extended_marker_map,
                                 );
                             }
                         }
@@ -137,7 +138,7 @@ pub fn import_komorebi_monitor_state(
     komorebi_state: Res<KomorebiState>,
     mut monitor_map: ResMut<MonitorToEntityMap>,
     registry: Res<RelationRegistry>,
-    extended_marker_map: Res<ExtendedMarkerMap>,
+    extended_marker_map: Res<MonitorExtendedMarkerMap>,
     mut keep_alive_monitors: ResMut<KeepAliveMonitors>,
 ) {
     let Some(state) = &komorebi_state.komorebi else {
@@ -236,7 +237,10 @@ pub fn import_komorebi_window_state(
     komorebi_state: Res<KomorebiState>,
     mut window_map: ResMut<WindowToEntityMap>,
     registry: Res<RelationRegistry>,
-    extended_marker_map: Res<ExtendedMarkerMap>,
+    window_extended_marker_map: Res<WindowExtendedMarkerMap>,
+    container_extended_marker_map: Res<ContainerExtendedMarkerMap>,
+    workspace_extended_marker_map: Res<WorkspaceExtendedMarkerMap>,
+    monitor_extended_marker_map: Res<MonitorExtendedMarkerMap>,
 ) {
     let Some(state) = &komorebi_state.komorebi else {
         return;
@@ -266,7 +270,7 @@ pub fn import_komorebi_window_state(
                                         record.monitor,
                                         entity,
                                         commands.reborrow(),
-                                        &extended_marker_map,
+                                        &monitor_extended_marker_map,
                                     );
                                 }
                                 // Despawn Workspace marker
@@ -275,7 +279,7 @@ pub fn import_komorebi_window_state(
                                         record.workspace,
                                         entity,
                                         commands.reborrow(),
-                                        &extended_marker_map,
+                                        &workspace_extended_marker_map,
                                     );
                                 }
                                 // Despawn Container marker
@@ -284,7 +288,7 @@ pub fn import_komorebi_window_state(
                                         record.container,
                                         entity,
                                         commands.reborrow(),
-                                        &extended_marker_map,
+                                        &container_extended_marker_map,
                                     );
                                 }
                                 // Despawn Window marker
@@ -293,7 +297,7 @@ pub fn import_komorebi_window_state(
                                         record.window,
                                         entity,
                                         commands.reborrow(),
-                                        &extended_marker_map,
+                                        &window_extended_marker_map,
                                     );
                                 }
                             }
@@ -354,7 +358,7 @@ pub fn import_komorebi_window_state(
                                         record.monitor,
                                         *entity,
                                         commands.reborrow(),
-                                        &extended_marker_map,
+                                        &monitor_extended_marker_map,
                                     );
                                 }
                                 // Despawn Workspace marker
@@ -363,7 +367,7 @@ pub fn import_komorebi_window_state(
                                         record.workspace,
                                         *entity,
                                         commands.reborrow(),
-                                        &extended_marker_map,
+                                        &workspace_extended_marker_map,
                                     );
                                 }
                                 // Despawn Container marker
@@ -372,7 +376,7 @@ pub fn import_komorebi_window_state(
                                         record.container,
                                         *entity,
                                         commands.reborrow(),
-                                        &extended_marker_map,
+                                        &container_extended_marker_map,
                                     );
                                 }
                                 // Despawn Window marker
@@ -381,7 +385,7 @@ pub fn import_komorebi_window_state(
                                         record.window,
                                         *entity,
                                         commands.reborrow(),
-                                        &extended_marker_map,
+                                        &window_extended_marker_map,
                                     );
                                 }
                             }
@@ -422,7 +426,9 @@ pub fn import_komorebi_container_state(
     komorebi_state: Res<KomorebiState>,
     mut container_map: ResMut<ContainerToEntityMap>,
     registry: Res<RelationRegistry>,
-    extended_marker_map: Res<ExtendedMarkerMap>,
+    container_extended_marker_map: Res<ContainerExtendedMarkerMap>,
+    workspace_extended_marker_map: Res<WorkspaceExtendedMarkerMap>,
+    monitor_extended_marker_map: Res<MonitorExtendedMarkerMap>,
     mut keep_alive_containers: ResMut<KeepAliveContainers>,
 ) {
     let Some(state) = &komorebi_state.komorebi else {
@@ -452,7 +458,7 @@ pub fn import_komorebi_container_state(
                                     record.monitor,
                                     entity,
                                     commands.reborrow(),
-                                    &extended_marker_map,
+                                    &monitor_extended_marker_map,
                                 );
                             }
                             // Despawn Workspace marker
@@ -461,7 +467,7 @@ pub fn import_komorebi_container_state(
                                     record.workspace,
                                     entity,
                                     commands.reborrow(),
-                                    &extended_marker_map,
+                                    &workspace_extended_marker_map,
                                 );
                             }
                             // Despawn Container marker
@@ -470,7 +476,7 @@ pub fn import_komorebi_container_state(
                                     record.container,
                                     entity,
                                     commands.reborrow(),
-                                    &extended_marker_map,
+                                    &container_extended_marker_map,
                                 );
                             }
                         }
@@ -530,7 +536,7 @@ pub fn import_komorebi_container_state(
                                     record.monitor,
                                     *entity,
                                     commands.reborrow(),
-                                    &extended_marker_map,
+                                    &monitor_extended_marker_map,
                                 );
                             }
                             // Despawn Workspace marker
@@ -539,7 +545,7 @@ pub fn import_komorebi_container_state(
                                     record.workspace,
                                     *entity,
                                     commands.reborrow(),
-                                    &extended_marker_map,
+                                    &workspace_extended_marker_map,
                                 );
                             }
                             // Despawn Container marker
@@ -548,7 +554,7 @@ pub fn import_komorebi_container_state(
                                     record.container,
                                     *entity,
                                     commands.reborrow(),
-                                    &extended_marker_map,
+                                    &container_extended_marker_map,
                                 );
                             }
                         }
@@ -610,7 +616,10 @@ pub fn build_relation_registry(
     container_map: Res<ContainerToEntityMap>,
     window_map: Res<WindowToEntityMap>,
     mut registry: ResMut<RelationRegistry>,
-    extended_marker_map: Res<ExtendedMarkerMap>,
+    window_extended_marker_map: Res<WindowExtendedMarkerMap>,
+    container_extended_marker_map: Res<ContainerExtendedMarkerMap>,
+    workspace_extended_marker_map: Res<WorkspaceExtendedMarkerMap>,
+    monitor_extended_marker_map: Res<MonitorExtendedMarkerMap>,
 ) {
     registry.records.clear();
 
@@ -632,7 +641,7 @@ pub fn build_relation_registry(
             monitor_marker_idx,
             *monitor_entity,
             commands.reborrow(),
-            &extended_marker_map,
+            &monitor_extended_marker_map,
         );
 
         // Check and insert/remove monitor focus
@@ -658,13 +667,13 @@ pub fn build_relation_registry(
                 monitor_marker_idx,
                 *workspace_entity,
                 commands.reborrow(),
-                &extended_marker_map,
+                &monitor_extended_marker_map,
             );
             insert_workspace_marker_component(
                 workspace_marker_idx,
                 *workspace_entity,
                 commands.reborrow(),
-                &extended_marker_map,
+                &workspace_extended_marker_map,
             );
 
             // Check and insert/remove workspace focus
@@ -693,19 +702,19 @@ pub fn build_relation_registry(
                     monitor_marker_idx,
                     *container_entity,
                     commands.reborrow(),
-                    &extended_marker_map,
+                    &monitor_extended_marker_map,
                 );
                 insert_workspace_marker_component(
                     workspace_marker_idx,
                     *container_entity,
                     commands.reborrow(),
-                    &extended_marker_map,
+                    &workspace_extended_marker_map,
                 );
                 insert_container_marker_component(
                     container_marker_idx,
                     *container_entity,
                     commands.reborrow(),
-                    &extended_marker_map,
+                    &container_extended_marker_map,
                 );
 
                 // Check and insert/remove container focus
@@ -735,25 +744,25 @@ pub fn build_relation_registry(
                         monitor_marker_idx,
                         *window_entity,
                         commands.reborrow(),
-                        &extended_marker_map,
+                        &monitor_extended_marker_map,
                     );
                     insert_workspace_marker_component(
                         workspace_marker_idx,
                         *window_entity,
                         commands.reborrow(),
-                        &extended_marker_map,
+                        &workspace_extended_marker_map,
                     );
                     insert_container_marker_component(
                         container_marker_idx,
                         *window_entity,
                         commands.reborrow(),
-                        &extended_marker_map,
+                        &container_extended_marker_map,
                     );
                     insert_window_marker_component(
                         window_marker_idx,
                         *window_entity,
                         commands.reborrow(),
-                        &extended_marker_map,
+                        &window_extended_marker_map,
                     );
 
                     // Check and insert/remove window focus
@@ -778,13 +787,13 @@ pub fn build_relation_registry(
                         monitor_marker_idx,
                         *monocle_entity,
                         commands.reborrow(),
-                        &extended_marker_map,
+                        &monitor_extended_marker_map,
                     );
                     insert_workspace_marker_component(
                         workspace_marker_idx,
                         *monocle_entity,
                         commands.reborrow(),
-                        &extended_marker_map,
+                        &workspace_extended_marker_map,
                     );
                 };
             }
@@ -795,13 +804,13 @@ pub fn build_relation_registry(
                         monitor_marker_idx,
                         *maximized_entity,
                         commands.reborrow(),
-                        &extended_marker_map,
+                        &monitor_extended_marker_map,
                     );
                     insert_workspace_marker_component(
                         workspace_marker_idx,
                         *maximized_entity,
                         commands.reborrow(),
-                        &extended_marker_map,
+                        &workspace_extended_marker_map,
                     );
                 }
             }

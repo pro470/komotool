@@ -18,3 +18,6 @@ pub struct LastFocused;
 
 #[derive(Component, Reflect)]
 pub struct FocusedGlobal;
+
+#[derive(Component)]
+pub struct WindowManager;

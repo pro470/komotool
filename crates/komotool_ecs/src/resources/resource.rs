@@ -73,8 +73,22 @@ pub struct KomorebiStaticConfig {
     pub config: Option<StaticConfig>,
 }
 
-#[derive(Resource, Default, Reflect)]
-pub struct ExtendedMarkerMap {
+#[derive(Resource, Default, Reflect, Clone)]
+pub struct WindowExtendedMarkerMap {
+    pub makers: HashMap<usize, ComponentId>,
+}
+#[derive(Resource, Default, Reflect, Clone)]
+pub struct ContainerExtendedMarkerMap {
+    pub makers: HashMap<usize, ComponentId>,
+}
+
+#[derive(Resource, Default, Reflect, Clone)]
+pub struct WorkspaceExtendedMarkerMap {
+    pub makers: HashMap<usize, ComponentId>,
+}
+
+#[derive(Resource, Default, Reflect, Clone)]
+pub struct MonitorExtendedMarkerMap {
     pub makers: HashMap<usize, ComponentId>,
 }
 

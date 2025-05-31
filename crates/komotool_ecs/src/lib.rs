@@ -1,6 +1,7 @@
 pub mod components;
 pub mod register_komorebi_types;
 pub mod relations;
+pub mod relationships;
 pub mod resources;
 pub mod systems;
 
@@ -9,6 +10,7 @@ pub mod prelude {
     pub use components::*;
     pub use register_komorebi_types::*;
     pub use relations::*;
+    pub use relationships::*;
     pub use resources::*;
     pub use systems::*;
 }
@@ -30,7 +32,10 @@ impl Plugin for KomoToolEcsPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<AppState>()
             .init_resource::<RelationRegistry>()
-            .init_resource::<ExtendedMarkerMap>()
+            .init_resource::<WindowExtendedMarkerMap>()
+            .init_resource::<ContainerExtendedMarkerMap>()
+            .init_resource::<WorkspaceExtendedMarkerMap>()
+            .init_resource::<MonitorExtendedMarkerMap>()
             .init_resource::<KomorebiState>()
             .init_resource::<KomotoolState>()
             .init_resource::<MonitorToEntityMap>()
