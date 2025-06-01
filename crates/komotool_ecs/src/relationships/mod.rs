@@ -992,40 +992,13 @@ pub fn apply_markers_to_monitor_hierarchy<Marker: Resource + Clone + Default>(
         .map_or_else(Vec::new, |children| children.0.iter().copied().collect());
 
     for workspace_entity in workspace_entities {
-        insert_marker(
-            monitor_index,
+        apply_markers_to_workspace_hierarchy(
+            deferred_world.reborrow(),
             workspace_entity,
-            deferred_world.commands(),
+            monitor_index,
             marker_map,
+            &mut insert_marker,
         );
-
-        let container_entities: Vec<Entity> = deferred_world
-            .entity(workspace_entity)
-            .get::<WorkspaceChildren>()
-            .map_or_else(Vec::new, |children| children.0.iter().copied().collect());
-
-        for container_entity in container_entities {
-            insert_marker(
-                monitor_index,
-                container_entity,
-                deferred_world.commands(),
-                marker_map,
-            );
-
-            let window_entities: Vec<Entity> = deferred_world
-                .entity(container_entity)
-                .get::<ContainerChildren>()
-                .map_or_else(Vec::new, |children| children.0.iter().copied().collect());
-
-            for window_entity in window_entities {
-                insert_marker(
-                    monitor_index,
-                    window_entity,
-                    deferred_world.commands(),
-                    marker_map,
-                );
-            }
-        }
     }
 }
 
@@ -1052,29 +1025,13 @@ pub fn apply_markers_to_workspace_hierarchy<Marker: Resource + Clone + Default>(
         .map_or_else(Vec::new, |children| children.0.iter().copied().collect());
 
     for container_entity in container_entities {
-        // Marker für Container setzen
-        insert_marker(
-            workspace_index,
+        apply_markers_to_container_hierarchy(
+            deferred_world.reborrow(),
             container_entity,
-            deferred_world.commands(),
+            workspace_index,
             marker_map,
-        );
-
-        // Fenster-Kinder des Containers
-        let window_entities: Vec<Entity> = deferred_world
-            .entity(container_entity)
-            .get::<ContainerChildren>()
-            .map_or_else(Vec::new, |children| children.0.iter().copied().collect());
-
-        for window_entity in window_entities {
-            // Marker für Fenster setzen
-            insert_marker(
-                workspace_index,
-                window_entity,
-                deferred_world.commands(),
-                marker_map,
-            );
-        }
+            &mut insert_marker,
+        )
     }
 }
 
