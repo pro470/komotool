@@ -9,8 +9,16 @@ use bevy_ecs::relationship::{
     Relationship, RelationshipHookMode, RelationshipSourceCollection, RelationshipTarget,
 };
 
+use crate::components::{
+    insert_container_marker_component, insert_monitor_marker_component,
+    insert_workspace_marker_component,
+};
+use crate::prelude::MonitorExtendedMarkerMap;
+use crate::relationships::window_manager::WindowManagerChildOf;
+use crate::resources::{ContainerExtendedMarkerMap, WorkspaceExtendedMarkerMap};
 use bevy_ecs::component::HookContext;
 use bevy_ecs::prelude::Component;
+use bevy_ecs::resource::Resource;
 use bevy_ecs::world::{DeferredWorld, EntityWorldMut};
 use bevy_log::warn;
 use bevy_platform::prelude::Box;
@@ -29,13 +37,11 @@ use core::{
     },
     ptr,
 };
+use bevy_ecs::system::Commands;
 use indexmap::set::{self, IndexSet};
 pub use monitor::*;
 pub use window::*;
 pub use workspace::*;
-use crate::components::{insert_monitor_marker_component, insert_workspace_marker_component, insert_container_marker_component};
-use crate::prelude::MonitorExtendedMarkerMap;
-use crate::resources::{WorkspaceExtendedMarkerMap, ContainerExtendedMarkerMap};
 
 #[derive(Component, Reflect)]
 pub struct RelationshipIndexSet(IndexSet<Entity, EntityHash>);
@@ -86,38 +92,6 @@ impl RelationshipSourceCollection for RelationshipIndexSet {
     }
 }
 
-/// Setzt Container-Marker für einen Container und rekursiv für alle Fenster darunter.
-pub fn apply_container_markers_to_hierarchy(
-    mut deferred_world: DeferredWorld,
-    container_entity: Entity, // Die Container-Entität, für die und deren Kinder Marker gesetzt werden
-    container_index: usize,   // Der Index dieses Containers (relevant für die Marker-Komponente)
-    marker_map: &ContainerExtendedMarkerMap,
-) {
-    // Marker für die Container-Entität selbst setzen
-    insert_container_marker_component(
-        container_index,
-        container_entity,
-        deferred_world.commands(),
-        marker_map,
-    );
-
-    // Fenster-Kinder des Containers sammeln
-    // ContainerChildren enthält die Window-Entitäten eines Containers
-    let window_entities: Vec<Entity> = deferred_world
-        .entity(container_entity)
-        .get::<ContainerChildren>() // Kinder eines Containers sind Fenster, gespeichert in ContainerChildren
-        .map_or_else(Vec::new, |children| children.0.iter().copied().collect());
-
-    for window_entity in window_entities {
-        // Marker für jede Window-Entität setzen
-        insert_container_marker_component(
-            container_index, // Der Index des übergeordneten Containers wird weitergegeben
-            window_entity,
-            deferred_world.commands(),
-            marker_map,
-        );
-    }
-}
 impl RelationshipIndexSet {
     /// Creates an empty `RelationshipIndexSet`.
     /// Equivalent to [`IndexSet::with_hasher(EntityHash)`].
@@ -1005,13 +979,22 @@ pub fn relationships_hook<BevyRelatonship: Relationship>(
     }
 }
 
-fn apply_monitor_markers_to_hierarchy(
+pub fn apply_markers_to_monitor_hierarchy<
+    Marker: Resource + Clone + Default,
+>(
     mut deferred_world: DeferredWorld,
     monitor_entity: Entity,
     monitor_index: usize,
-    marker_map: &MonitorExtendedMarkerMap,
+    marker_map: &Marker,
+    mut insert_marker: impl FnMut(usize, Entity, Commands, &Marker),
+
 ) {
-    insert_monitor_marker_component(monitor_index, monitor_entity, deferred_world.commands(), marker_map);
+    insert_marker(
+        monitor_index,
+        monitor_entity,
+        deferred_world.commands(),
+        marker_map,
+    );
 
     let workspace_entities: Vec<Entity> = deferred_world
         .entity(monitor_entity)
@@ -1019,7 +1002,12 @@ fn apply_monitor_markers_to_hierarchy(
         .map_or_else(Vec::new, |children| children.0.iter().copied().collect());
 
     for workspace_entity in workspace_entities {
-        insert_monitor_marker_component(monitor_index, workspace_entity, deferred_world.commands(), marker_map);
+        insert_marker(
+            monitor_index,
+            workspace_entity,
+            deferred_world.commands(),
+            marker_map,
+        );
 
         let container_entities: Vec<Entity> = deferred_world
             .entity(workspace_entity)
@@ -1027,7 +1015,12 @@ fn apply_monitor_markers_to_hierarchy(
             .map_or_else(Vec::new, |children| children.0.iter().copied().collect());
 
         for container_entity in container_entities {
-            insert_monitor_marker_component(monitor_index, container_entity, deferred_world.commands(), marker_map);
+            insert_marker(
+                monitor_index,
+                container_entity,
+                deferred_world.commands(),
+                marker_map,
+            );
 
             let window_entities: Vec<Entity> = deferred_world
                 .entity(container_entity)
@@ -1035,21 +1028,29 @@ fn apply_monitor_markers_to_hierarchy(
                 .map_or_else(Vec::new, |children| children.0.iter().copied().collect());
 
             for window_entity in window_entities {
-                insert_monitor_marker_component(monitor_index, window_entity, deferred_world.commands(), marker_map);
+                insert_marker(
+                    monitor_index,
+                    window_entity,
+                    deferred_world.commands(),
+                    marker_map,
+                );
             }
         }
     }
 }
 
 /// Setzt Workspace-Marker für einen Workspace und rekursiv für alle Container und Fenster darunter.
-pub fn apply_workspace_markers_to_hierarchy(
+pub fn apply_markers_to_workspace_hierarchy<
+    Marker: Resource + Clone + Default
+>(
     mut deferred_world: DeferredWorld,
     workspace_entity: Entity,
     workspace_index: usize,
-    marker_map: &WorkspaceExtendedMarkerMap,
+    marker_map: &Marker,
+    mut insert_marker: impl FnMut(usize, Entity, Commands, &Marker),
 ) {
     // Marker für den Workspace selbst setzen
-    insert_workspace_marker_component(
+    insert_marker(
         workspace_index,
         workspace_entity,
         deferred_world.commands(),
@@ -1064,7 +1065,7 @@ pub fn apply_workspace_markers_to_hierarchy(
 
     for container_entity in container_entities {
         // Marker für Container setzen
-        insert_workspace_marker_component(
+        insert_marker(
             workspace_index,
             container_entity,
             deferred_world.commands(),
@@ -1079,7 +1080,7 @@ pub fn apply_workspace_markers_to_hierarchy(
 
         for window_entity in window_entities {
             // Marker für Fenster setzen
-            insert_workspace_marker_component(
+            insert_marker(
                 workspace_index,
                 window_entity,
                 deferred_world.commands(),
@@ -1087,4 +1088,87 @@ pub fn apply_workspace_markers_to_hierarchy(
             );
         }
     }
+}
+
+/// Setzt Container-Marker für einen Container und rekursiv für alle Fenster darunter.
+pub fn apply_markers_to_container_hierarchy<
+    Marker: Resource + Clone + Default
+>(
+    mut deferred_world: DeferredWorld,
+    container_entity: Entity, // Die Container-Entität, für die und deren Kinder Marker gesetzt werden
+    container_index: usize,   // Der Index dieses Containers (relevant für die Marker-Komponente)
+    marker_map: &Marker,
+    mut insert_marker: impl FnMut(usize, Entity, Commands, &Marker),
+) {
+    // Marker für die Container-Entität selbst setzen
+    insert_marker(
+        container_index,
+        container_entity,
+        deferred_world.commands(),
+        marker_map,
+    );
+
+    // Fenster-Kinder des Containers sammeln
+    // ContainerChildren enthält die Window-Entitäten eines Containers
+    let window_entities: Vec<Entity> = deferred_world
+        .entity(container_entity)
+        .get::<ContainerChildren>() // Kinder eines Containers sind Fenster, gespeichert in ContainerChildren
+        .map_or_else(Vec::new, |children| children.0.iter().copied().collect());
+
+    for window_entity in window_entities {
+        // Marker für jede Window-Entität setzen
+        insert_marker(
+            container_index, // Der Index des übergeordneten Containers wird weitergegeben
+            window_entity,
+            deferred_world.commands(),
+            marker_map,
+        );
+    }
+}
+
+pub trait GetIndex {
+    fn get_index_of(&self, entity: &Entity) -> Option<usize>;
+}
+
+pub type InsertMarkerFn<Marker> = fn(usize, Entity, Commands, &Marker);
+
+pub fn apply_parent_markers_to_hierarchy<
+    BevyRelatonship: Relationship<RelationshipTarget = BevyRelatonshipTarget>,
+    BevyRelatonshipTarget,
+    Marker: Resource + Clone + Default,
+>(
+    entity: Entity,
+    parent: Entity,
+    mut world: DeferredWorld,
+    mut to_hierarchy: impl FnMut(DeferredWorld, Entity, usize, &Marker, InsertMarkerFn<Marker>),
+    insert_marker: InsertMarkerFn<Marker>,
+) -> Option<Entity>
+where
+    BevyRelatonshipTarget: GetIndex + RelationshipTarget<Relationship = BevyRelatonship>,
+{
+    if let Some(childof) = world.entity(parent).get::<BevyRelatonship>() {
+        let childof = childof.get();
+        if let Some(children) = world.entity(childof).get::<BevyRelatonshipTarget>() {
+            if let Some(parent_idx) = children.get_index_of(&parent) {
+                // Rufe die neue Hilfsfunktion auf.
+
+                let marker_map_clone = world.get_resource::<Marker>().cloned();
+
+                if let Some(cloned_map) = marker_map_clone {
+                    // Rufe die neue Hilfsfunktion auf.
+                    // `entity` (der Workspace) ist der Startpunkt dieser Hierarchie.
+                    to_hierarchy(world.reborrow(), entity, parent_idx, &cloned_map, insert_marker);
+                    return Some(childof);
+                } else {
+                    warn!(
+                        "Failed to get {}. Markers over the default threshold will not be applied.",
+                        core::any::type_name::<Marker>()
+                    );
+                    to_hierarchy(world.reborrow(), entity, parent_idx, &Marker::default(), insert_marker);
+                    return Some(childof);
+                }
+            }
+        }
+    }
+    None
 }

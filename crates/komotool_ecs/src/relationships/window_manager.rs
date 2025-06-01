@@ -1,9 +1,10 @@
 use super::{
-    bevy_on_insert, bevy_on_remove, relationships_hook, ContainerChildren, MonitorChildren,
-    RelationshipIndexSet,
+    ContainerChildren, GetIndex, MonitorChildren, RelationshipIndexSet, bevy_on_insert,
+    bevy_on_remove, relationships_hook,
 };
-use crate::components::{insert_monitor_marker_component, WindowManager};
+use crate::components::{WindowManager, insert_monitor_marker_component};
 use crate::prelude::WorkspaceChildren;
+use crate::relationships;
 use crate::resources::MonitorExtendedMarkerMap;
 use bevy_ecs::component::{Component, HookContext};
 use bevy_ecs::entity::Entity;
@@ -12,14 +13,13 @@ use bevy_ecs::world::DeferredWorld;
 use bevy_log::warn;
 use bevy_reflect::Reflect;
 use komorebi_client::Monitor;
-use crate::relationships;
 
 #[derive(Component)]
 #[component(immutable)]
 pub struct WindowManagerChildOf(pub Entity);
 
 #[derive(Component, Reflect)]
-pub struct WindowManagerChildren(RelationshipIndexSet);
+pub struct WindowManagerChildren(pub(crate) RelationshipIndexSet);
 
 impl Relationship for WindowManagerChildOf {
     type RelationshipTarget = WindowManagerChildren;
@@ -55,23 +55,33 @@ impl Relationship for WindowManagerChildOf {
 
         if let Some(target_relationship) = world.entity(entity).get::<Self>() {
             let window_manager_entity = target_relationship.get();
-            if let Some(window_manager_children) = world.entity(window_manager_entity).get::<Self::RelationshipTarget>() {
-                if let Some(monitor_index_in_manager_list) = window_manager_children.0.get_index_of(&entity) {
-                    let marker_map_clone = world.get_resource::<MonitorExtendedMarkerMap>().cloned();
+            if let Some(window_manager_children) = world
+                .entity(window_manager_entity)
+                .get::<Self::RelationshipTarget>()
+            {
+                if let Some(monitor_index_in_manager_list) =
+                    window_manager_children.0.get_index_of(&entity)
+                {
+                    let marker_map_clone =
+                        world.get_resource::<MonitorExtendedMarkerMap>().cloned();
                     if let Some(cloned_map) = marker_map_clone {
-                        relationships::apply_monitor_markers_to_hierarchy(
+                        relationships::apply_markers_to_monitor_hierarchy(
                             world.reborrow(),
                             entity,
                             monitor_index_in_manager_list,
                             &cloned_map,
+                            insert_monitor_marker_component
                         );
                     } else {
-                        warn!("Failed to get MonitorExtendedMarkerMap. Markers over the default threeshold will not be applied.");
-                        relationships::apply_monitor_markers_to_hierarchy(
+                        warn!(
+                            "Failed to get MonitorExtendedMarkerMap. Markers over the default threeshold will not be applied."
+                        );
+                        relationships::apply_markers_to_monitor_hierarchy(
                             world.reborrow(),
                             entity,
                             monitor_index_in_manager_list,
                             &MonitorExtendedMarkerMap::default(),
+                            insert_monitor_marker_component
                         );
                     }
                 }
@@ -121,5 +131,11 @@ impl RelationshipTarget for WindowManagerChildren {
 
     fn from_collection_risky(collection: Self::Collection) -> Self {
         WindowManagerChildren(collection)
+    }
+}
+
+impl GetIndex for WindowManagerChildren {
+    fn get_index_of(&self, entity: &Entity) -> Option<usize> {
+        self.0.get_index_of(entity)
     }
 }
