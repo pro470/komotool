@@ -1,8 +1,10 @@
 use crate::components::{insert_monitor_marker_component, insert_workspace_marker_component};
 use crate::prelude::relationships_hook;
-use crate::relationships;
 use crate::relationships::window_manager::{WindowManagerChildOf, WindowManagerChildren};
-use crate::relationships::{GetIndex, RelationshipIndexSet, apply_markers_to_monitor_hierarchy, apply_parent_markers_to_hierarchy, bevy_on_insert, bevy_on_remove, apply_markers_to_workspace_hierarchy};
+use crate::relationships::{
+    GetIndex, RelationshipIndexSet, apply_markers_to_workspace_hierarchy,
+    apply_parent_markers_to_hierarchy, bevy_on_insert, bevy_on_remove,
+};
 use crate::resources::{MonitorExtendedMarkerMap, WorkspaceExtendedMarkerMap};
 use bevy_ecs::component::{Component, HookContext};
 use bevy_ecs::entity::Entity;
@@ -78,7 +80,7 @@ impl Relationship for MonitorChildOf {
                             entity,
                             workspace_idx_in_monitor_list,
                             &cloned_map,
-                            insert_workspace_marker_component
+                            insert_workspace_marker_component,
                         );
                     } else {
                         warn!(
@@ -89,7 +91,7 @@ impl Relationship for MonitorChildOf {
                             entity,
                             workspace_idx_in_monitor_list,
                             &WorkspaceExtendedMarkerMap::default(),
-                            insert_workspace_marker_component
+                            insert_workspace_marker_component,
                         );
                     }
 
@@ -102,7 +104,7 @@ impl Relationship for MonitorChildOf {
                         parent_monitor_entity,
                         world.reborrow(),
                         apply_markers_to_workspace_hierarchy,
-                        insert_monitor_marker_component
+                        insert_monitor_marker_component,
                     );
                 }
             }

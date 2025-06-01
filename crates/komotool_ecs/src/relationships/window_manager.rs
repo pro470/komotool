@@ -1,9 +1,5 @@
-use super::{
-    ContainerChildren, GetIndex, MonitorChildren, RelationshipIndexSet, bevy_on_insert,
-    bevy_on_remove, relationships_hook,
-};
+use super::{GetIndex, RelationshipIndexSet, bevy_on_insert, bevy_on_remove, relationships_hook};
 use crate::components::{WindowManager, insert_monitor_marker_component};
-use crate::prelude::WorkspaceChildren;
 use crate::relationships;
 use crate::resources::MonitorExtendedMarkerMap;
 use bevy_ecs::component::{Component, HookContext};
@@ -70,7 +66,7 @@ impl Relationship for WindowManagerChildOf {
                             entity,
                             monitor_index_in_manager_list,
                             &cloned_map,
-                            insert_monitor_marker_component
+                            insert_monitor_marker_component,
                         );
                     } else {
                         warn!(
@@ -81,7 +77,7 @@ impl Relationship for WindowManagerChildOf {
                             entity,
                             monitor_index_in_manager_list,
                             &MonitorExtendedMarkerMap::default(),
-                            insert_monitor_marker_component
+                            insert_monitor_marker_component,
                         );
                     }
                 }

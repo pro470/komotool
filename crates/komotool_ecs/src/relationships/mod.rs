@@ -9,16 +9,10 @@ use bevy_ecs::relationship::{
     Relationship, RelationshipHookMode, RelationshipSourceCollection, RelationshipTarget,
 };
 
-use crate::components::{
-    insert_container_marker_component, insert_monitor_marker_component,
-    insert_workspace_marker_component,
-};
-use crate::prelude::MonitorExtendedMarkerMap;
-use crate::relationships::window_manager::WindowManagerChildOf;
-use crate::resources::{ContainerExtendedMarkerMap, WorkspaceExtendedMarkerMap};
 use bevy_ecs::component::HookContext;
 use bevy_ecs::prelude::Component;
 use bevy_ecs::resource::Resource;
+use bevy_ecs::system::Commands;
 use bevy_ecs::world::{DeferredWorld, EntityWorldMut};
 use bevy_log::warn;
 use bevy_platform::prelude::Box;
@@ -37,7 +31,6 @@ use core::{
     },
     ptr,
 };
-use bevy_ecs::system::Commands;
 use indexmap::set::{self, IndexSet};
 pub use monitor::*;
 pub use window::*;
@@ -979,15 +972,12 @@ pub fn relationships_hook<BevyRelatonship: Relationship>(
     }
 }
 
-pub fn apply_markers_to_monitor_hierarchy<
-    Marker: Resource + Clone + Default,
->(
+pub fn apply_markers_to_monitor_hierarchy<Marker: Resource + Clone + Default>(
     mut deferred_world: DeferredWorld,
     monitor_entity: Entity,
     monitor_index: usize,
     marker_map: &Marker,
     mut insert_marker: impl FnMut(usize, Entity, Commands, &Marker),
-
 ) {
     insert_marker(
         monitor_index,
@@ -1040,9 +1030,7 @@ pub fn apply_markers_to_monitor_hierarchy<
 }
 
 /// Setzt Workspace-Marker für einen Workspace und rekursiv für alle Container und Fenster darunter.
-pub fn apply_markers_to_workspace_hierarchy<
-    Marker: Resource + Clone + Default
->(
+pub fn apply_markers_to_workspace_hierarchy<Marker: Resource + Clone + Default>(
     mut deferred_world: DeferredWorld,
     workspace_entity: Entity,
     workspace_index: usize,
@@ -1091,9 +1079,7 @@ pub fn apply_markers_to_workspace_hierarchy<
 }
 
 /// Setzt Container-Marker für einen Container und rekursiv für alle Fenster darunter.
-pub fn apply_markers_to_container_hierarchy<
-    Marker: Resource + Clone + Default
->(
+pub fn apply_markers_to_container_hierarchy<Marker: Resource + Clone + Default>(
     mut deferred_world: DeferredWorld,
     container_entity: Entity, // Die Container-Entität, für die und deren Kinder Marker gesetzt werden
     container_index: usize,   // Der Index dieses Containers (relevant für die Marker-Komponente)
@@ -1157,14 +1143,26 @@ where
                 if let Some(cloned_map) = marker_map_clone {
                     // Rufe die neue Hilfsfunktion auf.
                     // `entity` (der Workspace) ist der Startpunkt dieser Hierarchie.
-                    to_hierarchy(world.reborrow(), entity, parent_idx, &cloned_map, insert_marker);
+                    to_hierarchy(
+                        world.reborrow(),
+                        entity,
+                        parent_idx,
+                        &cloned_map,
+                        insert_marker,
+                    );
                     return Some(childof);
                 } else {
                     warn!(
                         "Failed to get {}. Markers over the default threshold will not be applied.",
                         core::any::type_name::<Marker>()
                     );
-                    to_hierarchy(world.reborrow(), entity, parent_idx, &Marker::default(), insert_marker);
+                    to_hierarchy(
+                        world.reborrow(),
+                        entity,
+                        parent_idx,
+                        &Marker::default(),
+                        insert_marker,
+                    );
                     return Some(childof);
                 }
             }

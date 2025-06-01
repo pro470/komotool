@@ -1,7 +1,13 @@
-use crate::components::{insert_container_marker_component, insert_monitor_marker_component, insert_workspace_marker_component};
-use crate::relationships;
+use crate::components::{
+    insert_container_marker_component, insert_monitor_marker_component,
+    insert_workspace_marker_component,
+};
 use crate::relationships::window_manager::{WindowManagerChildOf, WindowManagerChildren};
-use crate::relationships::{GetIndex, MonitorChildOf, MonitorChildren, RelationshipIndexSet, apply_markers_to_monitor_hierarchy, apply_parent_markers_to_hierarchy, apply_markers_to_workspace_hierarchy, bevy_on_insert, bevy_on_remove, relationships_hook, apply_markers_to_container_hierarchy};
+use crate::relationships::{
+    GetIndex, MonitorChildOf, MonitorChildren, RelationshipIndexSet,
+    apply_markers_to_container_hierarchy, apply_parent_markers_to_hierarchy, bevy_on_insert,
+    bevy_on_remove, relationships_hook,
+};
 use crate::resources::{
     ContainerExtendedMarkerMap, MonitorExtendedMarkerMap, WorkspaceExtendedMarkerMap,
 };
@@ -78,7 +84,7 @@ impl Relationship for WorkspaceChildOf {
                             entity,
                             container_idx_in_workspace_list,
                             &cloned_map,
-                            insert_container_marker_component
+                            insert_container_marker_component,
                         );
                     } else {
                         warn!(
@@ -89,7 +95,7 @@ impl Relationship for WorkspaceChildOf {
                             entity,
                             container_idx_in_workspace_list,
                             &ContainerExtendedMarkerMap::default(),
-                            insert_container_marker_component
+                            insert_container_marker_component,
                         );
                     }
                     if let Some(parent_monitor_entity) = apply_parent_markers_to_hierarchy::<
@@ -101,7 +107,7 @@ impl Relationship for WorkspaceChildOf {
                         parent_workspace_entity,
                         world.reborrow(),
                         apply_markers_to_container_hierarchy,
-                        insert_workspace_marker_component
+                        insert_workspace_marker_component,
                     ) {
                         apply_parent_markers_to_hierarchy::<
                             WindowManagerChildOf,
@@ -112,7 +118,7 @@ impl Relationship for WorkspaceChildOf {
                             parent_monitor_entity,
                             world.reborrow(),
                             apply_markers_to_container_hierarchy,
-                            insert_monitor_marker_component
+                            insert_monitor_marker_component,
                         );
                     }
                 }
