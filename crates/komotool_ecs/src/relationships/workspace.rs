@@ -1,12 +1,10 @@
-use crate::components::{
-    despawn_container_marker_component, insert_container_marker_component,
-};
+use crate::components::{despawn_container_marker_component, insert_container_marker_component};
 use crate::prelude::{get_old_index, remove_parent_markers_from_hierarchy};
 use crate::relationships::window_manager::WindowManagerChildOf;
 use crate::relationships::{
-    GetIndex, InsertMarkerFn, KomotoolRelationship, MonitorChildOf, 
-    RelationshipIndexSet, apply_markers_to_container_hierarchy, apply_parent_markers_to_hierarchy,
-    bevy_on_insert, bevy_on_remove, relationships_hook,
+    GetIndex, InsertMarkerFn, KomotoolRelationship, MonitorChildOf, RelationshipIndexSet,
+    apply_markers_to_container_hierarchy, apply_parent_markers_to_hierarchy, bevy_on_insert,
+    bevy_on_remove, relationships_hook,
 };
 use crate::resources::ContainerExtendedMarkerMap;
 use bevy_ecs::component::{Component, HookContext};

@@ -1,7 +1,4 @@
-use crate::components::{
-    despawn_workspace_marker_component, 
-    insert_workspace_marker_component,
-};
+use crate::components::{despawn_workspace_marker_component, insert_workspace_marker_component};
 use crate::prelude::{get_old_index, relationships_hook, update_markers};
 use crate::relationships::window_manager::WindowManagerChildOf;
 use crate::relationships::{

@@ -1,7 +1,6 @@
 use super::{
-    GetIndex, KomotoolRelationship, RelationshipIndexSet,
-    apply_markers_to_monitor_hierarchy, bevy_on_insert, bevy_on_remove, get_old_index,
-    relationships_hook, update_markers,
+    GetIndex, KomotoolRelationship, RelationshipIndexSet, apply_markers_to_monitor_hierarchy,
+    bevy_on_insert, bevy_on_remove, get_old_index, relationships_hook, update_markers,
 };
 use crate::components::{
     WindowManager, despawn_monitor_marker_component, insert_monitor_marker_component,

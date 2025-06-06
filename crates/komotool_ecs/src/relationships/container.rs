@@ -1,14 +1,12 @@
-use crate::components::{
-    despawn_window_marker_component, insert_window_marker_component,
-};
+use crate::components::{despawn_window_marker_component, insert_window_marker_component};
 use crate::prelude::{
     DespawnInsertMarker, get_old_index, remove_parent_markers_from_hierarchy, update_markers,
 };
 use crate::relationships::window_manager::WindowManagerChildOf;
 use crate::relationships::{
-    GetIndex, InsertMarkerFn, KomotoolRelationship, MarkerFn, MonitorChildOf,
-    RelationshipIndexSet, WorkspaceChildOf, apply_parent_markers_to_hierarchy,
-    bevy_on_insert, bevy_on_remove, relationships_hook,
+    GetIndex, InsertMarkerFn, KomotoolRelationship, MarkerFn, MonitorChildOf, RelationshipIndexSet,
+    WorkspaceChildOf, apply_parent_markers_to_hierarchy, bevy_on_insert, bevy_on_remove,
+    relationships_hook,
 };
 use crate::resources::WindowExtendedMarkerMap;
 use bevy_ecs::component::{Component, HookContext};
