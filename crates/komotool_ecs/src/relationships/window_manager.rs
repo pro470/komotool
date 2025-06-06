@@ -1,5 +1,5 @@
 use super::{
-    DespawnInsertMarker, GetIndex, KomotoolRelationship, RelationshipIndexSet,
+    GetIndex, KomotoolRelationship, RelationshipIndexSet,
     apply_markers_to_monitor_hierarchy, bevy_on_insert, bevy_on_remove, get_old_index,
     relationships_hook, update_markers,
 };
@@ -12,7 +12,6 @@ use crate::resources::MonitorExtendedMarkerMap;
 use bevy_ecs::component::{Component, HookContext};
 use bevy_ecs::entity::Entity;
 use bevy_ecs::relationship::{Relationship, RelationshipTarget};
-use bevy_ecs::system::Commands;
 use bevy_ecs::world::DeferredWorld;
 use bevy_log::warn;
 use bevy_reflect::Reflect;

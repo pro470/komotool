@@ -1,21 +1,17 @@
 use crate::components::{
     despawn_container_marker_component, insert_container_marker_component,
-    insert_monitor_marker_component, insert_workspace_marker_component,
 };
 use crate::prelude::{get_old_index, remove_parent_markers_from_hierarchy};
-use crate::relationships::window_manager::{WindowManagerChildOf, WindowManagerChildren};
+use crate::relationships::window_manager::WindowManagerChildOf;
 use crate::relationships::{
-    GetIndex, InsertMarkerFn, KomotoolRelationship, MonitorChildOf, MonitorChildren,
+    GetIndex, InsertMarkerFn, KomotoolRelationship, MonitorChildOf, 
     RelationshipIndexSet, apply_markers_to_container_hierarchy, apply_parent_markers_to_hierarchy,
     bevy_on_insert, bevy_on_remove, relationships_hook,
 };
-use crate::resources::{
-    ContainerExtendedMarkerMap, MonitorExtendedMarkerMap, WorkspaceExtendedMarkerMap,
-};
+use crate::resources::ContainerExtendedMarkerMap;
 use bevy_ecs::component::{Component, HookContext};
 use bevy_ecs::entity::Entity;
 use bevy_ecs::relationship::{Relationship, RelationshipTarget};
-use bevy_ecs::system::Commands;
 use bevy_ecs::world::DeferredWorld;
 use bevy_log::warn;
 use bevy_reflect::Reflect;
