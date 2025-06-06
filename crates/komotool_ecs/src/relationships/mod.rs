@@ -977,9 +977,9 @@ pub fn apply_markers_to_monitor_hierarchy<Marker: Resource + Clone + Default>(
     monitor_entity: Entity,
     monitor_index: usize,
     marker_map: &Marker,
-    mut insert_marker: impl FnMut(usize, Entity, Commands, &Marker),
+    insert_marker: impl MarkerFn<Marker>,
 ) {
-    insert_marker(
+    insert_marker.marker(
         monitor_index,
         monitor_entity,
         deferred_world.commands(),
@@ -997,7 +997,7 @@ pub fn apply_markers_to_monitor_hierarchy<Marker: Resource + Clone + Default>(
             workspace_entity,
             monitor_index,
             marker_map,
-            &mut insert_marker,
+            insert_marker.reborrow(),
         );
     }
 }
@@ -1008,10 +1008,10 @@ pub fn apply_markers_to_workspace_hierarchy<Marker: Resource + Clone + Default>(
     workspace_entity: Entity,
     workspace_index: usize,
     marker_map: &Marker,
-    mut insert_marker: impl FnMut(usize, Entity, Commands, &Marker),
+    insert_marker: impl MarkerFn<Marker>,
 ) {
     // Marker für den Workspace selbst setzen
-    insert_marker(
+    insert_marker.marker(
         workspace_index,
         workspace_entity,
         deferred_world.commands(),
@@ -1030,7 +1030,7 @@ pub fn apply_markers_to_workspace_hierarchy<Marker: Resource + Clone + Default>(
             container_entity,
             workspace_index,
             marker_map,
-            &mut insert_marker,
+            insert_marker.reborrow(),
         )
     }
 }
@@ -1041,10 +1041,10 @@ pub fn apply_markers_to_container_hierarchy<Marker: Resource + Clone + Default>(
     container_entity: Entity, // Die Container-Entität, für die und deren Kinder Marker gesetzt werden
     container_index: usize,   // Der Index dieses Containers (relevant für die Marker-Komponente)
     marker_map: &Marker,
-    mut insert_marker: impl FnMut(usize, Entity, Commands, &Marker),
+    insert_marker: impl MarkerFn<Marker>,
 ) {
     // Marker für die Container-Entität selbst setzen
-    insert_marker(
+    insert_marker.marker(
         container_index,
         container_entity,
         deferred_world.commands(),
@@ -1060,7 +1060,7 @@ pub fn apply_markers_to_container_hierarchy<Marker: Resource + Clone + Default>(
 
     for window_entity in window_entities {
         // Marker für jede Window-Entität setzen
-        insert_marker(
+        insert_marker.marker(
             container_index, // Der Index des übergeordneten Containers wird weitergegeben
             window_entity,
             deferred_world.commands(),
@@ -1069,61 +1069,228 @@ pub fn apply_markers_to_container_hierarchy<Marker: Resource + Clone + Default>(
     }
 }
 
-pub trait GetIndex {
+pub trait GetIndex: RelationshipTarget {
     fn get_index_of(&self, entity: &Entity) -> Option<usize>;
+}
+
+pub trait KomotoolRelationship: Relationship {
+    type Marker: Resource + Clone + Default;
+
+    const INSERT_MARKER: fn(usize, Entity, Commands, &Self::Marker);
+
+    const DESPAWN_MARKER: fn(usize, Entity, Commands, &Self::Marker);
+
+    type Komorebi: Component;
+}
+
+pub trait MarkerFn<Marker> {
+    fn marker(&self, index: usize, entity: Entity, commands: Commands, marker: &Marker);
+    fn reborrow(&self) -> Self;
+}
+
+pub trait HierarchyFn<Marker, M: MarkerFn<Marker>> {
+    fn hierarchy<'a>(
+        &self,
+        world: DeferredWorld<'a>, // Connect world and marker lifetimes
+        entity: Entity,
+        index: usize,
+        marker: &'a Marker, // Same lifetime as world
+        insert_marker: M,
+    );
+}
+
+impl<Marker, F> MarkerFn<Marker> for F
+where
+    F: Fn(usize, Entity, Commands, &Marker) + Copy,
+{
+    fn marker(&self, index: usize, entity: Entity, commands: Commands, marker: &Marker) {
+        self(index, entity, commands, marker);
+    }
+
+    fn reborrow(&self) -> Self {
+        *self
+    }
+}
+
+impl<Marker, F, M> HierarchyFn<Marker, M> for F
+where
+    F: Fn(DeferredWorld, Entity, usize, &Marker, M),
+    M: MarkerFn<Marker>,
+{
+    fn hierarchy(
+        &self,
+        world: DeferredWorld,
+        entity: Entity,
+        index: usize,
+        marker: &Marker,
+        insert_marker: M,
+    ) {
+        self(world, entity, index, marker, insert_marker);
+    }
 }
 
 pub type InsertMarkerFn<Marker> = fn(usize, Entity, Commands, &Marker);
 
 pub fn apply_parent_markers_to_hierarchy<
-    BevyRelatonship: Relationship<RelationshipTarget = BevyRelatonshipTarget>,
-    BevyRelatonshipTarget,
-    Marker: Resource + Clone + Default,
+    BevyRelationship: Relationship<RelationshipTarget: GetIndex> + KomotoolRelationship,
+>(
+    entity: Entity,
+    parent: Entity,
+    world: DeferredWorld,
+    to_hierarchy: impl HierarchyFn<BevyRelationship::Marker, InsertMarkerFn<BevyRelationship::Marker>>,
+) -> Option<Entity> {
+    parent_markers_to_hierarchy::<BevyRelationship>(
+        entity,
+        parent,
+        world,
+        to_hierarchy,
+        BevyRelationship::INSERT_MARKER,
+    )
+}
+
+pub fn remove_parent_markers_from_hierarchy<
+    BevyRelationship: Relationship<RelationshipTarget: GetIndex> + KomotoolRelationship,
+>(
+    entity: Entity,
+    parent: Option<Entity>,
+    world: DeferredWorld,
+    to_hierarchy: impl HierarchyFn<BevyRelationship::Marker, InsertMarkerFn<BevyRelationship::Marker>>,
+) -> Option<Entity> {
+    parent_markers_to_hierarchy::<BevyRelationship>(
+        entity,
+        parent.unwrap_or_else(|| {
+            world
+                .entity(entity)
+                .get::<BevyRelationship>()
+                .map_or(Entity::PLACEHOLDER, |childof| childof.get())
+        }),
+        world,
+        to_hierarchy,
+        BevyRelationship::DESPAWN_MARKER,
+    )
+}
+
+fn parent_markers_to_hierarchy<
+    BevyRelationship: Relationship<RelationshipTarget: GetIndex> + KomotoolRelationship,
 >(
     entity: Entity,
     parent: Entity,
     mut world: DeferredWorld,
-    mut to_hierarchy: impl FnMut(DeferredWorld, Entity, usize, &Marker, InsertMarkerFn<Marker>),
-    insert_marker: InsertMarkerFn<Marker>,
-) -> Option<Entity>
-where
-    BevyRelatonshipTarget: GetIndex + RelationshipTarget<Relationship = BevyRelatonship>,
-{
-    if let Some(childof) = world.entity(parent).get::<BevyRelatonship>() {
+    to_hierarchy: impl HierarchyFn<BevyRelationship::Marker, InsertMarkerFn<BevyRelationship::Marker>>,
+    marker_func: InsertMarkerFn<BevyRelationship::Marker>,
+) -> Option<Entity> {
+    if let Some(childof) = world.entity(parent).get::<BevyRelationship>() {
         let childof = childof.get();
-        if let Some(children) = world.entity(childof).get::<BevyRelatonshipTarget>() {
+        if let Some(children) = world
+            .entity(childof)
+            .get::<BevyRelationship::RelationshipTarget>()
+        {
             if let Some(parent_idx) = children.get_index_of(&parent) {
                 // Rufe die neue Hilfsfunktion auf.
 
-                let marker_map_clone = world.get_resource::<Marker>().cloned();
+                let marker_map_clone = world.get_resource::<BevyRelationship::Marker>().cloned();
+                let mut default_map = None;
 
-                if let Some(cloned_map) = marker_map_clone {
-                    // Rufe die neue Hilfsfunktion auf.
-                    // `entity` (der Workspace) ist der Startpunkt dieser Hierarchie.
-                    to_hierarchy(
-                        world.reborrow(),
-                        entity,
-                        parent_idx,
-                        &cloned_map,
-                        insert_marker,
-                    );
-                    return Some(childof);
-                } else {
-                    warn!(
+                to_hierarchy.hierarchy(
+                    world.reborrow(),
+                    entity,
+                    parent_idx,
+                    marker_map_clone.as_ref().unwrap_or_else(|| {
+                        warn!(
                         "Failed to get {}. Markers over the default threshold will not be applied.",
-                        core::any::type_name::<Marker>()
+                        core::any::type_name::<BevyRelationship::Marker>()
                     );
-                    to_hierarchy(
-                        world.reborrow(),
-                        entity,
-                        parent_idx,
-                        &Marker::default(),
-                        insert_marker,
-                    );
-                    return Some(childof);
-                }
+                        default_map.get_or_insert_with(BevyRelationship::Marker::default)
+
+                    }),
+                    marker_func,
+                );
+                return Some(childof);
             }
         }
     }
     None
+}
+pub fn update_markers<BevyRelationship: Relationship + KomotoolRelationship>(
+    mut world: DeferredWorld,
+    marker_map: Option<BevyRelationship::Marker>,
+    entity: Entity,
+    old_idx: usize,
+    apply_to_hierarchy: impl HierarchyFn<
+        BevyRelationship::Marker,
+        DespawnInsertMarker<BevyRelationship::Marker>,
+    >,
+) {
+    let mut default_map = None;
+
+    if let Some(relationship) = world.entity(entity).get::<BevyRelationship>() {
+        let child_entity = relationship.get();
+        let children = world
+            .entity(child_entity)
+            .get::<BevyRelationship::RelationshipTarget>()
+            .map_or_else(Vec::new, |children| children.iter().collect());
+        {
+            let marker_func = DespawnInsertMarker {
+                despawn: BevyRelationship::DESPAWN_MARKER,
+                insert: BevyRelationship::INSERT_MARKER,
+            };
+            for idx in old_idx..children.len() {
+                if let Some(child_entity) = children.get(idx) {
+                    apply_to_hierarchy.hierarchy(
+                        world.reborrow(),
+                        *child_entity,
+                        idx,
+                        marker_map.as_ref().unwrap_or_else(|| {
+                            warn!(
+                        "Failed to get {}. Markers over the default threshold will not be applied.",
+                        core::any::type_name::<BevyRelationship::Marker>()
+                    );
+                            default_map.get_or_insert_with(BevyRelationship::Marker::default)
+                        }),
+                        marker_func.reborrow(),
+                    );
+                }
+            }
+        }
+    }
+}
+
+pub fn get_old_index<BevyRelatonship: Relationship<RelationshipTarget: GetIndex>>(
+    entity: Entity,
+    world: DeferredWorld,
+) -> Option<usize> {
+    if let Some(relationship) = world.entity(entity).get::<BevyRelatonship>() {
+        let child_entity = relationship.get();
+        if let Some(children) = world
+            .entity(child_entity)
+            .get::<BevyRelatonship::RelationshipTarget>()
+        {
+            children.get_index_of(&entity)
+        } else {
+            None
+        }
+    } else {
+        None
+    }
+}
+
+pub struct DespawnInsertMarker<Marker: Resource + Clone + Default> {
+    pub despawn: InsertMarkerFn<Marker>,
+    pub insert: InsertMarkerFn<Marker>,
+}
+
+impl<Marker: Resource + Clone + Default> MarkerFn<Marker> for DespawnInsertMarker<Marker> {
+    fn marker(&self, index: usize, entity: Entity, mut commands: Commands, marker: &Marker) {
+        self.despawn
+            .marker(index + 1, entity, commands.reborrow(), marker);
+        self.insert
+            .marker(index, entity, commands.reborrow(), marker);
+    }
+
+    fn reborrow(&self) -> DespawnInsertMarker<Marker> {
+        DespawnInsertMarker {
+            despawn: self.despawn,
+            insert: self.insert,
+        }
+    }
 }

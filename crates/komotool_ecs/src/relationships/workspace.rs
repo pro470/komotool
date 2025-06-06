@@ -1,12 +1,13 @@
 use crate::components::{
-    insert_container_marker_component, insert_monitor_marker_component,
-    insert_workspace_marker_component,
+    despawn_container_marker_component, insert_container_marker_component,
+    insert_monitor_marker_component, insert_workspace_marker_component,
 };
+use crate::prelude::{get_old_index, remove_parent_markers_from_hierarchy};
 use crate::relationships::window_manager::{WindowManagerChildOf, WindowManagerChildren};
 use crate::relationships::{
-    GetIndex, MonitorChildOf, MonitorChildren, RelationshipIndexSet,
-    apply_markers_to_container_hierarchy, apply_parent_markers_to_hierarchy, bevy_on_insert,
-    bevy_on_remove, relationships_hook,
+    GetIndex, InsertMarkerFn, KomotoolRelationship, MonitorChildOf, MonitorChildren,
+    RelationshipIndexSet, apply_markers_to_container_hierarchy, apply_parent_markers_to_hierarchy,
+    bevy_on_insert, bevy_on_remove, relationships_hook,
 };
 use crate::resources::{
     ContainerExtendedMarkerMap, MonitorExtendedMarkerMap, WorkspaceExtendedMarkerMap,
@@ -14,6 +15,7 @@ use crate::resources::{
 use bevy_ecs::component::{Component, HookContext};
 use bevy_ecs::entity::Entity;
 use bevy_ecs::relationship::{Relationship, RelationshipTarget};
+use bevy_ecs::system::Commands;
 use bevy_ecs::world::DeferredWorld;
 use bevy_log::warn;
 use bevy_reflect::Reflect;
@@ -75,50 +77,33 @@ impl Relationship for WorkspaceChildOf {
                     // Klone die Ressourcen-Map, um die immutable Leihe von `world` aufzuheben.
                     let marker_map_clone =
                         world.get_resource::<ContainerExtendedMarkerMap>().cloned();
+                    let mut default_map = None;
 
-                    if let Some(cloned_map) = marker_map_clone {
-                        // Rufe die neue Hilfsfunktion auf.
-                        // `entity` (der Container) ist der Startpunkt dieser Hierarchie.
-                        crate::relationships::apply_markers_to_container_hierarchy(
+                    crate::relationships::apply_markers_to_container_hierarchy(
                             world.reborrow(),
                             entity,
                             container_idx_in_workspace_list,
-                            &cloned_map,
-                            insert_container_marker_component,
-                        );
-                    } else {
-                        warn!(
+                            marker_map_clone.as_ref().unwrap_or_else(||{
+                                warn!(
                             "Failed to get ContainerExtendedMarkerMap. Markers over the default threshold will not be applied."
                         );
-                        apply_markers_to_container_hierarchy(
-                            world.reborrow(),
-                            entity,
-                            container_idx_in_workspace_list,
-                            &ContainerExtendedMarkerMap::default(),
+                                default_map.get_or_insert_with(ContainerExtendedMarkerMap::default)
+                            }),
                             insert_container_marker_component,
                         );
-                    }
-                    if let Some(parent_monitor_entity) = apply_parent_markers_to_hierarchy::<
-                        MonitorChildOf,
-                        MonitorChildren,
-                        WorkspaceExtendedMarkerMap,
-                    >(
-                        entity,
-                        parent_workspace_entity,
-                        world.reborrow(),
-                        apply_markers_to_container_hierarchy,
-                        insert_workspace_marker_component,
-                    ) {
-                        apply_parent_markers_to_hierarchy::<
-                            WindowManagerChildOf,
-                            WindowManagerChildren,
-                            MonitorExtendedMarkerMap,
-                        >(
+                    if let Some(parent_monitor_entity) =
+                        apply_parent_markers_to_hierarchy::<MonitorChildOf>(
+                            entity,
+                            parent_workspace_entity,
+                            world.reborrow(),
+                            apply_markers_to_container_hierarchy,
+                        )
+                    {
+                        apply_parent_markers_to_hierarchy::<WindowManagerChildOf>(
                             entity,
                             parent_monitor_entity,
                             world.reborrow(),
                             apply_markers_to_container_hierarchy,
-                            insert_monitor_marker_component,
                         );
                     }
                 }
@@ -139,6 +124,8 @@ impl Relationship for WorkspaceChildOf {
             return;
         }
 
+        let old_idx = get_old_index::<Self>(entity, world.reborrow());
+
         bevy_on_remove::<Self>(
             world.reborrow(),
             HookContext {
@@ -148,6 +135,36 @@ impl Relationship for WorkspaceChildOf {
                 component_id,
             },
         );
+
+        if let Some(old_idx) = old_idx {
+            let marker_map_optional = world.get_resource::<ContainerExtendedMarkerMap>().cloned();
+            let mut default_map = None;
+            apply_markers_to_container_hierarchy(
+                world.reborrow(),
+                entity,
+                old_idx,
+                marker_map_optional.as_ref().unwrap_or_else(||{
+                    warn!(
+                        "Failed to get ContainerExtendedMarkerMap. Markers over the default threshold will not be applied."
+                    );
+                    default_map.get_or_insert_with(ContainerExtendedMarkerMap::default)
+                }),
+                insert_container_marker_component,
+            );
+
+            let parent_monitor_entity = remove_parent_markers_from_hierarchy::<MonitorChildOf>(
+                entity,
+                None,
+                world.reborrow(),
+                apply_markers_to_container_hierarchy,
+            );
+            remove_parent_markers_from_hierarchy::<WindowManagerChildOf>(
+                entity,
+                parent_monitor_entity,
+                world.reborrow(),
+                apply_markers_to_container_hierarchy,
+            );
+        }
     }
 }
 
@@ -175,4 +192,15 @@ impl GetIndex for WorkspaceChildren {
     fn get_index_of(&self, entity: &Entity) -> Option<usize> {
         self.0.get_index_of(entity)
     }
+}
+
+impl KomotoolRelationship for WorkspaceChildOf {
+    type Marker = ContainerExtendedMarkerMap;
+
+    const INSERT_MARKER: InsertMarkerFn<ContainerExtendedMarkerMap> =
+        insert_container_marker_component;
+
+    const DESPAWN_MARKER: InsertMarkerFn<ContainerExtendedMarkerMap> =
+        despawn_container_marker_component;
+    type Komorebi = Container;
 }
