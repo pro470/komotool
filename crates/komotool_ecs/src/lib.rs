@@ -15,7 +15,11 @@ pub mod prelude {
     pub use systems::*;
 }
 
-use bevy_app::{App, First, Last, Plugin};
+use crate::relationships::{
+    ContainerChildOf, ContainerChildren, MonitorChildOf, MonitorChildren, WindowManagerChildren,
+    WorkspaceChildOf, WorkspaceChildren,
+};
+use bevy_app::{App, First, Last, Plugin, PostStartup};
 use bevy_ecs::prelude::resource_changed;
 use bevy_ecs::schedule::IntoScheduleConfigs;
 use components::*;
@@ -57,6 +61,13 @@ impl Plugin for KomoToolEcsPlugin {
             .register_type::<FocusedGlobal>()
             .register_type::<MaximizedWindow>()
             .register_type::<LastFocused>()
+            .register_type::<WindowManagerChildren>()
+            .register_type::<MonitorChildOf>()
+            .register_type::<MonitorChildren>()
+            .register_type::<WorkspaceChildOf>()
+            .register_type::<WorkspaceChildren>()
+            .register_type::<ContainerChildren>()
+            .register_type::<ContainerChildOf>()
             .add_systems(
                 First,
                 (
@@ -66,14 +77,15 @@ impl Plugin for KomoToolEcsPlugin {
                     // Then run all imports in parallel
                     (
                         (
-                            import_komorebi_window_state,
-                            import_komorebi_container_state,
-                            import_komorebi_workspace_state,
                             import_komorebi_monitor_state,
+                            import_komorebi_workspace_state,
+                            import_komorebi_container_state,
+                            import_komorebi_window_state,
                         )
+                            .chain()
                             .before(build_relation_registry),
                         import_komorebi_appstate_state,
-                        build_relation_registry,
+                        //build_relation_registry,
                     )
                         .after(update_komorebi_state_from_notifications)
                         .run_if(resource_changed::<KomorebiState>),
@@ -82,7 +94,9 @@ impl Plugin for KomoToolEcsPlugin {
             .add_systems(
                 Last,
                 export_state_to_komorebi.before(komotool_framepace::framerate_limiter),
-            );
+            )
+            .add_systems(PostStartup, spawn_window_manager)
+            .add_systems(PostStartup, register_maker_sets);
         register_container_types(app);
         register_monitor_types(app);
         register_window_types(app);

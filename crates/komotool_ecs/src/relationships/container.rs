@@ -4,24 +4,97 @@ use crate::prelude::{
 };
 use crate::relationships::window_manager::WindowManagerChildOf;
 use crate::relationships::{
-    GetIndex, InsertMarkerFn, KomotoolRelationship, MarkerFn, MonitorChildOf, RelationshipIndexSet,
-    WorkspaceChildOf, apply_parent_markers_to_hierarchy, bevy_on_insert, bevy_on_remove,
-    relationships_hook,
+    ContainsParentChild, GetIndex, InsertMarkerFn, KomotoolRelationship, MarkerFn, MonitorChildOf,
+    RelationshipIndexSet, WorkspaceChildOf, apply_parent_markers_to_hierarchy, bevy_on_insert,
+    bevy_on_remove, relationships_hook,
 };
 use crate::resources::WindowExtendedMarkerMap;
-use bevy_ecs::component::{Component, HookContext};
+use bevy_ecs::component::HookContext;
 use bevy_ecs::entity::Entity;
 use bevy_ecs::relationship::{Relationship, RelationshipTarget};
 use bevy_ecs::world::DeferredWorld;
+use bevy_log::warn;
 use bevy_reflect::Reflect;
 use komorebi_client::{Container, Window};
 
-#[derive(Component, Reflect)]
-#[component(immutable)]
+#[derive(Reflect)]
 pub struct ContainerChildOf(pub Entity);
 
-#[derive(Component, Reflect)]
+impl bevy_ecs::component::Component for ContainerChildOf
+where
+    Self: Send + Sync + 'static,
+{
+    const STORAGE_TYPE: bevy_ecs::component::StorageType = bevy_ecs::component::StorageType::Table;
+    type Mutability = bevy_ecs::component::Immutable;
+
+    fn on_insert() -> ::core::option::Option<bevy_ecs::component::ComponentHook> {
+        ::core::option::Option::Some(<Self as bevy_ecs::relationship::Relationship>::on_insert)
+    }
+    fn on_replace() -> ::core::option::Option<bevy_ecs::component::ComponentHook> {
+        ::core::option::Option::Some(<Self as bevy_ecs::relationship::Relationship>::on_replace)
+    }
+
+    fn register_required_components(
+        requiree: bevy_ecs::component::ComponentId,
+        components: &mut bevy_ecs::component::ComponentsRegistrator,
+        required_components: &mut bevy_ecs::component::RequiredComponents,
+        inheritance_depth: u16,
+        recursion_check_stack: &mut bevy_ecs::__macro_exports::Vec<
+            bevy_ecs::component::ComponentId,
+        >,
+    ) {
+        bevy_ecs::component::enforce_no_required_components_recursion(
+            components,
+            recursion_check_stack,
+        );
+        let self_id = components.register_component::<Self>();
+        recursion_check_stack.push(self_id);
+        recursion_check_stack.pop();
+    }
+    fn clone_behavior() -> bevy_ecs::component::ComponentCloneBehavior {
+        use bevy_ecs::component::{DefaultCloneBehaviorBase, DefaultCloneBehaviorViaClone};
+        (&&&bevy_ecs::component::DefaultCloneBehaviorSpecialization::<Self>::default())
+            .default_clone_behavior()
+    }
+}
+
+#[derive(Reflect)]
 pub struct ContainerChildren(pub(crate) RelationshipIndexSet);
+
+impl bevy_ecs::component::Component for ContainerChildren
+where
+    Self: Send + Sync + 'static,
+{
+    const STORAGE_TYPE: bevy_ecs::component::StorageType = bevy_ecs::component::StorageType::Table;
+    type Mutability = bevy_ecs::component::Mutable;
+    fn register_required_components(
+        requiree: bevy_ecs::component::ComponentId,
+        components: &mut bevy_ecs::component::ComponentsRegistrator,
+        required_components: &mut bevy_ecs::component::RequiredComponents,
+        inheritance_depth: u16,
+        recursion_check_stack: &mut bevy_ecs::__macro_exports::Vec<
+            bevy_ecs::component::ComponentId,
+        >,
+    ) {
+        bevy_ecs::component::enforce_no_required_components_recursion(
+            components,
+            recursion_check_stack,
+        );
+        let self_id = components.register_component::<Self>();
+        recursion_check_stack.push(self_id);
+        recursion_check_stack.pop();
+    }
+    fn on_replace() -> ::core::option::Option<bevy_ecs::component::ComponentHook> {
+        ::core::option::Option::Some(
+            <Self as bevy_ecs::relationship::RelationshipTarget>::on_replace,
+        )
+    }
+    fn clone_behavior() -> bevy_ecs::component::ComponentCloneBehavior {
+        bevy_ecs::component::ComponentCloneBehavior::Custom(
+            bevy_ecs::relationship::clone_relationship_target::<Self>,
+        )
+    }
+}
 
 impl Relationship for ContainerChildOf {
     type RelationshipTarget = ContainerChildren;
@@ -51,6 +124,7 @@ impl Relationship for ContainerChildOf {
                 relationship_hook_mode,
                 component_id,
             },
+            ContainsParentChild,
         ) {
             return;
         }
@@ -61,10 +135,15 @@ impl Relationship for ContainerChildOf {
                 if let Some(index) = children.0.get_index_of(&entity) {
                     if let Some(marker) = world.get_resource::<WindowExtendedMarkerMap>() {
                         let marker = marker.clone();
-                        insert_window_marker_component(index, entity, world.commands(), &marker);
+                        insert_window_marker_component(
+                            index + 1,
+                            entity,
+                            world.commands(),
+                            &marker,
+                        );
                     } else {
                         insert_window_marker_component(
-                            index,
+                            index + 1,
                             entity,
                             world.commands(),
                             &WindowExtendedMarkerMap::default(),
@@ -119,6 +198,70 @@ impl Relationship for ContainerChildOf {
                         }
                     }
                 }
+            } else {
+                warn!(
+                    "Failed to find ContainerChildren. It has to be the first child of the Container."
+                );
+
+                if let Some(marker) = world.get_resource::<WindowExtendedMarkerMap>() {
+                    let marker = marker.clone();
+                    insert_window_marker_component(1, entity, world.commands(), &marker);
+                } else {
+                    insert_window_marker_component(
+                        1,
+                        entity,
+                        world.commands(),
+                        &WindowExtendedMarkerMap::default(),
+                    );
+                }
+                if let Some(parent_workspace_entity) =
+                    apply_parent_markers_to_hierarchy::<WorkspaceChildOf>(
+                        entity,
+                        parent_container_entity,
+                        world.reborrow(),
+                        |mut world: DeferredWorld<'_>,
+                         entity,
+                         index,
+                         marker: &_,
+                         insert_marker: InsertMarkerFn<
+                            <WorkspaceChildOf as KomotoolRelationship>::Marker,
+                        >| {
+                            insert_marker.marker(index, entity, world.commands(), marker)
+                        },
+                    )
+                {
+                    if let Some(parent_monitor_entity) =
+                        apply_parent_markers_to_hierarchy::<MonitorChildOf>(
+                            entity,
+                            parent_workspace_entity,
+                            world.reborrow(),
+                            |mut world: DeferredWorld<'_>,
+                             entity,
+                             index,
+                             marker: &_,
+                             insert_marker: InsertMarkerFn<
+                                <MonitorChildOf as KomotoolRelationship>::Marker,
+                            >| {
+                                insert_marker.marker(index, entity, world.commands(), marker)
+                            },
+                        )
+                    {
+                        apply_parent_markers_to_hierarchy::<WindowManagerChildOf>(
+                            entity,
+                            parent_monitor_entity,
+                            world.reborrow(),
+                            |mut world: DeferredWorld<'_>,
+                             entity,
+                             index,
+                             marker: &_,
+                             insert_marker: InsertMarkerFn<
+                                <WindowManagerChildOf as KomotoolRelationship>::Marker,
+                            >| {
+                                insert_marker.marker(index, entity, world.commands(), marker)
+                            },
+                        );
+                    }
+                }
             }
         }
     }
@@ -151,7 +294,7 @@ impl Relationship for ContainerChildOf {
         if let Some(old_idx) = old_idx {
             let marker_map_optional = world.get_resource::<WindowExtendedMarkerMap>().cloned();
             despawn_window_marker_component(
-                old_idx,
+                old_idx + 1,
                 entity,
                 world.commands(),
                 marker_map_optional
@@ -256,4 +399,6 @@ impl KomotoolRelationship for ContainerChildOf {
     const DESPAWN_MARKER: InsertMarkerFn<WindowExtendedMarkerMap> = despawn_window_marker_component;
 
     type Komorebi = Window;
+
+    type Child = ContainerChildOf;
 }

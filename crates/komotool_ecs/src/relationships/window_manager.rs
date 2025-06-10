@@ -1,6 +1,7 @@
 use super::{
-    GetIndex, KomotoolRelationship, RelationshipIndexSet, apply_markers_to_monitor_hierarchy,
-    bevy_on_insert, bevy_on_remove, get_old_index, relationships_hook, update_markers,
+    ContainsParentChild, GetIndex, KomotoolRelationship, MonitorChildOf, RelationshipIndexSet,
+    apply_markers_to_monitor_hierarchy, bevy_on_insert, bevy_on_remove, get_old_index,
+    relationships_hook, update_markers,
 };
 use crate::components::{
     WindowManager, despawn_monitor_marker_component, insert_monitor_marker_component,
@@ -8,7 +9,7 @@ use crate::components::{
 use crate::prelude::InsertMarkerFn;
 use crate::relationships;
 use crate::resources::MonitorExtendedMarkerMap;
-use bevy_ecs::component::{Component, HookContext};
+use bevy_ecs::component::HookContext;
 use bevy_ecs::entity::Entity;
 use bevy_ecs::relationship::{Relationship, RelationshipTarget};
 use bevy_ecs::world::DeferredWorld;
@@ -16,12 +17,86 @@ use bevy_log::warn;
 use bevy_reflect::Reflect;
 use komorebi_client::Monitor;
 
-#[derive(Component)]
-#[component(immutable)]
 pub struct WindowManagerChildOf(pub Entity);
 
-#[derive(Component, Reflect)]
+impl bevy_ecs::component::Component for WindowManagerChildOf
+where
+    Self: Send + Sync + 'static,
+{
+    const STORAGE_TYPE: bevy_ecs::component::StorageType = bevy_ecs::component::StorageType::Table;
+    type Mutability = bevy_ecs::component::Immutable;
+    fn on_insert() -> ::core::option::Option<bevy_ecs::component::ComponentHook> {
+        ::core::option::Option::Some(<Self as bevy_ecs::relationship::Relationship>::on_insert)
+    }
+    fn on_replace() -> ::core::option::Option<bevy_ecs::component::ComponentHook> {
+        ::core::option::Option::Some(<Self as bevy_ecs::relationship::Relationship>::on_replace)
+    }
+
+    fn register_required_components(
+        requiree: bevy_ecs::component::ComponentId,
+        components: &mut bevy_ecs::component::ComponentsRegistrator,
+        required_components: &mut bevy_ecs::component::RequiredComponents,
+        inheritance_depth: u16,
+        recursion_check_stack: &mut bevy_ecs::__macro_exports::Vec<
+            bevy_ecs::component::ComponentId,
+        >,
+    ) {
+        bevy_ecs::component::enforce_no_required_components_recursion(
+            components,
+            recursion_check_stack,
+        );
+        let self_id = components.register_component::<Self>();
+        recursion_check_stack.push(self_id);
+        recursion_check_stack.pop();
+    }
+    fn clone_behavior() -> bevy_ecs::component::ComponentCloneBehavior {
+        use bevy_ecs::component::{DefaultCloneBehaviorBase, DefaultCloneBehaviorViaClone};
+        (&&&bevy_ecs::component::DefaultCloneBehaviorSpecialization::<Self>::default())
+            .default_clone_behavior()
+    }
+    fn map_entities<M: bevy_ecs::entity::EntityMapper>(this: &mut Self, mapper: &mut M) {
+        use bevy_ecs::entity::MapEntities;
+        this.0.map_entities(mapper);
+    }
+}
+#[derive(Reflect)]
 pub struct WindowManagerChildren(pub(crate) RelationshipIndexSet);
+
+impl bevy_ecs::component::Component for WindowManagerChildren
+where
+    Self: Send + Sync + 'static,
+{
+    const STORAGE_TYPE: bevy_ecs::component::StorageType = bevy_ecs::component::StorageType::Table;
+    type Mutability = bevy_ecs::component::Mutable;
+    fn register_required_components(
+        requiree: bevy_ecs::component::ComponentId,
+        components: &mut bevy_ecs::component::ComponentsRegistrator,
+        required_components: &mut bevy_ecs::component::RequiredComponents,
+        inheritance_depth: u16,
+        recursion_check_stack: &mut bevy_ecs::__macro_exports::Vec<
+            bevy_ecs::component::ComponentId,
+        >,
+    ) {
+        bevy_ecs::component::enforce_no_required_components_recursion(
+            components,
+            recursion_check_stack,
+        );
+        let self_id = components.register_component::<Self>();
+        recursion_check_stack.push(self_id);
+        recursion_check_stack.pop();
+    }
+
+    fn on_replace() -> ::core::option::Option<bevy_ecs::component::ComponentHook> {
+        ::core::option::Option::Some(
+            <Self as bevy_ecs::relationship::RelationshipTarget>::on_replace,
+        )
+    }
+    fn clone_behavior() -> bevy_ecs::component::ComponentCloneBehavior {
+        bevy_ecs::component::ComponentCloneBehavior::Custom(
+            bevy_ecs::relationship::clone_relationship_target::<Self>,
+        )
+    }
+}
 
 impl Relationship for WindowManagerChildOf {
     type RelationshipTarget = WindowManagerChildren;
@@ -51,6 +126,7 @@ impl Relationship for WindowManagerChildOf {
                 relationship_hook_mode,
                 component_id,
             },
+            ContainsParentChild,
         ) {
             return;
         }
@@ -70,7 +146,7 @@ impl Relationship for WindowManagerChildOf {
                     relationships::apply_markers_to_monitor_hierarchy(
                             world.reborrow(),
                             entity,
-                            monitor_index_in_manager_list,
+                            monitor_index_in_manager_list + 1,
                             marker_map_clone.as_ref().unwrap_or_else(|| {
                                 warn!(
                             "Failed to get MonitorExtendedMarkerMap. Markers over the default threeshold will not be applied."
@@ -81,8 +157,33 @@ impl Relationship for WindowManagerChildOf {
                             }),
                             insert_monitor_marker_component,
                         );
+                } else {
+                    warn!("Failed to get monitor index in manager list");
                 }
+            } else {
+                warn!(
+                    "Failed to get window manager children. It has to be the first child of the window manager."
+                );
+
+                let marker_map_clone = world.get_resource::<MonitorExtendedMarkerMap>().cloned();
+                let mut default_map = None;
+                relationships::apply_markers_to_monitor_hierarchy(
+                    world.reborrow(),
+                    entity,
+                    1,
+                    marker_map_clone.as_ref().unwrap_or_else(|| {
+                        warn!(
+                            "Failed to get MonitorExtendedMarkerMap. Markers over the default threeshold will not be applied."
+                        );
+
+                        default_map.get_or_insert_with(MonitorExtendedMarkerMap::default)
+
+                    }),
+                    insert_monitor_marker_component,
+                );
             }
+        } else {
+            warn!("Failed to get target relationship");
         }
     }
 
@@ -117,7 +218,7 @@ impl Relationship for WindowManagerChildOf {
             apply_markers_to_monitor_hierarchy(
                 world.reborrow(),
                 entity,
-                old_idx,
+                old_idx + 1,
                 marker_map_optional.as_ref().unwrap_or_else(||{
                     warn!("Failed to get MonitorExtendedMarkerMap. Markers over the default threshold will not be applied.");
                     default_map.get_or_insert_with(MonitorExtendedMarkerMap::default)
@@ -171,4 +272,6 @@ impl KomotoolRelationship for WindowManagerChildOf {
         despawn_monitor_marker_component;
 
     type Komorebi = Monitor;
+
+    type Child = MonitorChildOf;
 }

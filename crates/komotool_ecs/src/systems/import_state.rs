@@ -1,9 +1,16 @@
 use crate::RelationRegistry;
 use crate::components::Focused;
 use crate::components::*;
+use crate::prelude::WorkspaceChildOf;
+use crate::relationships::{ContainerChildOf, MonitorChildOf, WindowManagerChildOf};
+#[cfg(not(debug_assertions))]
+use crate::relationships::{
+    ContainerChildren, MonitorChildren, WindowManagerChildren, WorkspaceChildren,
+};
 use crate::resources::*;
-use bevy_ecs::query::QueryEntityError;
-use bevy_ecs::system::{Commands, Query, Res, ResMut};
+use bevy_ecs::entity::{ContainsEntity, Entity};
+use bevy_ecs::query::{QueryEntityError, With};
+use bevy_ecs::system::{Commands, Query, Res, ResMut, Single};
 use komorebi_client::{Container, Monitor, Window, Workspace};
 use std::collections::{HashSet, hash_map::Entry};
 
@@ -12,9 +19,7 @@ pub fn import_komorebi_workspace_state(
     mut existing_workspaces: Query<&mut Workspace>,
     komorebi_state: Res<KomorebiState>,
     mut workspace_map: ResMut<WorkspaceToEntityMap>,
-    registry: Res<RelationRegistry>,
-    workspace_extended_marker_map: Res<WorkspaceExtendedMarkerMap>,
-    monitor_extended_marker_map: Res<MonitorExtendedMarkerMap>,
+    monitor_map: Res<MonitorToEntityMap>,
     mut keep_alive_workspaces: ResMut<KeepAliveWorkspaces>,
 ) {
     let Some(state) = &komorebi_state.komorebi else {
@@ -24,6 +29,10 @@ pub fn import_komorebi_workspace_state(
     let mut current_keys = HashSet::new();
 
     for komo_mon in state.monitors.elements() {
+        let Some(serial) = komo_mon.serial_number_id() else {
+            continue;
+        };
+        let monitor_entity = monitor_map.0.get(serial).unwrap_or(&Entity::PLACEHOLDER);
         let workspaces = komo_mon.workspaces();
         for komo_ws in workspaces.iter() {
             // Use name if available, otherwise fall back to ID
@@ -37,34 +46,22 @@ pub fn import_komorebi_workspace_state(
                 Entry::Occupied(entry) => {
                     let entity = *entry.get();
 
-                    // Despawn all relevant marker components
-                    if let Some(record) = registry.records.get(&entity) {
-                        // Despawn Monitor marker
-                        if record.monitor > 0 {
-                            despawn_monitor_marker_component(
-                                record.monitor,
-                                entity,
-                                commands.reborrow(),
-                                &monitor_extended_marker_map,
-                            );
-                        }
-                        // Despawn Workspace marker
-                        if record.workspace > 0 {
-                            despawn_workspace_marker_component(
-                                record.workspace,
-                                entity,
-                                commands.reborrow(),
-                                &workspace_extended_marker_map,
-                            );
-                        }
-                    }
-
                     if let Ok(mut workspace) = existing_workspaces.get_mut(entity) {
                         *workspace = komo_ws.clone();
+                        commands
+                            .entity(*monitor_entity)
+                            .add_one_related::<MonitorChildOf>(entity);
+                        #[cfg(not(debug_assertions))]
+                        {
+                            // This code will only be included in release builds
+                            commands.entity(entity).remove::<WorkspaceChildren>();
+                        }
                     }
                 }
                 Entry::Vacant(entry) => {
-                    let entity = commands.spawn(komo_ws.clone()).id();
+                    let entity = commands
+                        .spawn((komo_ws.clone(), MonitorChildOf(*monitor_entity)))
+                        .id();
                     entry.insert(entity);
                 }
             }
@@ -83,34 +80,16 @@ pub fn import_komorebi_workspace_state(
                 // Check if the entity actually still exists and has the component
                 match existing_workspaces.get(*entity) {
                     Ok(_) => {
-                        // Entity exists: Keep it alive, but remove its markers and focus.
-                        if let Some(record) = registry.records.get(entity) {
-                            // Despawn Monitor marker
-                            if record.monitor > 0 {
-                                despawn_monitor_marker_component(
-                                    record.monitor,
-                                    *entity,
-                                    commands.reborrow(),
-                                    &monitor_extended_marker_map,
-                                );
-                            }
-                            // Despawn Workspace marker
-                            if record.workspace > 0 {
-                                despawn_workspace_marker_component(
-                                    record.workspace,
-                                    *entity,
-                                    commands.reborrow(),
-                                    &workspace_extended_marker_map,
-                                );
-                            }
-                        }
                         commands.entity(*entity).remove::<Focused>();
+                        commands.entity(*entity).remove::<MonitorChildOf>();
                         true // Keep the entity in the map
                     }
                     Err(error) => {
                         match error {
                             QueryEntityError::AliasedMutability(_) => {
                                 // Entity exists but is mutably borrowed elsewhere. Keep it.
+                                commands.entity(*entity).remove::<Focused>();
+                                commands.entity(*entity).remove::<MonitorChildOf>();
                                 true // Keep in map
                             }
                             QueryEntityError::QueryDoesNotMatch(_, _)
@@ -137,15 +116,23 @@ pub fn import_komorebi_monitor_state(
     mut existing_monitors: Query<&mut Monitor>,
     komorebi_state: Res<KomorebiState>,
     mut monitor_map: ResMut<MonitorToEntityMap>,
-    registry: Res<RelationRegistry>,
-    extended_marker_map: Res<MonitorExtendedMarkerMap>,
     mut keep_alive_monitors: ResMut<KeepAliveMonitors>,
+    window_manager_entity: Single<Entity, With<WindowManager>>,
 ) {
     let Some(state) = &komorebi_state.komorebi else {
         return;
     };
 
     let mut current_serials = HashSet::new();
+
+    let window_manager_entity = window_manager_entity.entity();
+    #[cfg(not(debug_assertions))]
+    {
+        // This code will only be included in release builds
+        commands
+            .entity(window_manager_entity)
+            .remove::<WindowManagerChildren>();
+    }
 
     for komo_mon in state.monitors.elements() {
         let Some(serial) = komo_mon.serial_number_id() else {
@@ -157,25 +144,24 @@ pub fn import_komorebi_monitor_state(
             Entry::Occupied(entry) => {
                 let entity = *entry.get();
 
-                // Despawn the old marker component if it exists
-                if let Some(record) = registry.records.get(&entity) {
-                    if record.monitor > 0 {
-                        despawn_monitor_marker_component(
-                            record.monitor,
-                            entity,
-                            commands.reborrow(),
-                            &extended_marker_map,
-                        );
-                    }
-                }
-
                 if let Ok(mut monitor) = existing_monitors.get_mut(entity) {
                     *monitor = komo_mon.clone();
+                    commands
+                        .entity(window_manager_entity)
+                        .add_one_related::<WindowManagerChildOf>(entity);
+                    #[cfg(not(debug_assertions))]
+                    {
+                        // This code will only be included in release builds
+                        commands.entity(entity).remove::<MonitorChildren>();
+                    }
                 }
             }
             Entry::Vacant(entry) => {
                 let entity = commands.spawn(komo_mon.clone()).id();
                 entry.insert(entity);
+                commands
+                    .entity(window_manager_entity)
+                    .add_one_related::<WindowManagerChildOf>(entity);
             }
         }
     }
@@ -192,23 +178,15 @@ pub fn import_komorebi_monitor_state(
                 // Check if the entity actually still exists and has the component
                 match existing_monitors.get(*entity) {
                     Ok(_) => {
-                        // Entity exists: Keep it alive, but remove its marker and focus.
-                        if let Some(record) = registry.records.get(entity) {
-                            if record.monitor > 0 {
-                                despawn_monitor_marker_component(
-                                    record.monitor,
-                                    *entity,
-                                    commands.reborrow(),
-                                    &extended_marker_map,
-                                );
-                            }
-                        }
                         commands.entity(*entity).remove::<Focused>();
+                        commands.entity(*entity).remove::<WindowManagerChildOf>();
                         true // Keep the entity in the map
                     }
                     Err(error) => {
                         match error {
                             QueryEntityError::AliasedMutability(_) => {
+                                commands.entity(*entity).remove::<Focused>();
+                                commands.entity(*entity).remove::<WindowManagerChildOf>();
                                 // Entity exists but is mutably borrowed elsewhere. Keep it.
                                 true // Keep in map
                             }
@@ -236,11 +214,7 @@ pub fn import_komorebi_window_state(
     mut existing_windows: Query<&mut Window>,
     komorebi_state: Res<KomorebiState>,
     mut window_map: ResMut<WindowToEntityMap>,
-    registry: Res<RelationRegistry>,
-    window_extended_marker_map: Res<WindowExtendedMarkerMap>,
-    container_extended_marker_map: Res<ContainerExtendedMarkerMap>,
-    workspace_extended_marker_map: Res<WorkspaceExtendedMarkerMap>,
-    monitor_extended_marker_map: Res<MonitorExtendedMarkerMap>,
+    container_map: Res<ContainerToEntityMap>,
 ) {
     let Some(state) = &komorebi_state.komorebi else {
         return;
@@ -254,6 +228,11 @@ pub fn import_komorebi_window_state(
         let workspaces = komo_mon.workspaces();
         for komo_ws in workspaces.iter() {
             for komo_cont in komo_ws.containers() {
+                let container_entity = match container_map.0.get(komo_cont.id()) {
+                    Some(entity) => *entity,
+                    None => continue,
+                };
+
                 for komo_win in komo_cont.windows() {
                     let hwnd = komo_win.hwnd.to_string();
                     current_hwnds.insert(hwnd.clone());
@@ -262,56 +241,22 @@ pub fn import_komorebi_window_state(
                         Entry::Occupied(entry) => {
                             let entity = *entry.get();
 
-                            // Despawn all relevant marker components
-                            if let Some(record) = registry.records.get(&entity) {
-                                // Despawn Monitor marker
-                                if record.monitor > 0 {
-                                    despawn_monitor_marker_component(
-                                        record.monitor,
-                                        entity,
-                                        commands.reborrow(),
-                                        &monitor_extended_marker_map,
-                                    );
-                                }
-                                // Despawn Workspace marker
-                                if record.workspace > 0 {
-                                    despawn_workspace_marker_component(
-                                        record.workspace,
-                                        entity,
-                                        commands.reborrow(),
-                                        &workspace_extended_marker_map,
-                                    );
-                                }
-                                // Despawn Container marker
-                                if record.container > 0 {
-                                    despawn_container_marker_component(
-                                        record.container,
-                                        entity,
-                                        commands.reborrow(),
-                                        &container_extended_marker_map,
-                                    );
-                                }
-                                // Despawn Window marker
-                                if record.window > 0 {
-                                    despawn_window_marker_component(
-                                        record.window,
-                                        entity,
-                                        commands.reborrow(),
-                                        &window_extended_marker_map,
-                                    );
-                                }
-                            }
-                            commands.entity(entity).remove::<MaximizedWindow>();
-
                             // Update existing window component
                             if let Ok(mut window) = existing_windows.get_mut(entity) {
                                 *window = *komo_win;
+                                commands.entity(entity).remove::<MaximizedWindow>();
+                                commands
+                                    .entity(container_entity)
+                                    .add_one_related::<ContainerChildOf>(entity);
                             }
                         }
                         Entry::Vacant(entry) => {
                             // Spawn new window
                             let entity = commands.spawn(*komo_win).id();
                             entry.insert(entity);
+                            commands
+                                .entity(container_entity)
+                                .add_one_related::<ContainerChildOf>(entity);
                         }
                     }
                 }
@@ -348,49 +293,9 @@ pub fn import_komorebi_window_state(
                 Ok(window) => {
                     match window.exe() {
                         Ok(_) => {
-                            // Process exists: Keep entity but remove markers and focus.
-                            // Markers *should* have been removed if it was previously managed,
-                            // but clear them again just in case it's an edge case.
-                            if let Some(record) = registry.records.get(entity) {
-                                // Despawn Monitor marker
-                                if record.monitor > 0 {
-                                    despawn_monitor_marker_component(
-                                        record.monitor,
-                                        *entity,
-                                        commands.reborrow(),
-                                        &monitor_extended_marker_map,
-                                    );
-                                }
-                                // Despawn Workspace marker
-                                if record.workspace > 0 {
-                                    despawn_workspace_marker_component(
-                                        record.workspace,
-                                        *entity,
-                                        commands.reborrow(),
-                                        &workspace_extended_marker_map,
-                                    );
-                                }
-                                // Despawn Container marker
-                                if record.container > 0 {
-                                    despawn_container_marker_component(
-                                        record.container,
-                                        *entity,
-                                        commands.reborrow(),
-                                        &container_extended_marker_map,
-                                    );
-                                }
-                                // Despawn Window marker
-                                if record.window > 0 {
-                                    despawn_window_marker_component(
-                                        record.window,
-                                        *entity,
-                                        commands.reborrow(),
-                                        &window_extended_marker_map,
-                                    );
-                                }
-                            }
                             // Ensure focus is removed as it's no longer managed
                             commands.entity(*entity).remove::<Focused>();
+                            commands.entity(*entity).remove::<ContainerChildOf>();
                             true // Keep the entity in the map
                         }
                         Err(_) => {
@@ -405,6 +310,8 @@ pub fn import_komorebi_window_state(
                         QueryEntityError::AliasedMutability(_) => {
                             // Entity exists and has the component, but is mutably borrowed elsewhere.
                             // Keep the entity, don't despawn.
+                            commands.entity(*entity).remove::<Focused>();
+                            commands.entity(*entity).remove::<ContainerChildOf>();
                             true // Keep in map
                         }
                         QueryEntityError::QueryDoesNotMatch(_, _)
@@ -425,10 +332,7 @@ pub fn import_komorebi_container_state(
     mut existing_containers: Query<&mut Container>,
     komorebi_state: Res<KomorebiState>,
     mut container_map: ResMut<ContainerToEntityMap>,
-    registry: Res<RelationRegistry>,
-    container_extended_marker_map: Res<ContainerExtendedMarkerMap>,
-    workspace_extended_marker_map: Res<WorkspaceExtendedMarkerMap>,
-    monitor_extended_marker_map: Res<MonitorExtendedMarkerMap>,
+    workspace_map: Res<WorkspaceToEntityMap>,
     mut keep_alive_containers: ResMut<KeepAliveContainers>,
 ) {
     let Some(state) = &komorebi_state.komorebi else {
@@ -442,6 +346,10 @@ pub fn import_komorebi_container_state(
     for komo_mon in state.monitors.elements() {
         let workspaces = komo_mon.workspaces();
         for komo_ws in workspaces.iter() {
+            let Some(name) = komo_ws.name() else {
+                continue;
+            };
+            let workspace_entity = workspace_map.0.get(name).unwrap_or(&Entity::PLACEHOLDER);
             for komo_cont in komo_ws.containers() {
                 let id = komo_cont.id();
                 current_ids.insert(id.clone());
@@ -450,41 +358,18 @@ pub fn import_komorebi_container_state(
                     Entry::Occupied(entry) => {
                         let entity = *entry.get();
 
-                        // Despawn all relevant marker components
-                        if let Some(record) = registry.records.get(&entity) {
-                            // Despawn Monitor marker
-                            if record.monitor > 0 {
-                                despawn_monitor_marker_component(
-                                    record.monitor,
-                                    entity,
-                                    commands.reborrow(),
-                                    &monitor_extended_marker_map,
-                                );
-                            }
-                            // Despawn Workspace marker
-                            if record.workspace > 0 {
-                                despawn_workspace_marker_component(
-                                    record.workspace,
-                                    entity,
-                                    commands.reborrow(),
-                                    &workspace_extended_marker_map,
-                                );
-                            }
-                            // Despawn Container marker
-                            if record.container > 0 {
-                                despawn_container_marker_component(
-                                    record.container,
-                                    entity,
-                                    commands.reborrow(),
-                                    &container_extended_marker_map,
-                                );
-                            }
-                        }
-                        commands.entity(entity).remove::<MonocleContainer>();
-
                         // Update existing container component
                         if let Ok(mut container) = existing_containers.get_mut(entity) {
                             *container = komo_cont.clone();
+                            commands
+                                .entity(*workspace_entity)
+                                .add_one_related::<WorkspaceChildOf>(entity);
+                            #[cfg(not(debug_assertions))]
+                            {
+                                // This code will only be included in release builds
+                                commands.entity(entity).remove::<ContainerChildren>();
+                            }
+                            commands.entity(entity).remove::<MonocleContainer>();
                         }
 
                         // Insert/update WindowRing component
@@ -493,6 +378,9 @@ pub fn import_komorebi_container_state(
                         // Spawn new container with WindowRing
                         let entity = commands.spawn(komo_cont.clone()).id();
                         entry.insert(entity);
+                        commands
+                            .entity(*workspace_entity)
+                            .add_one_related::<WorkspaceChildOf>(entity);
                     }
                 }
             }
@@ -528,43 +416,16 @@ pub fn import_komorebi_container_state(
                 // Check if the entity actually still exists and has the component
                 match existing_containers.get(*entity) {
                     Ok(_) => {
-                        // Entity exists: Keep it alive, but remove its markers and focus.
-                        if let Some(record) = registry.records.get(entity) {
-                            // Despawn Monitor marker
-                            if record.monitor > 0 {
-                                despawn_monitor_marker_component(
-                                    record.monitor,
-                                    *entity,
-                                    commands.reborrow(),
-                                    &monitor_extended_marker_map,
-                                );
-                            }
-                            // Despawn Workspace marker
-                            if record.workspace > 0 {
-                                despawn_workspace_marker_component(
-                                    record.workspace,
-                                    *entity,
-                                    commands.reborrow(),
-                                    &workspace_extended_marker_map,
-                                );
-                            }
-                            // Despawn Container marker
-                            if record.container > 0 {
-                                despawn_container_marker_component(
-                                    record.container,
-                                    *entity,
-                                    commands.reborrow(),
-                                    &container_extended_marker_map,
-                                );
-                            }
-                        }
                         commands.entity(*entity).remove::<Focused>();
+                        commands.entity(*entity).remove::<WorkspaceChildOf>();
                         true // Keep the entity in the map
                     }
                     Err(error) => {
                         match error {
                             QueryEntityError::AliasedMutability(_) => {
                                 // Entity exists but is mutably borrowed elsewhere. Keep it.
+                                commands.entity(*entity).remove::<Focused>();
+                                commands.entity(*entity).remove::<WorkspaceChildOf>();
                                 true // Keep in map
                             }
                             QueryEntityError::QueryDoesNotMatch(_, _)
@@ -816,4 +677,8 @@ pub fn build_relation_registry(
             }
         }
     }
+}
+
+pub fn spawn_window_manager(mut commands: Commands) {
+    commands.spawn(WindowManager);
 }

@@ -1,7 +1,9 @@
 pub mod container;
+mod maximized_window;
 pub mod monitor;
+mod monocle_container;
 pub mod window;
-mod window_manager;
+pub mod window_manager;
 pub mod workspace;
 
 use bevy_ecs::entity::{Entity, EntityHash, EntitySetIterator};
@@ -9,7 +11,11 @@ use bevy_ecs::relationship::{
     Relationship, RelationshipHookMode, RelationshipSourceCollection, RelationshipTarget,
 };
 
-use bevy_ecs::component::HookContext;
+use crate::systems::{
+    Containermakerset, MaximizedWindowmakerid, Monitormakerset, MonocleContainermakerid,
+    Windowmakerset, Workspacemakerset,
+};
+use bevy_ecs::component::{ComponentId, HookContext};
 use bevy_ecs::prelude::Component;
 use bevy_ecs::resource::Resource;
 use bevy_ecs::system::Commands;
@@ -34,6 +40,7 @@ use core::{
 use indexmap::set::{self, IndexSet};
 pub use monitor::*;
 pub use window::*;
+pub use window_manager::*;
 pub use workspace::*;
 
 #[derive(Component, Reflect)]
@@ -828,7 +835,11 @@ impl Debug for Drain<'_> {
 
 unsafe impl EntitySetIterator for Drain<'_> {}
 
-pub fn bevy_on_insert<BevyRelatonship: Relationship, Child: Component, Parent: Component>(
+pub fn bevy_on_insert<
+    BevyRelatonship: Relationship<RelationshipTarget: GetIndex>,
+    Child: Component,
+    Parent: Component,
+>(
     mut world: DeferredWorld,
     HookContext {
         entity,
@@ -836,6 +847,7 @@ pub fn bevy_on_insert<BevyRelatonship: Relationship, Child: Component, Parent: C
         relationship_hook_mode,
         ..
     }: HookContext,
+    check: impl Check<BevyRelatonship, Child, Parent>,
 ) -> bool {
     if !relationships_hook::<BevyRelatonship>(relationship_hook_mode) {
         return true;
@@ -858,19 +870,7 @@ pub fn bevy_on_insert<BevyRelatonship: Relationship, Child: Component, Parent: C
             return true;
         }
 
-        if !world.entity(entity).contains::<Child>() {
-            warn!(
-                "The Monitor relationship can only be used on entities with the Workspace component."
-            );
-            world.commands().entity(entity).remove::<BevyRelatonship>();
-            return true;
-        }
-
-        if !world.entity(target_entity).contains::<Parent>() {
-            warn!(
-                "The Monitor relationship can only be used on entity targets with the Monitor component."
-            );
-            world.commands().entity(entity).remove::<BevyRelatonship>();
+        if check.check(world.reborrow(), entity, target_entity) {
             return true;
         }
 
@@ -1076,13 +1076,23 @@ pub trait GetIndex: RelationshipTarget {
 pub trait KomotoolRelationship: Relationship {
     type Marker: Resource + Clone + Default;
 
-    const INSERT_MARKER: fn(usize, Entity, Commands, &Self::Marker);
+    const INSERT_MARKER: InsertMarkerFn<Self::Marker>;
 
-    const DESPAWN_MARKER: fn(usize, Entity, Commands, &Self::Marker);
+    const DESPAWN_MARKER: InsertMarkerFn<Self::Marker>;
 
     type Komorebi: Component;
+
+    type Child: KomotoolRelationship;
 }
 
+pub trait Check<
+    BevyRelationship: Relationship<RelationshipTarget: GetIndex>,
+    Child: Component,
+    Parent: Component,
+>
+{
+    fn check(&self, world: DeferredWorld, entity: Entity, parent: Entity) -> bool;
+}
 pub trait MarkerFn<Marker> {
     fn marker(&self, index: usize, entity: Entity, commands: Commands, marker: &Marker);
     fn reborrow(&self) -> Self;
@@ -1161,7 +1171,7 @@ pub fn remove_parent_markers_from_hierarchy<
         parent.unwrap_or_else(|| {
             world
                 .entity(entity)
-                .get::<BevyRelationship>()
+                .get::<BevyRelationship::Child>()
                 .map_or(Entity::PLACEHOLDER, |childof| childof.get())
         }),
         world,
@@ -1179,6 +1189,11 @@ fn parent_markers_to_hierarchy<
     to_hierarchy: impl HierarchyFn<BevyRelationship::Marker, InsertMarkerFn<BevyRelationship::Marker>>,
     marker_func: InsertMarkerFn<BevyRelationship::Marker>,
 ) -> Option<Entity> {
+    if parent == Entity::PLACEHOLDER {
+        warn!("Parent entity not found");
+        remove_all_markers(world, entity);
+        return None;
+    }
     if let Some(childof) = world.entity(parent).get::<BevyRelationship>() {
         let childof = childof.get();
         if let Some(children) = world
@@ -1194,7 +1209,7 @@ fn parent_markers_to_hierarchy<
                 to_hierarchy.hierarchy(
                     world.reborrow(),
                     entity,
-                    parent_idx,
+                    parent_idx + 1,
                     marker_map_clone.as_ref().unwrap_or_else(|| {
                         warn!(
                         "Failed to get {}. Markers over the default threshold will not be applied.",
@@ -1239,7 +1254,7 @@ pub fn update_markers<BevyRelationship: Relationship + KomotoolRelationship>(
                     apply_to_hierarchy.hierarchy(
                         world.reborrow(),
                         *child_entity,
-                        idx,
+                        idx +1,
                         marker_map.as_ref().unwrap_or_else(|| {
                             warn!(
                         "Failed to get {}. Markers over the default threshold will not be applied.",
@@ -1259,17 +1274,31 @@ pub fn get_old_index<BevyRelatonship: Relationship<RelationshipTarget: GetIndex>
     entity: Entity,
     world: DeferredWorld,
 ) -> Option<usize> {
+    if !world.entities().contains(entity) {
+        warn!("Entity does not exist");
+        return None;
+    }
     if let Some(relationship) = world.entity(entity).get::<BevyRelatonship>() {
         let child_entity = relationship.get();
+        if !world.entities().contains(child_entity) {
+            warn!("Child entity does not exist");
+            remove_all_markers(world, entity);
+            return None;
+        }
+
         if let Some(children) = world
             .entity(child_entity)
             .get::<BevyRelatonship::RelationshipTarget>()
         {
             children.get_index_of(&entity)
         } else {
+            warn!("Child entity has no children");
+            remove_all_markers(world, entity);
             None
         }
     } else {
+        warn!("Entity has no relationship");
+        remove_all_markers(world, entity);
         None
     }
 }
@@ -1292,5 +1321,92 @@ impl<Marker: Resource + Clone + Default> MarkerFn<Marker> for DespawnInsertMarke
             despawn: self.despawn,
             insert: self.insert,
         }
+    }
+}
+
+pub struct ContainsParentChild;
+
+impl<
+    BevyRelationship: Relationship<RelationshipTarget: GetIndex>,
+    Child: Component,
+    Parent: Component,
+> Check<BevyRelationship, Child, Parent> for ContainsParentChild
+{
+    fn check(&self, mut world: DeferredWorld, entity: Entity, parent: Entity) -> bool {
+        if !world.entity(entity).contains::<Child>() {
+            warn!(
+                "The Monitor relationship can only be used on entities with the Workspace component."
+            );
+            world.commands().entity(entity).remove::<BevyRelationship>();
+            return true;
+        }
+
+        if !world.entity(parent).contains::<Parent>() {
+            warn!(
+                "The Monitor relationship can only be used on entity targets with the Monitor component."
+            );
+            world.commands().entity(entity).remove::<BevyRelationship>();
+            return true;
+        }
+
+        false
+    }
+}
+
+pub fn remove_all_markers(mut world: DeferredWorld, entity: Entity) {
+    let mut default_map_monitor = None;
+    let monitor_maker_set = world
+        .get_resource::<Monitormakerset>()
+        .unwrap_or(default_map_monitor.get_or_insert_with(Monitormakerset::default));
+
+    let mut default_map_workspace = None;
+    let workspace_maker_set = world
+        .get_resource::<Workspacemakerset>()
+        .unwrap_or(default_map_workspace.get_or_insert_with(Workspacemakerset::default));
+
+    let mut default_map_container = None;
+    let container_maker_set = world
+        .get_resource::<Containermakerset>()
+        .unwrap_or(default_map_container.get_or_insert_with(Containermakerset::default));
+
+    let mut default_map_window = None;
+    let window_maker_set = world
+        .get_resource::<Windowmakerset>()
+        .unwrap_or(default_map_window.get_or_insert_with(Windowmakerset::default));
+
+    let monocle_container_maker = world.get_resource::<MonocleContainermakerid>();
+
+    let maximized_window_maker = world.get_resource::<MaximizedWindowmakerid>();
+
+    let mut to_remove: Vec<ComponentId> = vec![];
+    let entity_ref = world.entity(entity);
+    let archetype = entity_ref.archetype();
+    for component_id in archetype.components() {
+        if monitor_maker_set.contains(&component_id) {
+            to_remove.push(component_id);
+        }
+        if workspace_maker_set.contains(&component_id) {
+            to_remove.push(component_id);
+        }
+        if container_maker_set.contains(&component_id) {
+            to_remove.push(component_id);
+        }
+        if window_maker_set.contains(&component_id) {
+            to_remove.push(component_id);
+        }
+        if let Some(monocle_container_maker) = monocle_container_maker {
+            if component_id == **monocle_container_maker {
+                to_remove.push(component_id);
+            }
+        }
+        if let Some(maximized_window_maker) = maximized_window_maker {
+            if component_id == **maximized_window_maker {
+                to_remove.push(component_id);
+            }
+        }
+    }
+
+    for component_id in to_remove {
+        world.commands().entity(entity).remove_by_id(component_id);
     }
 }
