@@ -1,4 +1,5 @@
 pub mod container;
+mod komorebi_relationship;
 mod maximized_window;
 pub mod monitor;
 mod monocle_container;
@@ -37,7 +38,7 @@ use core::{
     },
     ptr,
 };
-use indexmap::set::{self, IndexSet};
+use indexmap::set::{self, IndexSet, MutableValues};
 pub use monitor::*;
 pub use window::*;
 pub use window_manager::*;
@@ -45,6 +46,17 @@ pub use workspace::*;
 
 #[derive(Component, Reflect)]
 pub struct RelationshipIndexSet(IndexSet<Entity, EntityHash>);
+
+impl MapEntities for RelationshipIndexSet {
+    fn map_entities<E: EntityMapper>(&mut self, entity_mapper: &mut E) {
+        for idx in 0..self.0.len() {
+            let mut entity = self.0.get_index_mut2(idx);
+            if let Some(entity) = entity {
+                *entity = entity_mapper.get_mapped(*entity);
+            }
+        }
+    }
+}
 
 impl RelationshipSourceCollection for RelationshipIndexSet {
     type SourceIter<'a> = core::iter::Copied<set::Iter<'a, Entity>>;
@@ -1278,6 +1290,16 @@ pub enum OldIndex {
     ParentEntityDoesNotExist,
     ParentEntityHasNoChildren,
     EntityHasNoRelationship,
+}
+
+#[derive(Reflect, Clone, Copy, Component, Default, Debug, Eq, Hash, PartialEq)]
+pub enum KomorebiType {
+    Monitor,
+    Workspace,
+    Container,
+    Window,
+    #[default]
+    NotDefined,
 }
 
 pub fn get_old_index<BevyRelatonship: Relationship<RelationshipTarget: GetIndex>>(
