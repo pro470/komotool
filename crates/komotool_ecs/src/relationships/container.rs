@@ -1,12 +1,13 @@
 use crate::components::{despawn_window_marker_component, insert_window_marker_component};
 use crate::prelude::{
-    DespawnInsertMarker, get_old_index, remove_parent_markers_from_hierarchy, update_markers,
+    DespawnInsertMarker, OldIndex, get_old_index, remove_parent_markers_from_hierarchy,
+    update_markers,
 };
 use crate::relationships::window_manager::WindowManagerChildOf;
 use crate::relationships::{
     ContainsParentChild, GetIndex, InsertMarkerFn, KomotoolRelationship, MarkerFn, MonitorChildOf,
     RelationshipIndexSet, WorkspaceChildOf, apply_parent_markers_to_hierarchy, bevy_on_insert,
-    bevy_on_remove, relationships_hook,
+    bevy_on_remove, relationships_hook, remove_all_markers,
 };
 use crate::resources::WindowExtendedMarkerMap;
 use bevy_ecs::component::HookContext;
@@ -116,7 +117,7 @@ impl Relationship for ContainerChildOf {
             component_id,
         }: HookContext,
     ) {
-        if bevy_on_insert::<Self, Window, Container>(
+        if bevy_on_insert::<Self>(
             world.reborrow(),
             HookContext {
                 entity,
@@ -124,7 +125,9 @@ impl Relationship for ContainerChildOf {
                 relationship_hook_mode,
                 component_id,
             },
-            ContainsParentChild,
+            ContainsParentChild::<Window, Container> {
+                _phantom: std::marker::PhantomData,
+            },
         ) {
             return;
         }
@@ -291,76 +294,91 @@ impl Relationship for ContainerChildOf {
             },
         );
 
-        if let Some(old_idx) = old_idx {
-            let marker_map_optional = world.get_resource::<WindowExtendedMarkerMap>().cloned();
-            despawn_window_marker_component(
-                old_idx + 1,
-                entity,
-                world.commands(),
-                marker_map_optional
-                    .as_ref()
-                    .unwrap_or(&WindowExtendedMarkerMap::default()),
-            );
+        match old_idx {
+            OldIndex::OldIndex(old_idx) => {
+                if let Some(old_idx) = old_idx {
+                    let marker_map_optional =
+                        world.get_resource::<WindowExtendedMarkerMap>().cloned();
+                    despawn_window_marker_component(
+                        old_idx + 1,
+                        entity,
+                        world.commands(),
+                        marker_map_optional
+                            .as_ref()
+                            .unwrap_or(&WindowExtendedMarkerMap::default()),
+                    );
 
-            let parent_workspace_entity = remove_parent_markers_from_hierarchy::<WorkspaceChildOf>(
-                entity,
-                None,
-                world.reborrow(),
-                |mut world: DeferredWorld<'_>,
-                 entity,
-                 index,
-                 marker: &_,
-                 insert_marker: InsertMarkerFn<
-                    <WorkspaceChildOf as KomotoolRelationship>::Marker,
-                >| {
-                    insert_marker.marker(index, entity, world.commands(), marker)
-                },
-            );
+                    let parent_workspace_entity =
+                        remove_parent_markers_from_hierarchy::<WorkspaceChildOf>(
+                            entity,
+                            None,
+                            world.reborrow(),
+                            |mut world: DeferredWorld<'_>,
+                             entity,
+                             index,
+                             marker: &_,
+                             insert_marker: InsertMarkerFn<
+                                <WorkspaceChildOf as KomotoolRelationship>::Marker,
+                            >| {
+                                insert_marker.marker(index, entity, world.commands(), marker)
+                            },
+                        );
 
-            let parent_monitor_entity = remove_parent_markers_from_hierarchy::<MonitorChildOf>(
-                entity,
-                parent_workspace_entity,
-                world.reborrow(),
-                |mut world: DeferredWorld<'_>,
-                 entity,
-                 index,
-                 marker: &_,
-                 insert_marker: InsertMarkerFn<
-                    <MonitorChildOf as KomotoolRelationship>::Marker,
-                >| {
-                    insert_marker.marker(index, entity, world.commands(), marker)
-                },
-            );
-            remove_parent_markers_from_hierarchy::<WindowManagerChildOf>(
-                entity,
-                parent_monitor_entity,
-                world.reborrow(),
-                |mut world: DeferredWorld<'_>,
-                 entity,
-                 index,
-                 marker: &_,
-                 insert_marker: InsertMarkerFn<
-                    <WindowManagerChildOf as KomotoolRelationship>::Marker,
-                >| {
-                    insert_marker.marker(index, entity, world.commands(), marker)
-                },
-            );
+                    let parent_monitor_entity =
+                        remove_parent_markers_from_hierarchy::<MonitorChildOf>(
+                            entity,
+                            parent_workspace_entity,
+                            world.reborrow(),
+                            |mut world: DeferredWorld<'_>,
+                             entity,
+                             index,
+                             marker: &_,
+                             insert_marker: InsertMarkerFn<
+                                <MonitorChildOf as KomotoolRelationship>::Marker,
+                            >| {
+                                insert_marker.marker(index, entity, world.commands(), marker)
+                            },
+                        );
+                    remove_parent_markers_from_hierarchy::<WindowManagerChildOf>(
+                        entity,
+                        parent_monitor_entity,
+                        world.reborrow(),
+                        |mut world: DeferredWorld<'_>,
+                         entity,
+                         index,
+                         marker: &_,
+                         insert_marker: InsertMarkerFn<
+                            <WindowManagerChildOf as KomotoolRelationship>::Marker,
+                        >| {
+                            insert_marker.marker(index, entity, world.commands(), marker)
+                        },
+                    );
 
-            update_markers::<Self>(
-                world.reborrow(),
-                marker_map_optional,
-                entity,
-                old_idx,
-                |mut world: DeferredWorld<'_>,
-                 entity,
-                 index,
-                 marker: &_,
-                 insert_marker: DespawnInsertMarker<
-                    <ContainerChildOf as KomotoolRelationship>::Marker,
-                >| {
-                    insert_marker.marker(index, entity, world.commands(), marker)
-                },
-            )
+                    update_markers::<Self>(
+                        world.reborrow(),
+                        marker_map_optional,
+                        entity,
+                        old_idx,
+                        |mut world: DeferredWorld<'_>,
+                         entity,
+                         index,
+                         marker: &_,
+                         insert_marker: DespawnInsertMarker<
+                            <ContainerChildOf as KomotoolRelationship>::Marker,
+                        >| {
+                            insert_marker.marker(index, entity, world.commands(), marker)
+                        },
+                    )
+                }
+            }
+            OldIndex::EntityDoesNotExist => {
+                warn!("Entity does not exist");
+            }
+            OldIndex::ParentEntityDoesNotExist
+            | OldIndex::ParentEntityHasNoChildren
+            | OldIndex::EntityHasNoRelationship => {
+                remove_all_markers(world, entity);
+            }
         }
     }
 }

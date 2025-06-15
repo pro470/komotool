@@ -1,10 +1,10 @@
 use crate::components::{despawn_workspace_marker_component, insert_workspace_marker_component};
-use crate::prelude::{get_old_index, relationships_hook, update_markers};
+use crate::prelude::{OldIndex, get_old_index, relationships_hook, update_markers};
 use crate::relationships::window_manager::WindowManagerChildOf;
 use crate::relationships::{
     ContainsParentChild, GetIndex, InsertMarkerFn, KomotoolRelationship, RelationshipIndexSet,
     WorkspaceChildOf, apply_markers_to_workspace_hierarchy, apply_parent_markers_to_hierarchy,
-    bevy_on_insert, bevy_on_remove, remove_parent_markers_from_hierarchy,
+    bevy_on_insert, bevy_on_remove, remove_all_markers, remove_parent_markers_from_hierarchy,
 };
 use crate::resources::WorkspaceExtendedMarkerMap;
 use bevy_ecs::component::HookContext;
@@ -113,7 +113,7 @@ impl Relationship for MonitorChildOf {
             component_id,
         }: HookContext,
     ) {
-        if bevy_on_insert::<Self, Workspace, Monitor>(
+        if bevy_on_insert::<Self>(
             world.reborrow(),
             HookContext {
                 entity,
@@ -121,7 +121,9 @@ impl Relationship for MonitorChildOf {
                 relationship_hook_mode,
                 component_id,
             },
-            ContainsParentChild,
+            ContainsParentChild::<Workspace, Monitor> {
+                _phantom: std::marker::PhantomData,
+            },
         ) {
             return;
         }
@@ -222,37 +224,50 @@ impl Relationship for MonitorChildOf {
             },
         );
 
-        if let Some(old_idx) = old_idx {
-            let marker_map_optional = world.get_resource::<WorkspaceExtendedMarkerMap>().cloned();
-            let mut default_map = None;
+        match old_idx {
+            OldIndex::OldIndex(old_idx) => {
+                if let Some(old_idx) = old_idx {
+                    let marker_map_optional =
+                        world.get_resource::<WorkspaceExtendedMarkerMap>().cloned();
+                    let mut default_map = None;
 
-            apply_markers_to_workspace_hierarchy(
-                world.reborrow(),
-                entity,
-                old_idx +1,
-                marker_map_optional.as_ref().unwrap_or_else(|| {
-                    warn!(
+                    apply_markers_to_workspace_hierarchy(
+                        world.reborrow(),
+                        entity,
+                        old_idx +1,
+                        marker_map_optional.as_ref().unwrap_or_else(|| {
+                            warn!(
                         "Failed to get WorkspaceExtendedMarkerMap. Markers over the default threshold will not be applied."
                     );
-                    default_map.get_or_insert_with(WorkspaceExtendedMarkerMap::default)
-                }),
-                despawn_workspace_marker_component,
-            );
+                            default_map.get_or_insert_with(WorkspaceExtendedMarkerMap::default)
+                        }),
+                        despawn_workspace_marker_component,
+                    );
 
-            remove_parent_markers_from_hierarchy::<WindowManagerChildOf>(
-                entity,
-                None,
-                world.reborrow(),
-                apply_markers_to_workspace_hierarchy,
-            );
+                    remove_parent_markers_from_hierarchy::<WindowManagerChildOf>(
+                        entity,
+                        None,
+                        world.reborrow(),
+                        apply_markers_to_workspace_hierarchy,
+                    );
 
-            update_markers::<Self>(
-                world.reborrow(),
-                marker_map_optional,
-                entity,
-                old_idx,
-                apply_markers_to_workspace_hierarchy,
-            )
+                    update_markers::<Self>(
+                        world.reborrow(),
+                        marker_map_optional,
+                        entity,
+                        old_idx,
+                        apply_markers_to_workspace_hierarchy,
+                    )
+                }
+            }
+            OldIndex::EntityDoesNotExist => {
+                warn!("Entity does not exist");
+            }
+            OldIndex::ParentEntityDoesNotExist
+            | OldIndex::ParentEntityHasNoChildren
+            | OldIndex::EntityHasNoRelationship => {
+                remove_all_markers(world, entity);
+            }
         }
     }
 }

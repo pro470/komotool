@@ -6,7 +6,7 @@ pub mod window;
 pub mod window_manager;
 pub mod workspace;
 
-use bevy_ecs::entity::{Entity, EntityHash, EntitySetIterator};
+use bevy_ecs::entity::{Entity, EntityHash, EntityMapper, EntitySetIterator, MapEntities};
 use bevy_ecs::relationship::{
     Relationship, RelationshipHookMode, RelationshipSourceCollection, RelationshipTarget,
 };
@@ -835,11 +835,7 @@ impl Debug for Drain<'_> {
 
 unsafe impl EntitySetIterator for Drain<'_> {}
 
-pub fn bevy_on_insert<
-    BevyRelatonship: Relationship<RelationshipTarget: GetIndex>,
-    Child: Component,
-    Parent: Component,
->(
+pub fn bevy_on_insert<BevyRelatonship: Relationship<RelationshipTarget: GetIndex>>(
     mut world: DeferredWorld,
     HookContext {
         entity,
@@ -847,7 +843,7 @@ pub fn bevy_on_insert<
         relationship_hook_mode,
         ..
     }: HookContext,
-    check: impl Check<BevyRelatonship, Child, Parent>,
+    check: impl Check<BevyRelatonship>,
 ) -> bool {
     if !relationships_hook::<BevyRelatonship>(relationship_hook_mode) {
         return true;
@@ -1085,12 +1081,7 @@ pub trait KomotoolRelationship: Relationship {
     type Child: KomotoolRelationship;
 }
 
-pub trait Check<
-    BevyRelationship: Relationship<RelationshipTarget: GetIndex>,
-    Child: Component,
-    Parent: Component,
->
-{
+pub trait Check<BevyRelationship: Relationship<RelationshipTarget: GetIndex>> {
     fn check(&self, world: DeferredWorld, entity: Entity, parent: Entity) -> bool;
 }
 pub trait MarkerFn<Marker> {
@@ -1136,6 +1127,16 @@ where
         insert_marker: M,
     ) {
         self(world, entity, index, marker, insert_marker);
+    }
+}
+impl<F, BR> Check<BR> for F
+where
+    F: Fn(DeferredWorld, Entity, Entity) -> bool,
+    BR: Relationship<RelationshipTarget: GetIndex>,
+{
+    fn check(&self, world: DeferredWorld, entity: Entity, parent: Entity) -> bool {
+        // Simply call the function/closure with the arguments
+        self(world, entity, parent)
     }
 }
 
@@ -1189,6 +1190,7 @@ fn parent_markers_to_hierarchy<
     to_hierarchy: impl HierarchyFn<BevyRelationship::Marker, InsertMarkerFn<BevyRelationship::Marker>>,
     marker_func: InsertMarkerFn<BevyRelationship::Marker>,
 ) -> Option<Entity> {
+    #[cfg(not(debug_assertions))]
     if parent == Entity::PLACEHOLDER {
         warn!("Parent entity not found");
         remove_all_markers(world, entity);
@@ -1270,36 +1272,41 @@ pub fn update_markers<BevyRelationship: Relationship + KomotoolRelationship>(
     }
 }
 
+pub enum OldIndex {
+    OldIndex(Option<usize>),
+    EntityDoesNotExist,
+    ParentEntityDoesNotExist,
+    ParentEntityHasNoChildren,
+    EntityHasNoRelationship,
+}
+
 pub fn get_old_index<BevyRelatonship: Relationship<RelationshipTarget: GetIndex>>(
     entity: Entity,
     world: DeferredWorld,
-) -> Option<usize> {
+) -> OldIndex {
     if !world.entities().contains(entity) {
         warn!("Entity does not exist");
-        return None;
+        return OldIndex::EntityDoesNotExist;
     }
     if let Some(relationship) = world.entity(entity).get::<BevyRelatonship>() {
-        let child_entity = relationship.get();
-        if !world.entities().contains(child_entity) {
+        let parent_entity = relationship.get();
+        if !world.entities().contains(parent_entity) {
             warn!("Child entity does not exist");
-            remove_all_markers(world, entity);
-            return None;
+            return OldIndex::ParentEntityDoesNotExist;
         }
 
         if let Some(children) = world
-            .entity(child_entity)
+            .entity(parent_entity)
             .get::<BevyRelatonship::RelationshipTarget>()
         {
-            children.get_index_of(&entity)
+            OldIndex::OldIndex(children.get_index_of(&entity))
         } else {
             warn!("Child entity has no children");
-            remove_all_markers(world, entity);
-            None
+            OldIndex::ParentEntityHasNoChildren
         }
     } else {
         warn!("Entity has no relationship");
-        remove_all_markers(world, entity);
-        None
+        OldIndex::EntityHasNoRelationship
     }
 }
 
@@ -1324,13 +1331,16 @@ impl<Marker: Resource + Clone + Default> MarkerFn<Marker> for DespawnInsertMarke
     }
 }
 
-pub struct ContainsParentChild;
+#[derive(Default)]
+pub struct ContainsParentChild<Child: Component, Parent: Component> {
+    _phantom: PhantomData<(Child, Parent)>,
+}
 
 impl<
     BevyRelationship: Relationship<RelationshipTarget: GetIndex>,
     Child: Component,
     Parent: Component,
-> Check<BevyRelationship, Child, Parent> for ContainsParentChild
+> Check<BevyRelationship> for ContainsParentChild<Child, Parent>
 {
     fn check(&self, mut world: DeferredWorld, entity: Entity, parent: Entity) -> bool {
         if !world.entity(entity).contains::<Child>() {

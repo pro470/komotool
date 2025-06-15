@@ -1,12 +1,12 @@
 use super::{
     ContainsParentChild, GetIndex, KomotoolRelationship, MonitorChildOf, RelationshipIndexSet,
     apply_markers_to_monitor_hierarchy, bevy_on_insert, bevy_on_remove, get_old_index,
-    relationships_hook, update_markers,
+    relationships_hook, remove_all_markers, update_markers,
 };
 use crate::components::{
     WindowManager, despawn_monitor_marker_component, insert_monitor_marker_component,
 };
-use crate::prelude::InsertMarkerFn;
+use crate::prelude::{InsertMarkerFn, OldIndex};
 use crate::relationships;
 use crate::resources::MonitorExtendedMarkerMap;
 use bevy_ecs::component::HookContext;
@@ -118,7 +118,7 @@ impl Relationship for WindowManagerChildOf {
             component_id,
         }: HookContext,
     ) {
-        if bevy_on_insert::<Self, Monitor, WindowManager>(
+        if bevy_on_insert::<Self>(
             world.reborrow(),
             HookContext {
                 entity,
@@ -126,7 +126,9 @@ impl Relationship for WindowManagerChildOf {
                 relationship_hook_mode,
                 component_id,
             },
-            ContainsParentChild,
+            ContainsParentChild::<Monitor, WindowManager> {
+                _phantom: std::marker::PhantomData,
+            },
         ) {
             return;
         }
@@ -212,27 +214,40 @@ impl Relationship for WindowManagerChildOf {
             },
         );
 
-        if let Some(old_idx) = old_idx {
-            let marker_map_optional = world.get_resource::<MonitorExtendedMarkerMap>().cloned();
-            let mut default_map = None;
-            apply_markers_to_monitor_hierarchy(
-                world.reborrow(),
-                entity,
-                old_idx + 1,
-                marker_map_optional.as_ref().unwrap_or_else(||{
-                    warn!("Failed to get MonitorExtendedMarkerMap. Markers over the default threshold will not be applied.");
-                    default_map.get_or_insert_with(MonitorExtendedMarkerMap::default)
-                }),
-                despawn_monitor_marker_component,
-            );
+        match old_idx {
+            OldIndex::OldIndex(old_idx) => {
+                if let Some(old_idx) = old_idx {
+                    let marker_map_optional =
+                        world.get_resource::<MonitorExtendedMarkerMap>().cloned();
+                    let mut default_map = None;
+                    apply_markers_to_monitor_hierarchy(
+                        world.reborrow(),
+                        entity,
+                        old_idx + 1,
+                        marker_map_optional.as_ref().unwrap_or_else(||{
+                            warn!("Failed to get MonitorExtendedMarkerMap. Markers over the default threshold will not be applied.");
+                            default_map.get_or_insert_with(MonitorExtendedMarkerMap::default)
+                        }),
+                        despawn_monitor_marker_component,
+                    );
 
-            update_markers::<Self>(
-                world.reborrow(),
-                marker_map_optional,
-                entity,
-                old_idx,
-                apply_markers_to_monitor_hierarchy,
-            );
+                    update_markers::<Self>(
+                        world.reborrow(),
+                        marker_map_optional,
+                        entity,
+                        old_idx,
+                        apply_markers_to_monitor_hierarchy,
+                    );
+                }
+            }
+            OldIndex::EntityDoesNotExist => {
+                warn!("Entity does not exist");
+            }
+            OldIndex::ParentEntityDoesNotExist
+            | OldIndex::ParentEntityHasNoChildren
+            | OldIndex::EntityHasNoRelationship => {
+                remove_all_markers(world, entity);
+            }
         }
     }
 }

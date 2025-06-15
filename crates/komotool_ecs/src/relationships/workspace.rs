@@ -1,11 +1,11 @@
 use crate::components::{despawn_container_marker_component, insert_container_marker_component};
-use crate::prelude::{get_old_index, remove_parent_markers_from_hierarchy};
+use crate::prelude::{OldIndex, get_old_index, remove_parent_markers_from_hierarchy};
 use crate::relationships::window_manager::WindowManagerChildOf;
 use crate::relationships::{
     ContainerChildOf, ContainsParentChild, GetIndex, InsertMarkerFn, KomotoolRelationship,
     MonitorChildOf, RelationshipIndexSet, apply_markers_to_container_hierarchy,
     apply_parent_markers_to_hierarchy, bevy_on_insert, bevy_on_remove, relationships_hook,
-    update_markers,
+    remove_all_markers, update_markers,
 };
 use crate::resources::ContainerExtendedMarkerMap;
 use bevy_ecs::component::HookContext;
@@ -115,7 +115,7 @@ impl Relationship for WorkspaceChildOf {
             component_id,
         }: HookContext,
     ) {
-        if bevy_on_insert::<Self, Container, Workspace>(
+        if bevy_on_insert::<Self>(
             world.reborrow(),
             HookContext {
                 entity,
@@ -123,7 +123,9 @@ impl Relationship for WorkspaceChildOf {
                 caller,
                 component_id,
             },
-            ContainsParentChild,
+            ContainsParentChild::<Container, Workspace> {
+                _phantom: std::marker::PhantomData,
+            },
         ) {
             return;
         }
@@ -240,42 +242,56 @@ impl Relationship for WorkspaceChildOf {
             },
         );
 
-        if let Some(old_idx) = old_idx {
-            let marker_map_optional = world.get_resource::<ContainerExtendedMarkerMap>().cloned();
-            let mut default_map = None;
-            apply_markers_to_container_hierarchy(
-                world.reborrow(),
-                entity,
-                old_idx + 1,
-                marker_map_optional.as_ref().unwrap_or_else(||{
-                    warn!(
+        match old_idx {
+            OldIndex::OldIndex(old_idx) => {
+                if let Some(old_idx) = old_idx {
+                    let marker_map_optional =
+                        world.get_resource::<ContainerExtendedMarkerMap>().cloned();
+                    let mut default_map = None;
+                    apply_markers_to_container_hierarchy(
+                        world.reborrow(),
+                        entity,
+                        old_idx + 1,
+                        marker_map_optional.as_ref().unwrap_or_else(||{
+                            warn!(
                         "Failed to get ContainerExtendedMarkerMap. Markers over the default threshold will not be applied."
                     );
-                    default_map.get_or_insert_with(ContainerExtendedMarkerMap::default)
-                }),
-                despawn_container_marker_component,
-            );
+                            default_map.get_or_insert_with(ContainerExtendedMarkerMap::default)
+                        }),
+                        despawn_container_marker_component,
+                    );
 
-            let parent_monitor_entity = remove_parent_markers_from_hierarchy::<MonitorChildOf>(
-                entity,
-                None,
-                world.reborrow(),
-                apply_markers_to_container_hierarchy,
-            );
-            remove_parent_markers_from_hierarchy::<WindowManagerChildOf>(
-                entity,
-                parent_monitor_entity,
-                world.reborrow(),
-                apply_markers_to_container_hierarchy,
-            );
+                    let parent_monitor_entity =
+                        remove_parent_markers_from_hierarchy::<MonitorChildOf>(
+                            entity,
+                            None,
+                            world.reborrow(),
+                            apply_markers_to_container_hierarchy,
+                        );
+                    remove_parent_markers_from_hierarchy::<WindowManagerChildOf>(
+                        entity,
+                        parent_monitor_entity,
+                        world.reborrow(),
+                        apply_markers_to_container_hierarchy,
+                    );
 
-            update_markers::<Self>(
-                world.reborrow(),
-                marker_map_optional,
-                entity,
-                old_idx,
-                apply_markers_to_container_hierarchy,
-            )
+                    update_markers::<Self>(
+                        world.reborrow(),
+                        marker_map_optional,
+                        entity,
+                        old_idx,
+                        apply_markers_to_container_hierarchy,
+                    )
+                }
+            }
+            OldIndex::EntityDoesNotExist => {
+                warn!("Entity does not exist");
+            }
+            OldIndex::ParentEntityDoesNotExist
+            | OldIndex::ParentEntityHasNoChildren
+            | OldIndex::EntityHasNoRelationship => {
+                remove_all_markers(world, entity);
+            }
         }
     }
 }
