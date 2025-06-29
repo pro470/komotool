@@ -3,6 +3,7 @@ mod komorebi_relationship;
 mod maximized_window;
 pub mod monitor;
 mod monocle_container;
+pub mod relationships_hooks;
 pub mod window;
 pub mod window_manager;
 pub mod workspace;
@@ -39,7 +40,10 @@ use core::{
     ptr,
 };
 use indexmap::set::{self, IndexSet, MutableValues};
+use komorebi_client::{Container, Monitor, Window, Workspace};
+pub use komorebi_relationship::*;
 pub use monitor::*;
+pub use relationships_hooks::*;
 pub use window::*;
 pub use window_manager::*;
 pub use workspace::*;
@@ -855,7 +859,7 @@ pub fn bevy_on_insert<BevyRelatonship: Relationship<RelationshipTarget: GetIndex
         relationship_hook_mode,
         ..
     }: HookContext,
-    check: impl Check<BevyRelatonship>,
+    mut check: impl Check,
 ) -> bool {
     if !relationships_hook::<BevyRelatonship>(relationship_hook_mode) {
         return true;
@@ -878,7 +882,7 @@ pub fn bevy_on_insert<BevyRelatonship: Relationship<RelationshipTarget: GetIndex
             return true;
         }
 
-        if check.check(world.reborrow(), entity, target_entity) {
+        if check.check::<BevyRelatonship>(world.reborrow(), entity, target_entity) {
             return true;
         }
 
@@ -985,29 +989,25 @@ pub fn apply_markers_to_monitor_hierarchy<Marker: Resource + Clone + Default>(
     monitor_entity: Entity,
     monitor_index: usize,
     marker_map: &Marker,
-    insert_marker: impl MarkerFn<Marker>,
+    insert_marker: &dyn MarkerFn<Marker>,
 ) {
-    insert_marker.marker(
-        monitor_index,
-        monitor_entity,
-        deferred_world.commands(),
+    run_insert_marker(
         marker_map,
+        monitor_entity,
+        deferred_world.reborrow(),
+        insert_marker,
     );
 
-    let workspace_entities: Vec<Entity> = deferred_world
-        .entity(monitor_entity)
-        .get::<MonitorChildren>()
-        .map_or_else(Vec::new, |children| children.0.iter().copied().collect());
+    let children = get_children::<MonitorChildren>(deferred_world.reborrow(), monitor_entity);
 
-    for workspace_entity in workspace_entities {
-        apply_markers_to_workspace_hierarchy(
-            deferred_world.reborrow(),
-            workspace_entity,
-            monitor_index,
-            marker_map,
-            insert_marker.reborrow(),
-        );
-    }
+    apply_markers_to_children(
+        deferred_world.reborrow(),
+        monitor_index,
+        marker_map,
+        insert_marker,
+        apply_markers_to_workspace_hierarchy,
+        children,
+    );
 }
 
 /// Setzt Workspace-Marker für einen Workspace und rekursiv für alle Container und Fenster darunter.
@@ -1016,31 +1016,25 @@ pub fn apply_markers_to_workspace_hierarchy<Marker: Resource + Clone + Default>(
     workspace_entity: Entity,
     workspace_index: usize,
     marker_map: &Marker,
-    insert_marker: impl MarkerFn<Marker>,
+    insert_marker: &dyn MarkerFn<Marker>,
 ) {
-    // Marker für den Workspace selbst setzen
-    insert_marker.marker(
-        workspace_index,
-        workspace_entity,
-        deferred_world.commands(),
+    run_insert_marker(
         marker_map,
+        workspace_entity,
+        deferred_world.reborrow(),
+        insert_marker,
     );
 
-    // Container-Kinder des Workspaces
-    let container_entities: Vec<Entity> = deferred_world
-        .entity(workspace_entity)
-        .get::<WorkspaceChildren>()
-        .map_or_else(Vec::new, |children| children.0.iter().copied().collect());
+    let children = get_children::<WorkspaceChildren>(deferred_world.reborrow(), workspace_entity);
 
-    for container_entity in container_entities {
-        apply_markers_to_container_hierarchy(
-            deferred_world.reborrow(),
-            container_entity,
-            workspace_index,
-            marker_map,
-            insert_marker.reborrow(),
-        )
-    }
+    apply_markers_to_children(
+        deferred_world.reborrow(),
+        workspace_index,
+        marker_map,
+        insert_marker,
+        apply_markers_to_container_hierarchy,
+        children,
+    );
 }
 
 /// Setzt Container-Marker für einen Container und rekursiv für alle Fenster darunter.
@@ -1049,32 +1043,109 @@ pub fn apply_markers_to_container_hierarchy<Marker: Resource + Clone + Default>(
     container_entity: Entity, // Die Container-Entität, für die und deren Kinder Marker gesetzt werden
     container_index: usize,   // Der Index dieses Containers (relevant für die Marker-Komponente)
     marker_map: &Marker,
-    insert_marker: impl MarkerFn<Marker>,
+    insert_marker: &dyn MarkerFn<Marker>,
 ) {
-    // Marker für die Container-Entität selbst setzen
-    insert_marker.marker(
-        container_index,
+    run_insert_marker(
+        marker_map,
         container_entity,
-        deferred_world.commands(),
+        deferred_world.reborrow(),
+        insert_marker,
+    );
+
+    let children = get_children::<ContainerChildren>(deferred_world.reborrow(), container_entity);
+
+    apply_markers_to_children(
+        deferred_world.reborrow(),
+        container_index,
+        marker_map,
+        insert_marker,
+        |mut deferred_world: DeferredWorld<'_>,
+         entity,
+         index,
+         marker_map: &_,
+         insert_marker: &dyn MarkerFn<Marker>| {
+            insert_marker.marker(index, entity, deferred_world.commands(), marker_map);
+        },
+        children,
+    );
+}
+
+pub fn apply_markers_inner<
+    Marker: Resource + Clone + Default,
+    BevyRelationshipTarget: RelationshipTarget<Collection = RelationshipIndexSet>,
+>(
+    mut deferred_world: DeferredWorld,
+    entity: Entity,
+    index: usize,
+    marker_map: &Marker,
+    insert_marker: &dyn MarkerFn<Marker>,
+    inner_apply_markers: impl HierarchyFn<Marker>,
+) {
+    insert_marker.marker(
+        index,
+        entity,
+        deferred_world.commands().reborrow(),
         marker_map,
     );
 
-    // Fenster-Kinder des Containers sammeln
-    // ContainerChildren enthält die Window-Entitäten eines Containers
-    let window_entities: Vec<Entity> = deferred_world
-        .entity(container_entity)
-        .get::<ContainerChildren>() // Kinder eines Containers sind Fenster, gespeichert in ContainerChildren
-        .map_or_else(Vec::new, |children| children.0.iter().copied().collect());
+    let children: Vec<Entity> = deferred_world
+        .entity(entity)
+        .get::<BevyRelationshipTarget>()
+        .map_or_else(Vec::new, |children| {
+            children.collection().iter().copied().collect()
+        });
 
-    for window_entity in window_entities {
-        // Marker für jede Window-Entität setzen
-        insert_marker.marker(
-            container_index, // Der Index des übergeordneten Containers wird weitergegeben
-            window_entity,
-            deferred_world.commands(),
+    for child in children {
+        inner_apply_markers.hierarchy(
+            deferred_world.reborrow(),
+            child,
+            index,
             marker_map,
+            insert_marker,
         );
     }
+}
+
+pub fn apply_markers_to_children<Marker: Resource + Clone + Default>(
+    mut deferred_world: DeferredWorld,
+    index: usize,
+    marker_map: &Marker,
+    insert_marker: &dyn MarkerFn<Marker>,
+    inner_apply_markers: impl HierarchyFn<Marker>,
+    children: Vec<Entity>,
+) {
+    for child in children {
+        inner_apply_markers.hierarchy(
+            deferred_world.reborrow(),
+            child,
+            index,
+            marker_map,
+            insert_marker,
+        );
+    }
+}
+
+pub fn run_insert_marker<Marker: Resource + Clone + Default>(
+    marker: &Marker,
+    entity: Entity,
+    mut deferred_world: DeferredWorld,
+    insert_marker: &dyn MarkerFn<Marker>,
+) {
+    insert_marker.marker(0, entity, deferred_world.commands().reborrow(), marker);
+}
+
+pub fn get_children<
+    BevyRelationshipTarget: RelationshipTarget<Collection = RelationshipIndexSet>,
+>(
+    deferred_world: DeferredWorld,
+    entity: Entity,
+) -> Vec<Entity> {
+    deferred_world
+        .entity(entity)
+        .get::<BevyRelationshipTarget>()
+        .map_or_else(Vec::new, |children| {
+            children.collection().iter().copied().collect()
+        })
 }
 
 pub trait GetIndex: RelationshipTarget {
@@ -1088,28 +1159,56 @@ pub trait KomotoolRelationship: Relationship {
 
     const DESPAWN_MARKER: InsertMarkerFn<Self::Marker>;
 
+    const HIERARCHY: HierarchyFnType<Self::Marker>;
+
     type Komorebi: Component;
 
     type Child: KomotoolRelationship;
 }
 
-pub trait Check<BevyRelationship: Relationship<RelationshipTarget: GetIndex>> {
-    fn check(&self, world: DeferredWorld, entity: Entity, parent: Entity) -> bool;
+pub trait Check {
+    fn check<BevyRelationship: Relationship<RelationshipTarget: GetIndex>>(
+        &mut self,
+        world: DeferredWorld,
+        entity: Entity,
+        parent: Entity,
+    ) -> bool;
 }
 pub trait MarkerFn<Marker> {
     fn marker(&self, index: usize, entity: Entity, commands: Commands, marker: &Marker);
-    fn reborrow(&self) -> Self;
 }
 
-pub trait HierarchyFn<Marker, M: MarkerFn<Marker>> {
+pub trait HierarchyFn<Marker> {
     fn hierarchy<'a>(
         &self,
         world: DeferredWorld<'a>, // Connect world and marker lifetimes
         entity: Entity,
         index: usize,
         marker: &'a Marker, // Same lifetime as world
-        insert_marker: M,
+        insert_marker: &dyn MarkerFn<Marker>,
     );
+}
+
+/// A trait for components that represent a specific, typed entity in the Komorebi hierarchy.
+pub trait HasKomorebiType: Component {
+    /// The associated KomorebiType for this component.
+    const KOMOREBI_CHILD_TYPE: KomorebiType;
+}
+
+impl HasKomorebiType for Monitor {
+    const KOMOREBI_CHILD_TYPE: KomorebiType = KomorebiType::Workspace;
+}
+
+impl HasKomorebiType for Workspace {
+    const KOMOREBI_CHILD_TYPE: KomorebiType = KomorebiType::Container;
+}
+
+impl HasKomorebiType for Container {
+    const KOMOREBI_CHILD_TYPE: KomorebiType = KomorebiType::Window;
+}
+
+impl HasKomorebiType for Window {
+    const KOMOREBI_CHILD_TYPE: KomorebiType = KomorebiType::NotDefined;
 }
 
 impl<Marker, F> MarkerFn<Marker> for F
@@ -1119,16 +1218,11 @@ where
     fn marker(&self, index: usize, entity: Entity, commands: Commands, marker: &Marker) {
         self(index, entity, commands, marker);
     }
-
-    fn reborrow(&self) -> Self {
-        *self
-    }
 }
 
-impl<Marker, F, M> HierarchyFn<Marker, M> for F
+impl<Marker, F> HierarchyFn<Marker> for F
 where
-    F: Fn(DeferredWorld, Entity, usize, &Marker, M),
-    M: MarkerFn<Marker>,
+    F: Fn(DeferredWorld, Entity, usize, &Marker, &dyn MarkerFn<Marker>),
 {
     fn hierarchy(
         &self,
@@ -1136,23 +1230,28 @@ where
         entity: Entity,
         index: usize,
         marker: &Marker,
-        insert_marker: M,
+        insert_marker: &dyn MarkerFn<Marker>,
     ) {
         self(world, entity, index, marker, insert_marker);
     }
 }
-impl<F, BR> Check<BR> for F
+impl<F> Check for F
 where
-    F: Fn(DeferredWorld, Entity, Entity) -> bool,
-    BR: Relationship<RelationshipTarget: GetIndex>,
+    F: FnMut(DeferredWorld, Entity, Entity) -> bool,
 {
-    fn check(&self, world: DeferredWorld, entity: Entity, parent: Entity) -> bool {
+    fn check<BR: Relationship<RelationshipTarget: GetIndex>>(
+        &mut self,
+        world: DeferredWorld,
+        entity: Entity,
+        parent: Entity,
+    ) -> bool {
         // Simply call the function/closure with the arguments
         self(world, entity, parent)
     }
 }
 
 pub type InsertMarkerFn<Marker> = fn(usize, Entity, Commands, &Marker);
+pub type HierarchyFnType<Marker> = fn(DeferredWorld, Entity, usize, &Marker, &dyn MarkerFn<Marker>);
 
 pub fn apply_parent_markers_to_hierarchy<
     BevyRelationship: Relationship<RelationshipTarget: GetIndex> + KomotoolRelationship,
@@ -1160,14 +1259,21 @@ pub fn apply_parent_markers_to_hierarchy<
     entity: Entity,
     parent: Entity,
     world: DeferredWorld,
-    to_hierarchy: impl HierarchyFn<BevyRelationship::Marker, InsertMarkerFn<BevyRelationship::Marker>>,
+    to_hierarchy: impl HierarchyFn<BevyRelationship::Marker>,
 ) -> Option<Entity> {
     parent_markers_to_hierarchy::<BevyRelationship>(
         entity,
         parent,
         world,
-        to_hierarchy,
-        BevyRelationship::INSERT_MARKER,
+        |entity, world, parent_idx| {
+            to_hierarchy_with_marker(
+                entity,
+                world,
+                &to_hierarchy,
+                BevyRelationship::INSERT_MARKER,
+                parent_idx,
+            );
+        },
     )
 }
 
@@ -1177,7 +1283,7 @@ pub fn remove_parent_markers_from_hierarchy<
     entity: Entity,
     parent: Option<Entity>,
     world: DeferredWorld,
-    to_hierarchy: impl HierarchyFn<BevyRelationship::Marker, InsertMarkerFn<BevyRelationship::Marker>>,
+    to_hierarchy: impl HierarchyFn<BevyRelationship::Marker>,
 ) -> Option<Entity> {
     parent_markers_to_hierarchy::<BevyRelationship>(
         entity,
@@ -1188,19 +1294,23 @@ pub fn remove_parent_markers_from_hierarchy<
                 .map_or(Entity::PLACEHOLDER, |childof| childof.get())
         }),
         world,
-        to_hierarchy,
-        BevyRelationship::DESPAWN_MARKER,
+        |entity, world, parent_idx| {
+            to_hierarchy_with_marker(
+                entity,
+                world,
+                &to_hierarchy,
+                BevyRelationship::DESPAWN_MARKER,
+                parent_idx,
+            );
+        },
     )
 }
 
-fn parent_markers_to_hierarchy<
-    BevyRelationship: Relationship<RelationshipTarget: GetIndex> + KomotoolRelationship,
->(
+fn parent_markers_to_hierarchy<BevyRelationship: Relationship<RelationshipTarget: GetIndex>>(
     entity: Entity,
     parent: Entity,
     mut world: DeferredWorld,
-    to_hierarchy: impl HierarchyFn<BevyRelationship::Marker, InsertMarkerFn<BevyRelationship::Marker>>,
-    marker_func: InsertMarkerFn<BevyRelationship::Marker>,
+    mut f: impl FnMut(Entity, DeferredWorld, usize),
 ) -> Option<Entity> {
     #[cfg(not(debug_assertions))]
     if parent == Entity::PLACEHOLDER {
@@ -1215,77 +1325,141 @@ fn parent_markers_to_hierarchy<
             .get::<BevyRelationship::RelationshipTarget>()
         {
             if let Some(parent_idx) = children.get_index_of(&parent) {
-                // Rufe die neue Hilfsfunktion auf.
+                f(entity, world.reborrow(), parent_idx);
 
-                let marker_map_clone = world.get_resource::<BevyRelationship::Marker>().cloned();
-                let mut default_map = None;
-
-                to_hierarchy.hierarchy(
-                    world.reborrow(),
-                    entity,
-                    parent_idx + 1,
-                    marker_map_clone.as_ref().unwrap_or_else(|| {
-                        warn!(
-                        "Failed to get {}. Markers over the default threshold will not be applied.",
-                        core::any::type_name::<BevyRelationship::Marker>()
-                    );
-                        default_map.get_or_insert_with(BevyRelationship::Marker::default)
-
-                    }),
-                    marker_func,
-                );
                 return Some(childof);
             }
         }
     }
     None
 }
-pub fn update_markers<BevyRelationship: Relationship + KomotoolRelationship>(
+
+pub fn to_hierarchy_with_marker<Marker: Resource + Clone + Default>(
+    entity: Entity,
+    mut world: DeferredWorld,
+    to_hierarchy: &impl HierarchyFn<Marker>,
+    marker_func: InsertMarkerFn<Marker>,
+    parent_idx: usize,
+) {
+    let marker_map = world.get_resource::<Marker>().cloned();
+    let mut default_map = None;
+
+    to_hierarchy.hierarchy(
+        world.reborrow(),
+        entity,
+        parent_idx,
+        marker_map.as_ref().unwrap_or_else(|| {
+            warn!(
+                "Failed to get {}. Markers over the default threshold will not be applied.",
+                core::any::type_name::<Marker>()
+            );
+            default_map.get_or_insert_with(Marker::default)
+        }),
+        &marker_func,
+    );
+}
+pub fn update_markers<
+    BevyRelationship: Relationship<RelationshipTarget: RelationshipTarget<Collection = RelationshipIndexSet>>
+        + KomotoolRelationship,
+>(
     mut world: DeferredWorld,
     marker_map: Option<BevyRelationship::Marker>,
     entity: Entity,
     old_idx: usize,
-    apply_to_hierarchy: impl HierarchyFn<
-        BevyRelationship::Marker,
-        DespawnInsertMarker<BevyRelationship::Marker>,
-    >,
+    apply_to_hierarchy: impl HierarchyFn<BevyRelationship::Marker>,
 ) {
-    let mut default_map = None;
-
     if let Some(relationship) = world.entity(entity).get::<BevyRelationship>() {
         let child_entity = relationship.get();
-        let children = world
-            .entity(child_entity)
-            .get::<BevyRelationship::RelationshipTarget>()
-            .map_or_else(Vec::new, |children| children.iter().collect());
+        let children =
+            get_children::<BevyRelationship::RelationshipTarget>(world.reborrow(), child_entity);
         {
             let marker_func = DespawnInsertMarker {
                 despawn: BevyRelationship::DESPAWN_MARKER,
                 insert: BevyRelationship::INSERT_MARKER,
             };
-            for idx in old_idx..children.len() {
-                if let Some(child_entity) = children.get(idx) {
-                    apply_to_hierarchy.hierarchy(
-                        world.reborrow(),
-                        *child_entity,
-                        idx +1,
-                        marker_map.as_ref().unwrap_or_else(|| {
-                            warn!(
-                        "Failed to get {}. Markers over the default threshold will not be applied.",
-                        core::any::type_name::<BevyRelationship::Marker>()
-                    );
-                            default_map.get_or_insert_with(BevyRelationship::Marker::default)
-                        }),
-                        marker_func.reborrow(),
-                    );
-                }
-            }
+
+            update_markers_inner(
+                world.reborrow(),
+                marker_map,
+                children,
+                old_idx,
+                apply_to_hierarchy,
+                marker_func,
+            );
         }
+    }
+}
+
+pub fn update_markers_inner<Marker: Resource + Clone + Default>(
+    mut world: DeferredWorld,
+    marker_map: Option<Marker>,
+    children: Vec<Entity>,
+    old_idx: usize,
+    apply_to_hierarchy: impl HierarchyFn<Marker>,
+    marker_func: DespawnInsertMarker<Marker>,
+) {
+    let mut default_map = None;
+
+    for idx in old_idx..children.len() {
+        if let Some(child_entity) = children.get(idx) {
+            apply_to_hierarchy.hierarchy(
+                world.reborrow(),
+                *child_entity,
+                idx + 1,
+                marker_map.as_ref().unwrap_or_else(|| {
+                    warn!(
+                        "Failed to get {}. Markers over the default threshold will not be applied.",
+                        core::any::type_name::<Marker>()
+                    );
+                    default_map.get_or_insert_with(Marker::default)
+                }),
+                &marker_func,
+            );
+        }
+    }
+}
+
+pub fn komotool_on_insert<BevyRelationship: Relationship<RelationshipTarget: GetIndex>>(
+    entity: Entity,
+    mut world: DeferredWorld,
+    f: impl Fn(DeferredWorld, Entity, Entity, usize),
+) {
+    if let Some(target_relationship) = world.entity(entity).get::<BevyRelationship>() {
+        let target_entity = target_relationship.get();
+        if let Some(children) = world
+            .entity(target_entity)
+            .get::<BevyRelationship::RelationshipTarget>()
+        {
+            if let Some(child_idx) = children.get_index_of(&entity) {
+                f(world.reborrow(), entity, target_entity, child_idx + 1);
+            } else {
+                warn!(
+                    "Failed to get index for in {}.",
+                    core::any::type_name::<BevyRelationship::RelationshipTarget>()
+                )
+            }
+        } else {
+            warn!(
+                "Failed to get {}. It has to be the first child of Relationship.",
+                core::any::type_name::<BevyRelationship::RelationshipTarget>()
+            );
+            f(world.reborrow(), entity, target_entity, 1);
+        }
+    } else {
+        warn!("Failed to get relationship");
     }
 }
 
 pub enum OldIndex {
     OldIndex(Option<usize>),
+    EntityDoesNotExist,
+    ParentEntityDoesNotExist,
+    ParentEntityHasNoChildren,
+    EntityHasNoRelationship,
+}
+
+pub enum OldIndexInner<ReturnType> {
+    OldIndex(ReturnType),
     EntityDoesNotExist,
     ParentEntityDoesNotExist,
     ParentEntityHasNoChildren,
@@ -1302,33 +1476,143 @@ pub enum KomorebiType {
     NotDefined,
 }
 
+impl KomorebiType {
+    /// Returns the parent type in the hierarchy, if any
+    pub fn parent(&self) -> Option<Self> {
+        match self {
+            KomorebiType::Workspace => Some(KomorebiType::Monitor),
+            KomorebiType::Container => Some(KomorebiType::Workspace),
+            KomorebiType::Window => Some(KomorebiType::Container),
+            // Monitor is the top level, NotDefined has no parent
+            KomorebiType::Monitor | KomorebiType::NotDefined => None,
+        }
+    }
+
+    /// Returns the child type in the hierarchy, if any
+    pub fn child(&self) -> Option<Self> {
+        match self {
+            KomorebiType::Monitor => Some(KomorebiType::Workspace),
+            KomorebiType::Workspace => Some(KomorebiType::Container),
+            KomorebiType::Container => Some(KomorebiType::Window),
+            // Window is the bottom level, NotDefined has no children
+            KomorebiType::Window | KomorebiType::NotDefined => None,
+        }
+    }
+
+    /// Returns the depth in the hierarchy (Monitor = 0, Window = 3)
+    pub fn depth(&self) -> Option<usize> {
+        match self {
+            KomorebiType::Monitor => Some(0),
+            KomorebiType::Workspace => Some(1),
+            KomorebiType::Container => Some(2),
+            KomorebiType::Window => Some(3),
+            KomorebiType::NotDefined => None,
+        }
+    }
+
+    /// Checks if this type is an ancestor of the given type
+    pub fn is_ancestor_of(&self, other: &Self) -> bool {
+        if *self == KomorebiType::NotDefined || *other == KomorebiType::NotDefined {
+            return false;
+        }
+
+        self.depth().is_some_and(|self_depth| {
+            other
+                .depth()
+                .is_some_and(|other_depth| self_depth < other_depth)
+        })
+    }
+
+    /// Checks if this type is a descendant of the given type
+    pub fn is_descendant_of(&self, other: &Self) -> bool {
+        other.is_ancestor_of(self)
+    }
+
+    /// Returns all ancestors in order from immediate parent to topmost
+    pub fn ancestors(&self) -> Vec<Self> {
+        let mut result = Vec::new();
+        let mut current = *self;
+
+        while let Some(parent) = current.parent() {
+            result.push(parent);
+            current = parent;
+        }
+
+        result
+    }
+
+    /// Returns all descendants in order from immediate child to bottommost
+    pub fn descendants(&self) -> Vec<Self> {
+        let mut result = Vec::new();
+        let mut current = *self;
+
+        while let Some(child) = current.child() {
+            result.push(child);
+            current = child;
+        }
+
+        result
+    }
+
+    /// Returns the type at the specified depth, if valid
+    pub fn type_at_depth(depth: usize) -> Option<Self> {
+        match depth {
+            0 => Some(KomorebiType::Monitor),
+            1 => Some(KomorebiType::Workspace),
+            2 => Some(KomorebiType::Container),
+            3 => Some(KomorebiType::Window),
+            _ => None,
+        }
+    }
+}
 pub fn get_old_index<BevyRelatonship: Relationship<RelationshipTarget: GetIndex>>(
     entity: Entity,
-    world: DeferredWorld,
+    mut world: DeferredWorld,
 ) -> OldIndex {
+    match get_old_index_inner::<BevyRelatonship, Option<usize>>(
+        entity,
+        world.reborrow(),
+        |children: &BevyRelatonship::RelationshipTarget| children.get_index_of(&entity),
+    ) {
+        OldIndexInner::OldIndex(old_index) => OldIndex::OldIndex(old_index),
+        OldIndexInner::EntityDoesNotExist => OldIndex::EntityDoesNotExist,
+        OldIndexInner::ParentEntityDoesNotExist => OldIndex::ParentEntityDoesNotExist,
+        OldIndexInner::ParentEntityHasNoChildren => OldIndex::ParentEntityHasNoChildren,
+        OldIndexInner::EntityHasNoRelationship => OldIndex::EntityHasNoRelationship,
+    }
+}
+
+pub fn get_old_index_inner<
+    BevyRelatonship: Relationship<RelationshipTarget: GetIndex>,
+    ReturnType,
+>(
+    entity: Entity,
+    world: DeferredWorld,
+    f: impl Fn(&BevyRelatonship::RelationshipTarget) -> ReturnType,
+) -> OldIndexInner<ReturnType> {
     if !world.entities().contains(entity) {
         warn!("Entity does not exist");
-        return OldIndex::EntityDoesNotExist;
+        return OldIndexInner::EntityDoesNotExist;
     }
     if let Some(relationship) = world.entity(entity).get::<BevyRelatonship>() {
         let parent_entity = relationship.get();
         if !world.entities().contains(parent_entity) {
             warn!("Child entity does not exist");
-            return OldIndex::ParentEntityDoesNotExist;
+            return OldIndexInner::ParentEntityDoesNotExist;
         }
 
         if let Some(children) = world
             .entity(parent_entity)
             .get::<BevyRelatonship::RelationshipTarget>()
         {
-            OldIndex::OldIndex(children.get_index_of(&entity))
+            OldIndexInner::OldIndex(f(children))
         } else {
             warn!("Child entity has no children");
-            OldIndex::ParentEntityHasNoChildren
+            OldIndexInner::ParentEntityHasNoChildren
         }
     } else {
         warn!("Entity has no relationship");
-        OldIndex::EntityHasNoRelationship
+        OldIndexInner::EntityHasNoRelationship
     }
 }
 
@@ -1344,13 +1628,6 @@ impl<Marker: Resource + Clone + Default> MarkerFn<Marker> for DespawnInsertMarke
         self.insert
             .marker(index, entity, commands.reborrow(), marker);
     }
-
-    fn reborrow(&self) -> DespawnInsertMarker<Marker> {
-        DespawnInsertMarker {
-            despawn: self.despawn,
-            insert: self.insert,
-        }
-    }
 }
 
 #[derive(Default)]
@@ -1358,13 +1635,13 @@ pub struct ContainsParentChild<Child: Component, Parent: Component> {
     _phantom: PhantomData<(Child, Parent)>,
 }
 
-impl<
-    BevyRelationship: Relationship<RelationshipTarget: GetIndex>,
-    Child: Component,
-    Parent: Component,
-> Check<BevyRelationship> for ContainsParentChild<Child, Parent>
-{
-    fn check(&self, mut world: DeferredWorld, entity: Entity, parent: Entity) -> bool {
+impl<Child: Component, Parent: Component> Check for ContainsParentChild<Child, Parent> {
+    fn check<BevyRelationship: Relationship<RelationshipTarget: GetIndex>>(
+        &mut self,
+        mut world: DeferredWorld,
+        entity: Entity,
+        parent: Entity,
+    ) -> bool {
         if !world.entity(entity).contains::<Child>() {
             warn!(
                 "The Monitor relationship can only be used on entities with the Workspace component."

@@ -1,9 +1,32 @@
-use crate::relationships::{GetIndex, KomorebiType, RelationshipIndexSet};
+use crate::components::{
+    WindowManager, despawn_container_marker_component, despawn_monitor_marker_component,
+    despawn_window_marker_component, despawn_workspace_marker_component,
+    insert_container_marker_component, insert_window_marker_component,
+    insert_workspace_marker_component,
+};
+use crate::prelude::{
+    MarkerFn, OldIndex, OldIndexInner, WorkspaceChildren, apply_markers_to_children,
+    apply_markers_to_container_hierarchy, get_children, insert_monitor_marker_component,
+    run_insert_marker,
+};
+use crate::relationships;
+use crate::relationships::{
+    Check, ContainsParentChild, GetIndex, InsertMarkerFn, KomorebiType, RelationshipIndexSet,
+    bevy_on_insert, bevy_on_remove, get_old_index, get_old_index_inner, komotool_on_insert,
+    parent_markers_to_hierarchy, relationships_hook, to_hierarchy_with_marker,
+};
+use crate::resources::{
+    ContainerExtendedMarkerMap, MonitorExtendedMarkerMap, WindowExtendedMarkerMap,
+    WorkspaceExtendedMarkerMap,
+};
 use bevy_ecs::component::{Component, HookContext};
 use bevy_ecs::entity::Entity;
-use bevy_ecs::relationship::{Relationship, RelationshipTarget};
+use bevy_ecs::prelude::Resource;
+use bevy_ecs::relationship::Relationship;
 use bevy_ecs::world::DeferredWorld;
+use bevy_log::warn;
 use bevy_reflect::Reflect;
+use komorebi_client::{Container, Monitor, Window, Workspace};
 
 #[derive(Reflect)]
 pub struct KomorebiChildOf(pub Entity);
@@ -58,7 +81,7 @@ impl Relationship for KomorebiChildOf {
     }
 
     fn on_insert(
-        world: DeferredWorld,
+        mut world: DeferredWorld,
         HookContext {
             entity,
             caller,
@@ -66,11 +89,44 @@ impl Relationship for KomorebiChildOf {
             component_id,
         }: HookContext,
     ) {
-        todo!()
+        let mut komorebi_type = KomorebiType::default();
+        if bevy_on_insert::<Self>(
+            world.reborrow(),
+            HookContext {
+                entity,
+                caller,
+                relationship_hook_mode,
+                component_id,
+            },
+            |world: DeferredWorld<'_>, entity, parent| {
+                komorebi_relationship_check(world, entity, parent, &mut komorebi_type)
+            },
+        ) {
+            return;
+        }
+        komotool_on_insert::<Self>(
+            entity,
+            world.reborrow(),
+            |mut world: DeferredWorld<'_>, entity, parent, child_idx| {
+                insert_match_komorebi_type_to_hierarchy(
+                    entity,
+                    world.reborrow(),
+                    child_idx,
+                    komorebi_type,
+                );
+
+                insert_parent_markers_to_komorebi_hierarchy(
+                    world.reborrow(),
+                    entity,
+                    parent,
+                    komorebi_type,
+                )
+            },
+        )
     }
 
     fn on_replace(
-        world: DeferredWorld,
+        mut world: DeferredWorld,
         HookContext {
             entity,
             caller,
@@ -78,10 +134,311 @@ impl Relationship for KomorebiChildOf {
             component_id,
         }: HookContext,
     ) {
-        todo!()
+        if !relationships_hook::<Self>(relationship_hook_mode) {
+            return;
+        }
+
+        let old_idx = get_old_index_and_komorebi_type(entity, world.reborrow());
+
+        bevy_on_remove::<Self>(
+            world.reborrow(),
+            HookContext {
+                entity,
+                caller,
+                relationship_hook_mode,
+                component_id,
+            },
+        );
+
+        match old_idx {
+            OldIndexInner::OldIndex((old_idx, komorebi_type)) => {
+                if let Some(old_idx) = old_idx {
+                    despawn_match_komorebi_type_to_hierarchy(
+                        entity,
+                        world.reborrow(),
+                        old_idx,
+                        komorebi_type,
+                    );
+
+                    despawn_parent_markers_to_komorebi_hierarchy(
+                        world.reborrow(),
+                        entity,
+                        komorebi_type,
+                    )
+                }
+            }
+            OldIndexInner::EntityDoesNotExist => {}
+            OldIndexInner::ParentEntityDoesNotExist => {}
+            OldIndexInner::ParentEntityHasNoChildren => {}
+            OldIndexInner::EntityHasNoRelationship => {}
+        }
     }
 }
 
+pub fn get_old_index_and_komorebi_type(
+    entity: Entity,
+    mut world: DeferredWorld,
+) -> OldIndexInner<(Option<usize>, KomorebiType)> {
+    get_old_index_inner::<KomorebiChildOf, (Option<usize>, KomorebiType)>(
+        entity,
+        world.reborrow(),
+        |children: &KomorebiChildren| {
+            (children.get_index_of(&entity), children.get_komorebi_type())
+        },
+    )
+}
+
+pub fn insert_match_komorebi_type_to_hierarchy(
+    entity: Entity,
+    mut world: DeferredWorld,
+    child_idx: usize,
+    komorebi_type: KomorebiType,
+) {
+    match_komorebi_type_to_hierarchy(
+        entity,
+        world.reborrow(),
+        child_idx,
+        komorebi_type,
+        KomorebiInsertMarkerFns {
+            monitor: insert_monitor_marker_component,
+            workspace: insert_workspace_marker_component,
+            container: insert_container_marker_component,
+            window: insert_window_marker_component,
+        },
+    );
+}
+
+pub fn despawn_match_komorebi_type_to_hierarchy(
+    entity: Entity,
+    mut world: DeferredWorld,
+    child_idx: usize,
+    komorebi_type: KomorebiType,
+) {
+    match_komorebi_type_to_hierarchy(
+        entity,
+        world.reborrow(),
+        child_idx,
+        komorebi_type,
+        KomorebiInsertMarkerFns {
+            monitor: despawn_monitor_marker_component,
+            workspace: despawn_workspace_marker_component,
+            container: despawn_container_marker_component,
+            window: despawn_window_marker_component,
+        },
+    );
+}
+
+pub fn match_komorebi_type_to_hierarchy(
+    entity: Entity,
+    mut world: DeferredWorld,
+    child_idx: usize,
+    komorebi_type: KomorebiType,
+    funcs: KomorebiInsertMarkerFns,
+) {
+    match komorebi_type {
+        KomorebiType::Monitor => to_hierarchy_with_marker(
+            entity,
+            world.reborrow(),
+            &apply_markers_to_komorebi_hierarchy,
+            funcs.monitor,
+            child_idx,
+        ),
+        KomorebiType::Workspace => to_hierarchy_with_marker(
+            entity,
+            world.reborrow(),
+            &apply_markers_to_komorebi_hierarchy,
+            funcs.workspace,
+            child_idx,
+        ),
+        KomorebiType::Container => to_hierarchy_with_marker(
+            entity,
+            world.reborrow(),
+            &apply_markers_to_komorebi_hierarchy,
+            funcs.container,
+            child_idx,
+        ),
+        KomorebiType::Window => to_hierarchy_with_marker(
+            entity,
+            world.reborrow(),
+            &apply_markers_to_komorebi_hierarchy,
+            funcs.window,
+            child_idx,
+        ),
+        _ => {}
+    };
+}
+
+pub fn apply_markers_to_komorebi_hierarchy<Marker: Resource + Clone + Default>(
+    mut deferred_world: DeferredWorld,
+    workspace_entity: Entity,
+    child_index: usize,
+    marker_map: &Marker,
+    insert_marker: &dyn MarkerFn<Marker>,
+) {
+    run_insert_marker(
+        marker_map,
+        workspace_entity,
+        deferred_world.reborrow(),
+        insert_marker,
+    );
+
+    let children = get_children::<KomorebiChildren>(deferred_world.reborrow(), workspace_entity);
+
+    apply_markers_to_children(
+        deferred_world.reborrow(),
+        child_index,
+        marker_map,
+        insert_marker,
+        apply_markers_to_komorebi_hierarchy,
+        children,
+    );
+}
+
+pub enum KomotoolDirection {
+    Up,
+    Down,
+}
+
+pub fn insert_parent_markers_to_komorebi_hierarchy(
+    mut deferred_world: DeferredWorld,
+    entity: Entity,
+    parent: Entity,
+    komorebi_type: KomorebiType,
+) {
+    parent_markers_to_komorebi_hierarchy(
+        deferred_world.reborrow(),
+        entity,
+        parent,
+        komorebi_type,
+        KomorebiInsertMarkerFns {
+            monitor: insert_monitor_marker_component,
+            workspace: insert_workspace_marker_component,
+            container: insert_container_marker_component,
+            window: insert_window_marker_component,
+        },
+    );
+}
+
+pub fn despawn_parent_markers_to_komorebi_hierarchy(
+    mut deferred_world: DeferredWorld,
+    entity: Entity,
+    komorebi_type: KomorebiType,
+) {
+    let parent = deferred_world
+        .entity(entity)
+        .get::<KomorebiChildOf>()
+        .map_or(Entity::PLACEHOLDER, |childof| childof.get());
+    parent_markers_to_komorebi_hierarchy(
+        deferred_world.reborrow(),
+        entity,
+        parent,
+        komorebi_type,
+        KomorebiInsertMarkerFns {
+            monitor: despawn_monitor_marker_component,
+            workspace: despawn_workspace_marker_component,
+            container: despawn_container_marker_component,
+            window: despawn_window_marker_component,
+        },
+    );
+}
+pub fn parent_markers_to_komorebi_hierarchy(
+    mut deferred_world: DeferredWorld,
+    entity: Entity,
+    parent: Entity,
+    komorebi_type: KomorebiType,
+    funcs: KomorebiInsertMarkerFns,
+) {
+    let mut current_entity = entity;
+
+    while let Some(parent_komorebi_type) = komorebi_type.parent() {
+        if let Some(entity) = run_komorebi_type_apply_markers(
+            parent_komorebi_type,
+            current_entity,
+            parent,
+            deferred_world.reborrow(),
+            &funcs,
+        ) {
+            current_entity = entity;
+        } else {
+            break;
+        }
+    }
+}
+
+pub struct KomorebiInsertMarkerFns {
+    pub monitor: InsertMarkerFn<MonitorExtendedMarkerMap>,
+    pub workspace: InsertMarkerFn<WorkspaceExtendedMarkerMap>,
+    pub container: InsertMarkerFn<ContainerExtendedMarkerMap>,
+    pub window: InsertMarkerFn<WindowExtendedMarkerMap>,
+}
+
+pub fn run_komorebi_type_apply_markers(
+    komorebi_type: KomorebiType,
+    entity: Entity,
+    parent: Entity,
+    mut deferred_world: DeferredWorld,
+    funcs: &KomorebiInsertMarkerFns,
+) -> Option<Entity> {
+    match komorebi_type {
+        KomorebiType::Monitor => parent_markers_to_hierarchy::<KomorebiChildOf>(
+            entity,
+            parent,
+            deferred_world.reborrow(),
+            |entity, mut world, idx| {
+                to_hierarchy_with_marker(
+                    entity,
+                    world.reborrow(),
+                    &apply_markers_to_komorebi_hierarchy,
+                    funcs.monitor,
+                    idx,
+                )
+            },
+        ),
+        KomorebiType::Workspace => parent_markers_to_hierarchy::<KomorebiChildOf>(
+            entity,
+            parent,
+            deferred_world.reborrow(),
+            |entity, mut world, idx| {
+                to_hierarchy_with_marker(
+                    entity,
+                    world.reborrow(),
+                    &apply_markers_to_komorebi_hierarchy,
+                    funcs.workspace,
+                    idx,
+                )
+            },
+        ),
+        KomorebiType::Container => parent_markers_to_hierarchy::<KomorebiChildOf>(
+            entity,
+            parent,
+            deferred_world.reborrow(),
+            |entity, mut world, idx| {
+                to_hierarchy_with_marker(
+                    entity,
+                    world.reborrow(),
+                    &apply_markers_to_komorebi_hierarchy,
+                    funcs.container,
+                    idx,
+                )
+            },
+        ),
+        KomorebiType::Window => parent_markers_to_hierarchy::<KomorebiChildOf>(
+            entity,
+            parent,
+            deferred_world.reborrow(),
+            |entity, mut world, idx| {
+                to_hierarchy_with_marker(
+                    entity,
+                    world.reborrow(),
+                    &apply_markers_to_komorebi_hierarchy,
+                    funcs.window,
+                    idx,
+                )
+            },
+        ),
+        KomorebiType::NotDefined => None,
+    }
+}
 impl GetIndex for KomorebiChildren {
     fn get_index_of(&self, entity: &Entity) -> Option<usize> {
         self.collection.get_index_of(entity)
@@ -96,4 +453,68 @@ impl KomorebiChildren {
     fn set_komorebi_type(&mut self, komorebi_child_type: KomorebiType) {
         self.komorebi_child_type = komorebi_child_type;
     }
+}
+
+pub fn komorebi_relationship_check(
+    mut world: DeferredWorld,
+    entity: Entity,
+    parent: Entity,
+    mut komorebi_type: &mut KomorebiType,
+) -> bool {
+    if let Some(children) = world.entity(entity).get::<KomorebiChildren>() {
+        let children_komorebi_type = children.get_komorebi_type();
+        let komorebi_type_inner = find_komorebi_relationship(entity, parent, world.reborrow());
+        if children_komorebi_type == komorebi_type_inner {
+            *komorebi_type = children_komorebi_type;
+            return false;
+        }
+        true
+    } else {
+        let komorebi_type_inner = find_komorebi_relationship(entity, parent, world.reborrow());
+        *komorebi_type = komorebi_type_inner;
+        if komorebi_type_inner == KomorebiType::NotDefined {
+            return true;
+        }
+        false
+    }
+}
+
+pub fn find_komorebi_relationship(
+    entity: Entity,
+    parent: Entity,
+    mut world: DeferredWorld,
+) -> KomorebiType {
+    let mut workspacecontainer = ContainsParentChild::<Container, Workspace> {
+        _phantom: std::marker::PhantomData,
+    };
+
+    if workspacecontainer.check::<KomorebiChildOf>(world.reborrow(), entity, parent) {
+        return KomorebiType::Container;
+    }
+
+    let mut containerwindow = ContainsParentChild::<Window, Container> {
+        _phantom: std::marker::PhantomData,
+    };
+
+    if containerwindow.check::<KomorebiChildOf>(world.reborrow(), entity, parent) {
+        return KomorebiType::Window;
+    }
+
+    let mut monitorworkspace = ContainsParentChild::<Workspace, Monitor> {
+        _phantom: std::marker::PhantomData,
+    };
+
+    if monitorworkspace.check::<KomorebiChildOf>(world.reborrow(), entity, parent) {
+        return KomorebiType::Workspace;
+    }
+
+    let mut windowmangermonitor = ContainsParentChild::<Monitor, WindowManager> {
+        _phantom: std::marker::PhantomData,
+    };
+
+    if windowmangermonitor.check::<KomorebiChildOf>(world.reborrow(), entity, parent) {
+        return KomorebiType::Monitor;
+    }
+
+    KomorebiType::NotDefined
 }

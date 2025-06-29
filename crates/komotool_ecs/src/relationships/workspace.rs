@@ -2,10 +2,11 @@ use crate::components::{despawn_container_marker_component, insert_container_mar
 use crate::prelude::{OldIndex, get_old_index, remove_parent_markers_from_hierarchy};
 use crate::relationships::window_manager::WindowManagerChildOf;
 use crate::relationships::{
-    ContainerChildOf, ContainsParentChild, GetIndex, InsertMarkerFn, KomotoolRelationship,
-    MonitorChildOf, RelationshipIndexSet, apply_markers_to_container_hierarchy,
-    apply_parent_markers_to_hierarchy, bevy_on_insert, bevy_on_remove, relationships_hook,
-    remove_all_markers, update_markers,
+    ContainerChildOf, ContainsParentChild, GetIndex, HierarchyFnType, InsertMarkerFn,
+    KomotoolRelationship, MonitorChildOf, RelationshipIndexSet,
+    apply_markers_to_container_hierarchy, apply_parent_markers_to_hierarchy, bevy_on_insert,
+    bevy_on_remove, komotool_on_insert, relationships_hook, remove_all_markers,
+    to_hierarchy_with_marker, update_markers,
 };
 use crate::resources::ContainerExtendedMarkerMap;
 use bevy_ecs::component::HookContext;
@@ -130,74 +131,18 @@ impl Relationship for WorkspaceChildOf {
             return;
         }
 
-        // In WorkspaceChildOf::on_insert, `entity` ist die Container-Entität.
-        // `target_relationship.get()` gibt die übergeordnete Workspace-Entität zurück.
-        // `Self::RelationshipTarget` ist `WorkspaceChildren`.
-        // `container_idx_in_workspace_list` ist der Index der `entity` (Container)
-        // innerhalb der Kinderliste des Workspaces.
-        if let Some(target_relationship) = world.entity(entity).get::<Self>() {
-            let parent_workspace_entity = target_relationship.get();
-            if let Some(workspace_children) = world
-                .entity(parent_workspace_entity)
-                .get::<Self::RelationshipTarget>()
-            {
-                if let Some(container_idx_in_workspace_list) =
-                    workspace_children.0.get_index_of(&entity)
-                {
-                    // Klone die Ressourcen-Map, um die immutable Leihe von `world` aufzuheben.
-                    let marker_map_clone =
-                        world.get_resource::<ContainerExtendedMarkerMap>().cloned();
-                    let mut default_map = None;
-
-                    crate::relationships::apply_markers_to_container_hierarchy(
-                            world.reborrow(),
-                            entity,
-                            container_idx_in_workspace_list + 1,
-                            marker_map_clone.as_ref().unwrap_or_else(||{
-                                warn!(
-                            "Failed to get ContainerExtendedMarkerMap. Markers over the default threshold will not be applied."
-                        );
-                                default_map.get_or_insert_with(ContainerExtendedMarkerMap::default)
-                            }),
-                            insert_container_marker_component,
-                        );
-                    if let Some(parent_monitor_entity) =
-                        apply_parent_markers_to_hierarchy::<MonitorChildOf>(
-                            entity,
-                            parent_workspace_entity,
-                            world.reborrow(),
-                            apply_markers_to_container_hierarchy,
-                        )
-                    {
-                        apply_parent_markers_to_hierarchy::<WindowManagerChildOf>(
-                            entity,
-                            parent_monitor_entity,
-                            world.reborrow(),
-                            apply_markers_to_container_hierarchy,
-                        );
-                    }
-                }
-            } else {
-                warn!(
-                    "Failed to get WorkspaceChildren. It has to be the first child of the workspace."
-                );
-
-                // Klone die Ressourcen-Map, um die immutable Leihe von `world` aufzuheben.
-                let marker_map_clone = world.get_resource::<ContainerExtendedMarkerMap>().cloned();
-                let mut default_map = None;
-
-                crate::relationships::apply_markers_to_container_hierarchy(
-                    world.reborrow(),
+        komotool_on_insert::<Self>(
+            entity,
+            world.reborrow(),
+            |mut world, entity, parent_workspace_entity, parent_idx| {
+                to_hierarchy_with_marker(
                     entity,
-                    1,
-                    marker_map_clone.as_ref().unwrap_or_else(||{
-                        warn!(
-                            "Failed to get ContainerExtendedMarkerMap. Markers over the default threshold will not be applied."
-                        );
-                        default_map.get_or_insert_with(ContainerExtendedMarkerMap::default)
-                    }),
-                    insert_container_marker_component,
+                    world.reborrow(),
+                    &apply_markers_to_container_hierarchy,
+                    Self::INSERT_MARKER,
+                    parent_idx,
                 );
+
                 if let Some(parent_monitor_entity) =
                     apply_parent_markers_to_hierarchy::<MonitorChildOf>(
                         entity,
@@ -213,8 +158,8 @@ impl Relationship for WorkspaceChildOf {
                         apply_markers_to_container_hierarchy,
                     );
                 }
-            }
-        }
+            },
+        );
     }
 
     fn on_replace(
@@ -258,7 +203,7 @@ impl Relationship for WorkspaceChildOf {
                     );
                             default_map.get_or_insert_with(ContainerExtendedMarkerMap::default)
                         }),
-                        despawn_container_marker_component,
+                        &despawn_container_marker_component,
                     );
 
                     let parent_monitor_entity =
@@ -330,6 +275,9 @@ impl KomotoolRelationship for WorkspaceChildOf {
 
     const DESPAWN_MARKER: InsertMarkerFn<ContainerExtendedMarkerMap> =
         despawn_container_marker_component;
+
+    const HIERARCHY: HierarchyFnType<ContainerExtendedMarkerMap> =
+        apply_markers_to_container_hierarchy;
     type Komorebi = Container;
 
     type Child = ContainerChildOf;

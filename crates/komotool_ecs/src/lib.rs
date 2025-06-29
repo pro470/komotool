@@ -17,7 +17,7 @@ pub mod prelude {
 
 use crate::relationships::{
     ContainerChildOf, ContainerChildren, MonitorChildOf, MonitorChildren, WindowManagerChildren,
-    WorkspaceChildOf, WorkspaceChildren,
+    WorkspaceChildOf, WorkspaceChildren, register_relationships_hooks,
 };
 use bevy_app::{App, First, Last, Plugin, PostStartup};
 use bevy_ecs::prelude::resource_changed;
@@ -102,5 +102,6 @@ impl Plugin for KomoToolEcsPlugin {
         register_window_types(app);
         register_workspace_types(app);
         register_komorebi_types(app);
+        register_relationships_hooks(app.world_mut())
     }
 }

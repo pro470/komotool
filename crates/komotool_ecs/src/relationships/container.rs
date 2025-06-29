@@ -1,13 +1,13 @@
 use crate::components::{despawn_window_marker_component, insert_window_marker_component};
 use crate::prelude::{
-    DespawnInsertMarker, OldIndex, get_old_index, remove_parent_markers_from_hierarchy,
-    update_markers,
+    OldIndex, get_old_index, remove_parent_markers_from_hierarchy, update_markers,
 };
 use crate::relationships::window_manager::WindowManagerChildOf;
 use crate::relationships::{
-    ContainsParentChild, GetIndex, InsertMarkerFn, KomotoolRelationship, MarkerFn, MonitorChildOf,
-    RelationshipIndexSet, WorkspaceChildOf, apply_parent_markers_to_hierarchy, bevy_on_insert,
-    bevy_on_remove, relationships_hook, remove_all_markers,
+    ContainsParentChild, GetIndex, HierarchyFnType, InsertMarkerFn, KomotoolRelationship, MarkerFn,
+    MonitorChildOf, RelationshipIndexSet, WorkspaceChildOf, apply_parent_markers_to_hierarchy,
+    bevy_on_insert, bevy_on_remove, komotool_on_insert, relationships_hook, remove_all_markers,
+    to_hierarchy_with_marker,
 };
 use crate::resources::WindowExtendedMarkerMap;
 use bevy_ecs::component::HookContext;
@@ -132,91 +132,18 @@ impl Relationship for ContainerChildOf {
             return;
         }
 
-        if let Some(target) = world.entity(entity).get::<Self>() {
-            let parent_container_entity = target.get();
-            if let Some(children) = world.entity(target.get()).get::<Self::RelationshipTarget>() {
-                if let Some(index) = children.0.get_index_of(&entity) {
-                    if let Some(marker) = world.get_resource::<WindowExtendedMarkerMap>() {
-                        let marker = marker.clone();
-                        insert_window_marker_component(
-                            index + 1,
-                            entity,
-                            world.commands(),
-                            &marker,
-                        );
-                    } else {
-                        insert_window_marker_component(
-                            index + 1,
-                            entity,
-                            world.commands(),
-                            &WindowExtendedMarkerMap::default(),
-                        );
-                    }
-                    if let Some(parent_workspace_entity) =
-                        apply_parent_markers_to_hierarchy::<WorkspaceChildOf>(
-                            entity,
-                            parent_container_entity,
-                            world.reborrow(),
-                            |mut world: DeferredWorld<'_>,
-                             entity,
-                             index,
-                             marker: &_,
-                             insert_marker: InsertMarkerFn<
-                                <WorkspaceChildOf as KomotoolRelationship>::Marker,
-                            >| {
-                                insert_marker.marker(index, entity, world.commands(), marker)
-                            },
-                        )
-                    {
-                        if let Some(parent_monitor_entity) =
-                            apply_parent_markers_to_hierarchy::<MonitorChildOf>(
-                                entity,
-                                parent_workspace_entity,
-                                world.reborrow(),
-                                |mut world: DeferredWorld<'_>,
-                                 entity,
-                                 index,
-                                 marker: &_,
-                                 insert_marker: InsertMarkerFn<
-                                    <MonitorChildOf as KomotoolRelationship>::Marker,
-                                >| {
-                                    insert_marker.marker(index, entity, world.commands(), marker)
-                                },
-                            )
-                        {
-                            apply_parent_markers_to_hierarchy::<WindowManagerChildOf>(
-                                entity,
-                                parent_monitor_entity,
-                                world.reborrow(),
-                                |mut world: DeferredWorld<'_>,
-                                 entity,
-                                 index,
-                                 marker: &_,
-                                 insert_marker: InsertMarkerFn<
-                                    <WindowManagerChildOf as KomotoolRelationship>::Marker,
-                                >| {
-                                    insert_marker.marker(index, entity, world.commands(), marker)
-                                },
-                            );
-                        }
-                    }
-                }
-            } else {
-                warn!(
-                    "Failed to find ContainerChildren. It has to be the first child of the Container."
+        komotool_on_insert::<Self>(
+            entity,
+            world.reborrow(),
+            |mut world, entity, parent_container_entity, parent_idx| {
+                to_hierarchy_with_marker(
+                    entity,
+                    world.reborrow(),
+                    &Self::HIERARCHY,
+                    Self::INSERT_MARKER,
+                    parent_idx,
                 );
 
-                if let Some(marker) = world.get_resource::<WindowExtendedMarkerMap>() {
-                    let marker = marker.clone();
-                    insert_window_marker_component(1, entity, world.commands(), &marker);
-                } else {
-                    insert_window_marker_component(
-                        1,
-                        entity,
-                        world.commands(),
-                        &WindowExtendedMarkerMap::default(),
-                    );
-                }
                 if let Some(parent_workspace_entity) =
                     apply_parent_markers_to_hierarchy::<WorkspaceChildOf>(
                         entity,
@@ -226,7 +153,7 @@ impl Relationship for ContainerChildOf {
                          entity,
                          index,
                          marker: &_,
-                         insert_marker: InsertMarkerFn<
+                         insert_marker: &dyn MarkerFn<
                             <WorkspaceChildOf as KomotoolRelationship>::Marker,
                         >| {
                             insert_marker.marker(index, entity, world.commands(), marker)
@@ -242,7 +169,7 @@ impl Relationship for ContainerChildOf {
                              entity,
                              index,
                              marker: &_,
-                             insert_marker: InsertMarkerFn<
+                             insert_marker: &dyn MarkerFn<
                                 <MonitorChildOf as KomotoolRelationship>::Marker,
                             >| {
                                 insert_marker.marker(index, entity, world.commands(), marker)
@@ -257,7 +184,7 @@ impl Relationship for ContainerChildOf {
                              entity,
                              index,
                              marker: &_,
-                             insert_marker: InsertMarkerFn<
+                             insert_marker: &dyn MarkerFn<
                                 <WindowManagerChildOf as KomotoolRelationship>::Marker,
                             >| {
                                 insert_marker.marker(index, entity, world.commands(), marker)
@@ -265,8 +192,8 @@ impl Relationship for ContainerChildOf {
                         );
                     }
                 }
-            }
-        }
+            },
+        );
     }
 
     fn on_replace(
@@ -317,7 +244,7 @@ impl Relationship for ContainerChildOf {
                              entity,
                              index,
                              marker: &_,
-                             insert_marker: InsertMarkerFn<
+                             insert_marker: &dyn MarkerFn<
                                 <WorkspaceChildOf as KomotoolRelationship>::Marker,
                             >| {
                                 insert_marker.marker(index, entity, world.commands(), marker)
@@ -333,7 +260,7 @@ impl Relationship for ContainerChildOf {
                              entity,
                              index,
                              marker: &_,
-                             insert_marker: InsertMarkerFn<
+                             insert_marker: &dyn MarkerFn<
                                 <MonitorChildOf as KomotoolRelationship>::Marker,
                             >| {
                                 insert_marker.marker(index, entity, world.commands(), marker)
@@ -347,7 +274,7 @@ impl Relationship for ContainerChildOf {
                          entity,
                          index,
                          marker: &_,
-                         insert_marker: InsertMarkerFn<
+                         insert_marker: &dyn MarkerFn<
                             <WindowManagerChildOf as KomotoolRelationship>::Marker,
                         >| {
                             insert_marker.marker(index, entity, world.commands(), marker)
@@ -363,7 +290,7 @@ impl Relationship for ContainerChildOf {
                          entity,
                          index,
                          marker: &_,
-                         insert_marker: DespawnInsertMarker<
+                         insert_marker: &dyn MarkerFn<
                             <ContainerChildOf as KomotoolRelationship>::Marker,
                         >| {
                             insert_marker.marker(index, entity, world.commands(), marker)
@@ -415,6 +342,15 @@ impl KomotoolRelationship for ContainerChildOf {
     const INSERT_MARKER: InsertMarkerFn<WindowExtendedMarkerMap> = insert_window_marker_component;
 
     const DESPAWN_MARKER: InsertMarkerFn<WindowExtendedMarkerMap> = despawn_window_marker_component;
+
+    const HIERARCHY: HierarchyFnType<WindowExtendedMarkerMap> =
+        |mut world: DeferredWorld<'_>,
+         entity,
+         index,
+         marker: &_,
+         insert_marker: &dyn MarkerFn<<Self as KomotoolRelationship>::Marker>| {
+            insert_marker.marker(index, entity, world.commands(), marker);
+        };
 
     type Komorebi = Window;
 

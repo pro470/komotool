@@ -2,9 +2,10 @@ use crate::components::{despawn_workspace_marker_component, insert_workspace_mar
 use crate::prelude::{OldIndex, get_old_index, relationships_hook, update_markers};
 use crate::relationships::window_manager::WindowManagerChildOf;
 use crate::relationships::{
-    ContainsParentChild, GetIndex, InsertMarkerFn, KomotoolRelationship, RelationshipIndexSet,
-    WorkspaceChildOf, apply_markers_to_workspace_hierarchy, apply_parent_markers_to_hierarchy,
-    bevy_on_insert, bevy_on_remove, remove_all_markers, remove_parent_markers_from_hierarchy,
+    ContainsParentChild, GetIndex, HierarchyFnType, InsertMarkerFn, KomotoolRelationship,
+    RelationshipIndexSet, WorkspaceChildOf, apply_markers_to_workspace_hierarchy,
+    apply_parent_markers_to_hierarchy, bevy_on_insert, bevy_on_remove, komotool_on_insert,
+    remove_all_markers, remove_parent_markers_from_hierarchy, to_hierarchy_with_marker,
 };
 use crate::resources::WorkspaceExtendedMarkerMap;
 use bevy_ecs::component::HookContext;
@@ -128,6 +129,27 @@ impl Relationship for MonitorChildOf {
             return;
         }
 
+        komotool_on_insert::<Self>(
+            entity,
+            world.reborrow(),
+            |mut world, entity, parent_monitor_entity, parent_idx| {
+                to_hierarchy_with_marker(
+                    entity,
+                    world.reborrow(),
+                    &apply_markers_to_workspace_hierarchy,
+                    Self::INSERT_MARKER,
+                    parent_idx,
+                );
+
+                apply_parent_markers_to_hierarchy::<Self>(
+                    entity,
+                    parent_monitor_entity,
+                    world.reborrow(),
+                    apply_markers_to_workspace_hierarchy,
+                );
+            },
+        );
+
         // In MonitorChildOf::on_insert, `entity` ist die Workspace-Entität.
         // `target_relationship.get()` gibt die übergeordnete Monitor-Entität zurück.
         // `Self::RelationshipTarget` ist `MonitorChildren`.
@@ -157,16 +179,9 @@ impl Relationship for MonitorChildOf {
                         );
                                 default_map.get_or_insert_with(WorkspaceExtendedMarkerMap::default)
                             }),
-                            insert_workspace_marker_component,
+                            &insert_workspace_marker_component,
                         );
                 }
-
-                apply_parent_markers_to_hierarchy::<WindowManagerChildOf>(
-                    entity,
-                    parent_monitor_entity,
-                    world.reborrow(),
-                    apply_markers_to_workspace_hierarchy,
-                );
             } else {
                 warn!(
                     "Failed to get MonitorChildren. It has to be the first child of the Monitor."
@@ -184,7 +199,7 @@ impl Relationship for MonitorChildOf {
                         );
                         default_map.get_or_insert_with(WorkspaceExtendedMarkerMap::default)
                     }),
-                    insert_workspace_marker_component,
+                    &insert_workspace_marker_component,
                 );
 
                 apply_parent_markers_to_hierarchy::<WindowManagerChildOf>(
@@ -241,7 +256,7 @@ impl Relationship for MonitorChildOf {
                     );
                             default_map.get_or_insert_with(WorkspaceExtendedMarkerMap::default)
                         }),
-                        despawn_workspace_marker_component,
+                        &despawn_workspace_marker_component,
                     );
 
                     remove_parent_markers_from_hierarchy::<WindowManagerChildOf>(
@@ -305,6 +320,9 @@ impl KomotoolRelationship for MonitorChildOf {
 
     const DESPAWN_MARKER: InsertMarkerFn<WorkspaceExtendedMarkerMap> =
         despawn_workspace_marker_component;
+
+    const HIERARCHY: HierarchyFnType<WorkspaceExtendedMarkerMap> =
+        apply_markers_to_workspace_hierarchy;
 
     type Komorebi = Workspace;
 

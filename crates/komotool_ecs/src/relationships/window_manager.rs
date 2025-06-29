@@ -1,7 +1,8 @@
 use super::{
-    ContainsParentChild, GetIndex, KomotoolRelationship, MonitorChildOf, RelationshipIndexSet,
-    apply_markers_to_monitor_hierarchy, bevy_on_insert, bevy_on_remove, get_old_index,
-    relationships_hook, remove_all_markers, update_markers,
+    ContainsParentChild, GetIndex, HierarchyFnType, KomotoolRelationship, MonitorChildOf,
+    RelationshipIndexSet, apply_markers_to_monitor_hierarchy, bevy_on_insert, bevy_on_remove,
+    get_old_index, komotool_on_insert, relationships_hook, remove_all_markers,
+    to_hierarchy_with_marker, update_markers,
 };
 use crate::components::{
     WindowManager, despawn_monitor_marker_component, insert_monitor_marker_component,
@@ -133,60 +134,19 @@ impl Relationship for WindowManagerChildOf {
             return;
         }
 
-        if let Some(target_relationship) = world.entity(entity).get::<Self>() {
-            let window_manager_entity = target_relationship.get();
-            if let Some(window_manager_children) = world
-                .entity(window_manager_entity)
-                .get::<Self::RelationshipTarget>()
-            {
-                if let Some(monitor_index_in_manager_list) =
-                    window_manager_children.0.get_index_of(&entity)
-                {
-                    let marker_map_clone =
-                        world.get_resource::<MonitorExtendedMarkerMap>().cloned();
-                    let mut default_map = None;
-                    relationships::apply_markers_to_monitor_hierarchy(
-                            world.reborrow(),
-                            entity,
-                            monitor_index_in_manager_list + 1,
-                            marker_map_clone.as_ref().unwrap_or_else(|| {
-                                warn!(
-                            "Failed to get MonitorExtendedMarkerMap. Markers over the default threeshold will not be applied."
-                        );
-
-                                default_map.get_or_insert_with(MonitorExtendedMarkerMap::default)
-
-                            }),
-                            insert_monitor_marker_component,
-                        );
-                } else {
-                    warn!("Failed to get monitor index in manager list");
-                }
-            } else {
-                warn!(
-                    "Failed to get window manager children. It has to be the first child of the window manager."
-                );
-
-                let marker_map_clone = world.get_resource::<MonitorExtendedMarkerMap>().cloned();
-                let mut default_map = None;
-                relationships::apply_markers_to_monitor_hierarchy(
-                    world.reborrow(),
+        komotool_on_insert::<Self>(
+            entity,
+            world.reborrow(),
+            |mut world, entity, _, parent_idx| {
+                to_hierarchy_with_marker(
                     entity,
-                    1,
-                    marker_map_clone.as_ref().unwrap_or_else(|| {
-                        warn!(
-                            "Failed to get MonitorExtendedMarkerMap. Markers over the default threeshold will not be applied."
-                        );
-
-                        default_map.get_or_insert_with(MonitorExtendedMarkerMap::default)
-
-                    }),
-                    insert_monitor_marker_component,
-                );
-            }
-        } else {
-            warn!("Failed to get target relationship");
-        }
+                    world.reborrow(),
+                    &apply_markers_to_monitor_hierarchy,
+                    Self::INSERT_MARKER,
+                    parent_idx,
+                )
+            },
+        );
     }
 
     fn on_replace(
@@ -228,7 +188,7 @@ impl Relationship for WindowManagerChildOf {
                             warn!("Failed to get MonitorExtendedMarkerMap. Markers over the default threshold will not be applied.");
                             default_map.get_or_insert_with(MonitorExtendedMarkerMap::default)
                         }),
-                        despawn_monitor_marker_component,
+                        &despawn_monitor_marker_component,
                     );
 
                     update_markers::<Self>(
@@ -285,6 +245,8 @@ impl KomotoolRelationship for WindowManagerChildOf {
 
     const DESPAWN_MARKER: InsertMarkerFn<MonitorExtendedMarkerMap> =
         despawn_monitor_marker_component;
+
+    const HIERARCHY: HierarchyFnType<MonitorExtendedMarkerMap> = apply_markers_to_monitor_hierarchy;
 
     type Komorebi = Monitor;
 
