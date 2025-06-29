@@ -36,7 +36,7 @@ pub fn setup_file_watcher(mut commands: Commands) {
     ) {
         Ok(watcher) => watcher,
         Err(e) => {
-            println!("Failed to create file watcher: {}", e);
+            println!("Failed to create file watcher: {e}");
             return;
         }
     };
@@ -46,7 +46,7 @@ pub fn setup_file_watcher(mut commands: Commands) {
         match watcher.watch(&komotool_path, RecursiveMode::Recursive) {
             Ok(_) => (),
             Err(e) => {
-                println!("Failed to watch directory: {}", e);
+                println!("Failed to watch directory: {e}");
                 return;
             }
         }
@@ -79,7 +79,7 @@ pub fn check_file_events(
                                 event.write(AssetEvent::Removed { id: typed });
                             }
                             Err(e) => {
-                                println!("Failed to get typed id: {}", e);
+                                println!("Failed to get typed id: {e}");
                             }
                         }
                     }

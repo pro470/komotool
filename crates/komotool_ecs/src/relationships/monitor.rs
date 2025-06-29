@@ -50,7 +50,7 @@ where
     }
     fn clone_behavior() -> bevy_ecs::component::ComponentCloneBehavior {
         use bevy_ecs::component::{DefaultCloneBehaviorBase, DefaultCloneBehaviorViaClone};
-        (&&&bevy_ecs::component::DefaultCloneBehaviorSpecialization::<Self>::default())
+        bevy_ecs::component::DefaultCloneBehaviorSpecialization::<Self>::default()
             .default_clone_behavior()
     }
 }

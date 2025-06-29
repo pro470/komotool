@@ -47,7 +47,7 @@ fn contains_function(ast: &AST, function_name: &str) -> bool {
 
         // Compare with the target function name
         if name == function_name {
-            println!("Function name: {}", name);
+            println!("Function name: {name}");
             return true;
         }
     }
@@ -108,7 +108,7 @@ fn contains_global_function(ast: &Ast, function_name: &str) -> bool {
 
             // Compare with the target function name
             if name_ref == function_name {
-                println!("Function name: {}", name_ref);
+                println!("Function name: {name_ref}");
                 return true;
             }
         }

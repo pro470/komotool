@@ -109,8 +109,7 @@ pub fn get_or_create_komotool_config_path() -> std::io::Result<PathBuf> {
         }
         Err(e) => {
             let error = format!(
-                "Failed to fetch USERPROFILE environment variable. ValueError: {}",
-                e
+                "Failed to fetch USERPROFILE environment variable. ValueError: {e}"
             );
             Err(std::io::Error::new(std::io::ErrorKind::NotFound, error))
         }
@@ -124,7 +123,7 @@ pub fn load_scripts(asset_server: Res<AssetServer>, mut commands: Commands) {
         if !path.exists() {
             match fs::create_dir_all(&path) {
                 Ok(_) => println!("Created directory: {}", path.display()),
-                Err(e) => println!("Failed to create directory: {}", e),
+                Err(e) => println!("Failed to create directory: {e}"),
             };
         }
     } else {
@@ -153,7 +152,7 @@ pub fn check_scripts_loaded(
     if let Some(RecursiveDependencyLoadState::Failed(e)) =
         asset_server.get_recursive_dependency_load_state(&tracker.handle)
     {
-        println!("Failed to load scripts: {}", e);
+        println!("Failed to load scripts: {e}");
     }
 }
 
@@ -174,7 +173,7 @@ pub fn handle_script_asset_events(
                 if let Some(path) = asset_server.get_path(*id) {
                     // Create a new entity with the script component
                     let script_path = path.path().to_string_lossy().to_string();
-                    println!("Adding script: {}", script_path);
+                    println!("Adding script: {script_path}");
 
                     // Avoid duplication - remove existing entity if present
                     if let Some(existing_entity) = script_mapping.handle_to_entity.get(id) {
@@ -198,7 +197,7 @@ pub fn handle_script_asset_events(
             AssetEvent::Removed { id } => {
                 // Remove the entity if the script is removed
                 if let Some(entity) = script_mapping.handle_to_entity.remove(id) {
-                    println!("Removing script entity: {:?}", entity);
+                    println!("Removing script entity: {entity:?}");
                     commands.entity(entity).despawn();
                 }
             }
@@ -323,17 +322,17 @@ pub fn handle_script_store_updates_all_labels<P>(
                         // Check and update each store
                         if script_functions.contains(OnUpdate::into_callback_label().as_ref()) {
                             update.scripts.insert(script_id.clone());
-                            println!("Added to OnUpdate: {}", script_id);
+                            println!("Added to OnUpdate: {script_id}");
                         }
 
                         if script_functions.contains(OnPreUpdate::into_callback_label().as_ref()) {
                             preupdate.scripts.insert(script_id.clone());
-                            println!("Added to OnPreUpdate: {}", script_id);
+                            println!("Added to OnPreUpdate: {script_id}");
                         }
 
                         if script_functions.contains(OnPostUpdate::into_callback_label().as_ref()) {
                             postupdate.scripts.insert(script_id.clone());
-                            println!("Added to OnPostUpdate: {}", script_id);
+                            println!("Added to OnPostUpdate: {script_id}");
                         }
 
                         println!("Processed new script: {}", path.path().to_string_lossy());
@@ -355,7 +354,7 @@ pub fn handle_script_store_updates_all_labels<P>(
 
                     // Check if script still has required functions
                     if let Some(script_bytes) = assets.get(*id) {
-                        println!("Script modified: {:?}", path);
+                        println!("Script modified: {path:?}");
 
                         // Get all functions in the script once
                         let script_functions = P::get_functions(&script_bytes.content);
@@ -447,17 +446,17 @@ pub fn handle_script_store_updates_all(
                     // Check and update each store
                     if script_functions.contains(OnUpdate::into_callback_label().as_ref()) {
                         update.scripts.insert(script_id.clone());
-                        println!("Added to OnUpdate: {}", script_id);
+                        println!("Added to OnUpdate: {script_id}");
                     }
 
                     if script_functions.contains(OnPreUpdate::into_callback_label().as_ref()) {
                         preupdate.scripts.insert(script_id.clone());
-                        println!("Added to OnPreUpdate: {}", script_id);
+                        println!("Added to OnPreUpdate: {script_id}");
                     }
 
                     if script_functions.contains(OnPostUpdate::into_callback_label().as_ref()) {
                         postupdate.scripts.insert(script_id.clone());
-                        println!("Added to OnPostUpdate: {}", script_id);
+                        println!("Added to OnPostUpdate: {script_id}");
                     }
 
                     println!(

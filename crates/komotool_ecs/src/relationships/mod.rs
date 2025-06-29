@@ -44,7 +44,6 @@ use komorebi_client::{Container, Monitor, Window, Workspace};
 pub use komorebi_relationship::*;
 pub use monitor::*;
 pub use relationships_hooks::*;
-pub use window::*;
 pub use window_manager::*;
 pub use workspace::*;
 
@@ -54,7 +53,7 @@ pub struct RelationshipIndexSet(IndexSet<Entity, EntityHash>);
 impl MapEntities for RelationshipIndexSet {
     fn map_entities<E: EntityMapper>(&mut self, entity_mapper: &mut E) {
         for idx in 0..self.0.len() {
-            let mut entity = self.0.get_index_mut2(idx);
+            let entity = self.0.get_index_mut2(idx);
             if let Some(entity) = entity {
                 *entity = entity_mapper.get_mapped(*entity);
             }

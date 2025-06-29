@@ -27,7 +27,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send focus_window message: {}", e);
+                        log::error!("Failed to send focus_window message: {e}");
                         false
                     }
                 }
@@ -47,7 +47,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send move_window message: {}", e);
+                        log::error!("Failed to send move_window message: {e}");
                         false
                     }
                 }
@@ -65,7 +65,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send cycle_focus_window message: {}", e);
+                        log::error!("Failed to send cycle_focus_window message: {e}");
                         false
                     }
                 }
@@ -83,7 +83,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send cycle_move_window message: {}", e);
+                        log::error!("Failed to send cycle_move_window message: {e}");
                         false
                     }
                 }
@@ -103,7 +103,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send stack_window message: {}", e);
+                        log::error!("Failed to send stack_window message: {e}");
                         false
                     }
                 }
@@ -113,7 +113,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send unstack_window message: {}", e);
+                        log::error!("Failed to send unstack_window message: {e}");
                         false
                     }
                 }
@@ -131,7 +131,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send cycle_stack message: {}", e);
+                        log::error!("Failed to send cycle_stack message: {e}");
                         false
                     }
                 }
@@ -149,7 +149,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send cycle_stack_index message: {}", e);
+                        log::error!("Failed to send cycle_stack_index message: {e}");
                         false
                     }
                 }
@@ -159,7 +159,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send focus_stack_window message: {}", e);
+                        log::error!("Failed to send focus_stack_window message: {e}");
                         false
                     }
                 }
@@ -169,7 +169,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send stack_all message: {}", e);
+                        log::error!("Failed to send stack_all message: {e}");
                         false
                     }
                 }
@@ -179,7 +179,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send unstack_all message: {}", e);
+                        log::error!("Failed to send unstack_all message: {e}");
                         false
                     }
                 }
@@ -208,7 +208,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send resize_window_edge message: {}", e);
+                        log::error!("Failed to send resize_window_edge message: {e}");
                         false
                     }
                 }
@@ -236,7 +236,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send resize_window_axis message: {}", e);
+                        log::error!("Failed to send resize_window_axis message: {e}");
                         false
                     }
                 }
@@ -246,7 +246,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send move_container_to_monitor_number message: {}", e);
+                        log::error!("Failed to send move_container_to_monitor_number message: {e}");
                         false
                     }
                 }
@@ -264,7 +264,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send cycle_move_container_to_monitor message: {}", e);
+                        log::error!("Failed to send cycle_move_container_to_monitor message: {e}");
                         false
                     }
                 }
@@ -274,7 +274,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send move_container_to_workspace_number message: {}", e);
+                        log::error!("Failed to send move_container_to_workspace_number message: {e}");
                         false
                     }
                 }
@@ -284,7 +284,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send move_container_to_named_workspace message: {}", e);
+                        log::error!("Failed to send move_container_to_named_workspace message: {e}");
                         false
                     }
                 }
@@ -302,7 +302,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send cycle_move_container_to_workspace message: {}", e);
+                        log::error!("Failed to send cycle_move_container_to_workspace message: {e}");
                         false
                     }
                 }
@@ -312,7 +312,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send send_container_to_monitor_number message: {}", e);
+                        log::error!("Failed to send send_container_to_monitor_number message: {e}");
                         false
                     }
                 }
@@ -330,7 +330,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send cycle_send_container_to_monitor message: {}", e);
+                        log::error!("Failed to send cycle_send_container_to_monitor message: {e}");
                         false
                     }
                 }
@@ -340,7 +340,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send send_container_to_workspace_number message: {}", e);
+                        log::error!("Failed to send send_container_to_workspace_number message: {e}");
                         false
                     }
                 }
@@ -358,7 +358,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send cycle_send_container_to_workspace message: {}", e);
+                        log::error!("Failed to send cycle_send_container_to_workspace message: {e}");
                         false
                     }
                 }
@@ -368,7 +368,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send send_container_to_monitor_workspace_number message: {}", e);
+                        log::error!("Failed to send send_container_to_monitor_workspace_number message: {e}");
                         false
                     }
                 }
@@ -378,7 +378,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send move_container_to_monitor_workspace_number message: {}", e);
+                        log::error!("Failed to send move_container_to_monitor_workspace_number message: {e}");
                         false
                     }
                 }
@@ -388,7 +388,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send send_container_to_named_workspace message: {}", e);
+                        log::error!("Failed to send send_container_to_named_workspace message: {e}");
                         false
                     }
                 }
@@ -406,7 +406,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send cycle_move_workspace_to_monitor message: {}", e);
+                        log::error!("Failed to send cycle_move_workspace_to_monitor message: {e}");
                         false
                     }
                 }
@@ -416,7 +416,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send move_workspace_to_monitor_number message: {}", e);
+                        log::error!("Failed to send move_workspace_to_monitor_number message: {e}");
                         false
                     }
                 }
@@ -426,7 +426,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send swap_workspaces_to_monitor_number message: {}", e);
+                        log::error!("Failed to send swap_workspaces_to_monitor_number message: {e}");
                         false
                     }
                 }
@@ -436,7 +436,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send force_focus message: {}", e);
+                        log::error!("Failed to send force_focus message: {e}");
                         false
                     }
                 }
@@ -446,7 +446,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send close message: {}", e);
+                        log::error!("Failed to send close message: {e}");
                         false
                     }
                 }
@@ -456,7 +456,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send minimize message: {}", e);
+                        log::error!("Failed to send minimize message: {e}");
                         false
                     }
                 }
@@ -466,7 +466,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send promote message: {}", e);
+                        log::error!("Failed to send promote message: {e}");
                         false
                     }
                 }
@@ -476,7 +476,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send promote_focus message: {}", e);
+                        log::error!("Failed to send promote_focus message: {e}");
                         false
                     }
                 }
@@ -496,7 +496,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send promote_window message: {}", e);
+                        log::error!("Failed to send promote_window message: {e}");
                         false
                     }
                 }
@@ -506,7 +506,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send eager_focus message: {}", e);
+                        log::error!("Failed to send eager_focus message: {e}");
                         false
                     }
                 }
@@ -516,7 +516,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send toggle_float message: {}", e);
+                        log::error!("Failed to send toggle_float message: {e}");
                         false
                     }
                 }
@@ -526,7 +526,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send toggle_monocle message: {}", e);
+                        log::error!("Failed to send toggle_monocle message: {e}");
                         false
                     }
                 }
@@ -536,7 +536,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send toggle_maximize message: {}", e);
+                        log::error!("Failed to send toggle_maximize message: {e}");
                         false
                     }
                 }
@@ -546,7 +546,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send toggle_window_container_behaviour message: {}", e);
+                        log::error!("Failed to send toggle_window_container_behaviour message: {e}");
                         false
                     }
                 }
@@ -556,7 +556,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send toggle_float_override message: {}", e);
+                        log::error!("Failed to send toggle_float_override message: {e}");
                         false
                     }
                 }
@@ -575,7 +575,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send window_hiding_behaviour message: {}", e);
+                        log::error!("Failed to send window_hiding_behaviour message: {e}");
                         false
                     }
                 }
@@ -585,7 +585,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send toggle_cross_monitor_move_behaviour message: {}", e);
+                        log::error!("Failed to send toggle_cross_monitor_move_behaviour message: {e}");
                         false
                     }
                 }
@@ -604,7 +604,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send cross_monitor_move_behaviour message: {}", e);
+                        log::error!("Failed to send cross_monitor_move_behaviour message: {e}");
                         false
                     }
                 }
@@ -622,7 +622,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send unmanaged_window_operation_behaviour message: {}", e);
+                        log::error!("Failed to send unmanaged_window_operation_behaviour message: {e}");
                         false
                     }
                 }
@@ -632,7 +632,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send manage_focused_window message: {}", e);
+                        log::error!("Failed to send manage_focused_window message: {e}");
                         false
                     }
                 }
@@ -642,7 +642,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send unmanage_focused_window message: {}", e);
+                        log::error!("Failed to send unmanage_focused_window message: {e}");
                         false
                     }
                 }
@@ -660,7 +660,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send adjust_container_padding message: {}", e);
+                        log::error!("Failed to send adjust_container_padding message: {e}");
                         false
                     }
                 }
@@ -678,7 +678,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send adjust_workspace_padding message: {}", e);
+                        log::error!("Failed to send adjust_workspace_padding message: {e}");
                         false
                     }
                 }
@@ -702,7 +702,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send change_layout message: {}", e);
+                        log::error!("Failed to send change_layout message: {e}");
                         false
                     }
                 }
@@ -720,7 +720,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send cycle_layout message: {}", e);
+                        log::error!("Failed to send cycle_layout message: {e}");
                         false
                     }
                 }
@@ -730,7 +730,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send change_layout_custom message: {}", e);
+                        log::error!("Failed to send change_layout_custom message: {e}");
                         false
                     }
                 }
@@ -749,7 +749,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send flip_layout message: {}", e);
+                        log::error!("Failed to send flip_layout message: {e}");
                         false
                     }
                 }
@@ -759,7 +759,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send toggle_workspace_window_container_behaviour message: {}", e);
+                        log::error!("Failed to send toggle_workspace_window_container_behaviour message: {e}");
                         false
                     }
                 }
@@ -769,7 +769,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send toggle_workspace_float_override message: {}", e);
+                        log::error!("Failed to send toggle_workspace_float_override message: {e}");
                         false
                     }
                 }
@@ -779,7 +779,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send monitor_index_preference message: {}", e);
+                        log::error!("Failed to send monitor_index_preference message: {e}");
                         false
                     }
                 }
@@ -789,7 +789,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send display_index_preference message: {}", e);
+                        log::error!("Failed to send display_index_preference message: {e}");
                         false
                     }
                 }
@@ -799,7 +799,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send ensure_workspaces message: {}", e);
+                        log::error!("Failed to send ensure_workspaces message: {e}");
                         false
                     }
                 }
@@ -809,7 +809,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send ensure_named_workspaces message: {}", e);
+                        log::error!("Failed to send ensure_named_workspaces message: {e}");
                         false
                     }
                 }
@@ -819,7 +819,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send new_workspace message: {}", e);
+                        log::error!("Failed to send new_workspace message: {e}");
                         false
                     }
                 }
@@ -829,7 +829,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send toggle_tiling message: {}", e);
+                        log::error!("Failed to send toggle_tiling message: {e}");
                         false
                     }
                 }
@@ -839,7 +839,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send stop message: {}", e);
+                        log::error!("Failed to send stop message: {e}");
                         false
                     }
                 }
@@ -849,7 +849,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send stop_ignore_restore message: {}", e);
+                        log::error!("Failed to send stop_ignore_restore message: {e}");
                         false
                     }
                 }
@@ -859,7 +859,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send toggle_pause message: {}", e);
+                        log::error!("Failed to send toggle_pause message: {e}");
                         false
                     }
                 }
@@ -869,7 +869,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send retile message: {}", e);
+                        log::error!("Failed to send retile message: {e}");
                         false
                     }
                 }
@@ -879,7 +879,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send retile_with_resize_dimensions message: {}", e);
+                        log::error!("Failed to send retile_with_resize_dimensions message: {e}");
                         false
                     }
                 }
@@ -889,7 +889,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send quick_save message: {}", e);
+                        log::error!("Failed to send quick_save message: {e}");
                         false
                     }
                 }
@@ -899,7 +899,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send quick_load message: {}", e);
+                        log::error!("Failed to send quick_load message: {e}");
                         false
                     }
                 }
@@ -909,7 +909,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send save message: {}", e);
+                        log::error!("Failed to send save message: {e}");
                         false
                     }
                 }
@@ -919,7 +919,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send load message: {}", e);
+                        log::error!("Failed to send load message: {e}");
                         false
                     }
                 }
@@ -937,7 +937,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send cycle_focus_monitor message: {}", e);
+                        log::error!("Failed to send cycle_focus_monitor message: {e}");
                         false
                     }
                 }
@@ -955,7 +955,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send cycle_focus_workspace message: {}", e);
+                        log::error!("Failed to send cycle_focus_workspace message: {e}");
                         false
                     }
                 }
@@ -965,7 +965,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send focus_monitor_number message: {}", e);
+                        log::error!("Failed to send focus_monitor_number message: {e}");
                         false
                     }
                 }
@@ -975,7 +975,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send focus_last_workspace message: {}", e);
+                        log::error!("Failed to send focus_last_workspace message: {e}");
                         false
                     }
                 }
@@ -985,7 +985,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send close_workspace message: {}", e);
+                        log::error!("Failed to send close_workspace message: {e}");
                         false
                     }
                 }
@@ -995,7 +995,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send focus_workspace_number message: {}", e);
+                        log::error!("Failed to send focus_workspace_number message: {e}");
                         false
                     }
                 }
@@ -1005,7 +1005,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send focus_workspace_numbers message: {}", e);
+                        log::error!("Failed to send focus_workspace_numbers message: {e}");
                         false
                     }
                 }
@@ -1015,7 +1015,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send focus_monitor_workspace_number message: {}", e);
+                        log::error!("Failed to send focus_monitor_workspace_number message: {e}");
                         false
                     }
                 }
@@ -1025,7 +1025,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send focus_named_workspace message: {}", e);
+                        log::error!("Failed to send focus_named_workspace message: {e}");
                         false
                     }
                 }
@@ -1035,7 +1035,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send container_padding message: {}", e);
+                        log::error!("Failed to send container_padding message: {e}");
                         false
                     }
                 }
@@ -1045,7 +1045,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send named_workspace_container_padding message: {}", e);
+                        log::error!("Failed to send named_workspace_container_padding message: {e}");
                         false
                     }
                 }
@@ -1055,7 +1055,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send focused_workspace_container_padding message: {}", e);
+                        log::error!("Failed to send focused_workspace_container_padding message: {e}");
                         false
                     }
                 }
@@ -1065,7 +1065,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send workspace_padding message: {}", e);
+                        log::error!("Failed to send workspace_padding message: {e}");
                         false
                     }
                 }
@@ -1075,7 +1075,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send named_workspace_padding message: {}", e);
+                        log::error!("Failed to send named_workspace_padding message: {e}");
                         false
                     }
                 }
@@ -1085,7 +1085,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send focused_workspace_padding message: {}", e);
+                        log::error!("Failed to send focused_workspace_padding message: {e}");
                         false
                     }
                 }
@@ -1095,7 +1095,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send workspace_tiling message: {}", e);
+                        log::error!("Failed to send workspace_tiling message: {e}");
                         false
                     }
                 }
@@ -1105,7 +1105,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send named_workspace_tiling message: {}", e);
+                        log::error!("Failed to send named_workspace_tiling message: {e}");
                         false
                     }
                 }
@@ -1115,7 +1115,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send workspace_name message: {}", e);
+                        log::error!("Failed to send workspace_name message: {e}");
                         false
                     }
                 }
@@ -1139,7 +1139,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send workspace_layout message: {}", e);
+                        log::error!("Failed to send workspace_layout message: {e}");
                         false
                     }
                 }
@@ -1163,7 +1163,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send named_workspace_layout message: {}", e);
+                        log::error!("Failed to send named_workspace_layout message: {e}");
                         false
                     }
                 }
@@ -1173,7 +1173,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send workspace_layout_custom message: {}", e);
+                        log::error!("Failed to send workspace_layout_custom message: {e}");
                         false
                     }
                 }
@@ -1183,7 +1183,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send named_workspace_layout_custom message: {}", e);
+                        log::error!("Failed to send named_workspace_layout_custom message: {e}");
                         false
                     }
                 }
@@ -1207,7 +1207,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send workspace_layout_rule message: {}", e);
+                        log::error!("Failed to send workspace_layout_rule message: {e}");
                         false
                     }
                 }
@@ -1231,7 +1231,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send named_workspace_layout_rule message: {}", e);
+                        log::error!("Failed to send named_workspace_layout_rule message: {e}");
                         false
                     }
                 }
@@ -1241,7 +1241,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send workspace_layout_custom_rule message: {}", e);
+                        log::error!("Failed to send workspace_layout_custom_rule message: {e}");
                         false
                     }
                 }
@@ -1251,7 +1251,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send named_workspace_layout_custom_rule message: {}", e);
+                        log::error!("Failed to send named_workspace_layout_custom_rule message: {e}");
                         false
                     }
                 }
@@ -1261,7 +1261,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send clear_workspace_layout_rules message: {}", e);
+                        log::error!("Failed to send clear_workspace_layout_rules message: {e}");
                         false
                     }
                 }
@@ -1271,7 +1271,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send clear_named_workspace_layout_rules message: {}", e);
+                        log::error!("Failed to send clear_named_workspace_layout_rules message: {e}");
                         false
                     }
                 }
@@ -1281,7 +1281,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send reload_configuration message: {}", e);
+                        log::error!("Failed to send reload_configuration message: {e}");
                         false
                     }
                 }
@@ -1291,7 +1291,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send replace_configuration message: {}", e);
+                        log::error!("Failed to send replace_configuration message: {e}");
                         false
                     }
                 }
@@ -1301,7 +1301,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send reload_static_configuration message: {}", e);
+                        log::error!("Failed to send reload_static_configuration message: {e}");
                         false
                     }
                 }
@@ -1311,7 +1311,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send watch_configuration message: {}", e);
+                        log::error!("Failed to send watch_configuration message: {e}");
                         false
                     }
                 }
@@ -1321,7 +1321,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send complete_configuration message: {}", e);
+                        log::error!("Failed to send complete_configuration message: {e}");
                         false
                     }
                 }
@@ -1331,7 +1331,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send alt_focus_hack message: {}", e);
+                        log::error!("Failed to send alt_focus_hack message: {e}");
                         false
                     }
                 }
@@ -1350,7 +1350,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send animation message: {}", e);
+                        log::error!("Failed to send animation message: {e}");
                         false
                     }
                 }
@@ -1369,7 +1369,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send animation_duration message: {}", e);
+                        log::error!("Failed to send animation_duration message: {e}");
                         false
                     }
                 }
@@ -1379,7 +1379,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send animation_fps message: {}", e);
+                        log::error!("Failed to send animation_fps message: {e}");
                         false
                     }
                 }
@@ -1434,7 +1434,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send animation_style message: {}", e);
+                        log::error!("Failed to send animation_style message: {e}");
                         false
                     }
                 }
@@ -1444,7 +1444,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send border message: {}", e);
+                        log::error!("Failed to send border message: {e}");
                         false
                     }
                 }
@@ -1465,7 +1465,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send border_colour message: {}", e);
+                        log::error!("Failed to send border_colour message: {e}");
                         false
                     }
                 }
@@ -1484,7 +1484,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send border_style message: {}", e);
+                        log::error!("Failed to send border_style message: {e}");
                         false
                     }
                 }
@@ -1494,7 +1494,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send border_width message: {}", e);
+                        log::error!("Failed to send border_width message: {e}");
                         false
                     }
                 }
@@ -1504,7 +1504,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send border_offset message: {}", e);
+                        log::error!("Failed to send border_offset message: {e}");
                         false
                     }
                 }
@@ -1522,7 +1522,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send border_implementation message: {}", e);
+                        log::error!("Failed to send border_implementation message: {e}");
                         false
                     }
                 }
@@ -1532,7 +1532,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send transparency message: {}", e);
+                        log::error!("Failed to send transparency message: {e}");
                         false
                     }
                 }
@@ -1542,7 +1542,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send toggle_transparency message: {}", e);
+                        log::error!("Failed to send toggle_transparency message: {e}");
                         false
                     }
                 }
@@ -1552,7 +1552,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send transparency_alpha message: {}", e);
+                        log::error!("Failed to send transparency_alpha message: {e}");
                         false
                     }
                 }
@@ -1568,7 +1568,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send invisible_borders message: {}", e);
+                        log::error!("Failed to send invisible_borders message: {e}");
                         false
                     }
                 }
@@ -1587,7 +1587,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send stackbar_mode message: {}", e);
+                        log::error!("Failed to send stackbar_mode message: {e}");
                         false
                     }
                 }
@@ -1605,7 +1605,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send stackbar_label message: {}", e);
+                        log::error!("Failed to send stackbar_label message: {e}");
                         false
                     }
                 }
@@ -1615,7 +1615,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send stackbar_focused_text_colour message: {}", e);
+                        log::error!("Failed to send stackbar_focused_text_colour message: {e}");
                         false
                     }
                 }
@@ -1625,7 +1625,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send stackbar_unfocused_text_colour message: {}", e);
+                        log::error!("Failed to send stackbar_unfocused_text_colour message: {e}");
                         false
                     }
                 }
@@ -1635,7 +1635,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send stackbar_background_colour message: {}", e);
+                        log::error!("Failed to send stackbar_background_colour message: {e}");
                         false
                     }
                 }
@@ -1645,7 +1645,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send stackbar_height message: {}", e);
+                        log::error!("Failed to send stackbar_height message: {e}");
                         false
                     }
                 }
@@ -1655,7 +1655,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send stackbar_tab_width message: {}", e);
+                        log::error!("Failed to send stackbar_tab_width message: {e}");
                         false
                     }
                 }
@@ -1665,7 +1665,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send stackbar_font_size message: {}", e);
+                        log::error!("Failed to send stackbar_font_size message: {e}");
                         false
                     }
                 }
@@ -1679,7 +1679,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send stackbar_font_family message: {}", e);
+                        log::error!("Failed to send stackbar_font_family message: {e}");
                         false
                     }
                 }
@@ -1695,7 +1695,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send work_area_offset message: {}", e);
+                        log::error!("Failed to send work_area_offset message: {e}");
                         false
                     }
                 }
@@ -1711,7 +1711,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send monitor_work_area_offset message: {}", e);
+                        log::error!("Failed to send monitor_work_area_offset message: {e}");
                         false
                     }
                 }
@@ -1721,7 +1721,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send resize_delta message: {}", e);
+                        log::error!("Failed to send resize_delta message: {e}");
                         false
                     }
                 }
@@ -1741,7 +1741,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send initial_workspace_rule message: {}", e);
+                        log::error!("Failed to send initial_workspace_rule message: {e}");
                         false
                     }
                 }
@@ -1761,7 +1761,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send initial_named_workspace_rule message: {}", e);
+                        log::error!("Failed to send initial_named_workspace_rule message: {e}");
                         false
                     }
                 }
@@ -1781,7 +1781,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send workspace_rule message: {}", e);
+                        log::error!("Failed to send workspace_rule message: {e}");
                         false
                     }
                 }
@@ -1801,7 +1801,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send named_workspace_rule message: {}", e);
+                        log::error!("Failed to send named_workspace_rule message: {e}");
                         false
                     }
                 }
@@ -1811,7 +1811,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send clear_workspace_rules message: {}", e);
+                        log::error!("Failed to send clear_workspace_rules message: {e}");
                         false
                     }
                 }
@@ -1821,7 +1821,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send clear_named_workspace_rules message: {}", e);
+                        log::error!("Failed to send clear_named_workspace_rules message: {e}");
                         false
                     }
                 }
@@ -1831,7 +1831,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send clear_all_workspace_rules message: {}", e);
+                        log::error!("Failed to send clear_all_workspace_rules message: {e}");
                         false
                     }
                 }
@@ -1841,7 +1841,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send enforce_workspace_rules message: {}", e);
+                        log::error!("Failed to send enforce_workspace_rules message: {e}");
                         false
                     }
                 }
@@ -1861,7 +1861,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send ignore_rule message: {}", e);
+                        log::error!("Failed to send ignore_rule message: {e}");
                         false
                     }
                 }
@@ -1881,7 +1881,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send manage_rule message: {}", e);
+                        log::error!("Failed to send manage_rule message: {e}");
                         false
                     }
                 }
@@ -1901,7 +1901,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send identify_object_name_change_application message: {}", e);
+                        log::error!("Failed to send identify_object_name_change_application message: {e}");
                         false
                     }
                 }
@@ -1921,7 +1921,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send identify_tray_application message: {}", e);
+                        log::error!("Failed to send identify_tray_application message: {e}");
                         false
                     }
                 }
@@ -1941,7 +1941,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send identify_layered_application message: {}", e);
+                        log::error!("Failed to send identify_layered_application message: {e}");
                         false
                     }
                 }
@@ -1961,7 +1961,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send identify_border_overflow_application message: {}", e);
+                        log::error!("Failed to send identify_border_overflow_application message: {e}");
                         false
                     }
                 }
@@ -1971,7 +1971,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send state message: {}", e);
+                        log::error!("Failed to send state message: {e}");
                         false
                     }
                 }
@@ -1981,7 +1981,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send global_state message: {}", e);
+                        log::error!("Failed to send global_state message: {e}");
                         false
                     }
                 }
@@ -1991,7 +1991,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send visible_windows message: {}", e);
+                        log::error!("Failed to send visible_windows message: {e}");
                         false
                     }
                 }
@@ -2001,7 +2001,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send monitor_information message: {}", e);
+                        log::error!("Failed to send monitor_information message: {e}");
                         false
                     }
                 }
@@ -2021,7 +2021,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send query message: {}", e);
+                        log::error!("Failed to send query message: {e}");
                         false
                     }
                 }
@@ -2039,7 +2039,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send focus_follows_mouse message: {}", e);
+                        log::error!("Failed to send focus_follows_mouse message: {e}");
                         false
                     }
                 }
@@ -2057,7 +2057,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send toggle_focus_follows_mouse message: {}", e);
+                        log::error!("Failed to send toggle_focus_follows_mouse message: {e}");
                         false
                     }
                 }
@@ -2067,7 +2067,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send mouse_follows_focus message: {}", e);
+                        log::error!("Failed to send mouse_follows_focus message: {e}");
                         false
                     }
                 }
@@ -2077,7 +2077,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send toggle_mouse_follows_focus message: {}", e);
+                        log::error!("Failed to send toggle_mouse_follows_focus message: {e}");
                         false
                     }
                 }
@@ -2097,7 +2097,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send remove_title_bar message: {}", e);
+                        log::error!("Failed to send remove_title_bar message: {e}");
                         false
                     }
                 }
@@ -2107,7 +2107,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send toggle_title_bars message: {}", e);
+                        log::error!("Failed to send toggle_title_bars message: {e}");
                         false
                     }
                 }
@@ -2117,7 +2117,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send add_subscriber_socket message: {}", e);
+                        log::error!("Failed to send add_subscriber_socket message: {e}");
                         false
                     }
                 }
@@ -2130,7 +2130,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send add_subscriber_socket_with_options message: {}", e);
+                        log::error!("Failed to send add_subscriber_socket_with_options message: {e}");
                         false
                     }
                 }
@@ -2140,7 +2140,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send remove_subscriber_socket message: {}", e);
+                        log::error!("Failed to send remove_subscriber_socket message: {e}");
                         false
                     }
                 }
@@ -2150,7 +2150,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send add_subscriber_pipe message: {}", e);
+                        log::error!("Failed to send add_subscriber_pipe message: {e}");
                         false
                     }
                 }
@@ -2160,7 +2160,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send remove_subscriber_pipe message: {}", e);
+                        log::error!("Failed to send remove_subscriber_pipe message: {e}");
                         false
                     }
                 }
@@ -2170,7 +2170,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send application_specific_configuration_schema message: {}", e);
+                        log::error!("Failed to send application_specific_configuration_schema message: {e}");
                         false
                     }
                 }
@@ -2180,7 +2180,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send notification_schema message: {}", e);
+                        log::error!("Failed to send notification_schema message: {e}");
                         false
                     }
                 }
@@ -2190,7 +2190,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send socket_schema message: {}", e);
+                        log::error!("Failed to send socket_schema message: {e}");
                         false
                     }
                 }
@@ -2200,7 +2200,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send static_config_schema message: {}", e);
+                        log::error!("Failed to send static_config_schema message: {e}");
                         false
                     }
                 }
@@ -2210,7 +2210,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send generate_static_config message: {}", e);
+                        log::error!("Failed to send generate_static_config message: {e}");
                         false
                     }
                 }
@@ -2220,7 +2220,7 @@ impl Plugin for KomoToolKomorebicPlugin {
                 match send_message(&message) {
                     Ok(_) => true,
                     Err(e) => {
-                        log::error!("Failed to send debug_window message: {}", e);
+                        log::error!("Failed to send debug_window message: {e}");
                         false
                     }
                 }

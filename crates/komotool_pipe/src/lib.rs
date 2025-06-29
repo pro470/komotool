@@ -29,7 +29,7 @@ impl Plugin for KomoToolPipePlugin {
             loop {
                 match run_pipe_listener(&sender) {
                     Ok(_) => log::info!("Pipe listener finished, attempting to reconnect..."),
-                    Err(e) => log::warn!("Pipe listener error: {}. Retrying...", e),
+                    Err(e) => log::warn!("Pipe listener error: {e}. Retrying..."),
                 }
 
                 // Wait before retrying to prevent overwhelming the system
@@ -46,7 +46,7 @@ impl Plugin for KomoToolPipePlugin {
 pub fn run_pipe_listener(sender: &Sender<Notification>) -> Result<()> {
     const NAME: &str = "komotool";
 
-    println!("Connecting to named pipe: {}", NAME);
+    println!("Connecting to named pipe: {NAME}");
 
     // Attempt to subscribe
     let socket = match subscribe_with_options(
@@ -61,8 +61,7 @@ pub fn run_pipe_listener(sender: &Sender<Notification>) -> Result<()> {
         }
         Err(e) => {
             eprintln!(
-                "Failed to connect to the named pipe: {}. Retrying in 2s...",
-                e
+                "Failed to connect to the named pipe: {e}. Retrying in 2s..."
             );
             return Ok(()); // Retry connecting
         }
@@ -99,16 +98,16 @@ pub fn run_pipe_listener(sender: &Sender<Notification>) -> Result<()> {
                                     println!("Failed to send notification to channel");
                                 }
                             }
-                            Err(e) => println!("Malformed notification: {}", e),
+                            Err(e) => println!("Malformed notification: {e}"),
                         }
                     }
                     Err(e) => {
-                        println!("Notification string was invalid UTF-8: {}", e);
+                        println!("Notification string was invalid UTF-8: {e}");
                     }
                 }
             }
             Err(e) => {
-                println!("Socket error: {}. Reconnecting...", e);
+                println!("Socket error: {e}. Reconnecting...");
                 return Ok(()); // Exit to trigger reconnection
             }
         }

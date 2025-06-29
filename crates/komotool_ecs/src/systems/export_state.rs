@@ -1,5 +1,5 @@
 use crate::KomorebiState;
-use crate::components::{FloatingWindow, Focused, MaximizedWindow, MonocleContainer};
+use crate::components::{FloatingWindow, Focused};
 use crate::relations::registry::RelationRegistry;
 use crate::resources::{AppState, KomotoolState};
 use bevy_ecs::query::With;
@@ -90,7 +90,7 @@ pub fn export_state(
                     monitor_focus_idx = Some(monitors_vec.len());
                 }
             } else {
-                eprintln!("Monitor entity {:?} not found in query", entity);
+                eprintln!("Monitor entity {entity:?} not found in query");
                 continue; // Skip processing this branch if monitor data is missing
             }
             continue; // Move to next record
@@ -130,7 +130,7 @@ pub fn export_state(
                     }
                 }
             } else {
-                eprintln!("Workspace entity {:?} not found in query", entity);
+                eprintln!("Workspace entity {entity:?} not found in query");
                 current_workspace_opt = None; // Ensure we don't use stale data
                 continue;
             }
@@ -160,7 +160,7 @@ pub fn export_state(
                     }
                 }
             } else {
-                eprintln!("Container entity {:?} not found in query", entity);
+                eprintln!("Container entity {entity:?} not found in query");
                 current_container_opt = None; // Ensure we don't use stale data
                 continue;
             }
@@ -188,7 +188,7 @@ pub fn export_state(
                 }
             }
         } else {
-            eprintln!("Window entity {:?} not found in query", entity);
+            eprintln!("Window entity {entity:?} not found in query");
         }
     }
 
@@ -237,7 +237,7 @@ pub fn export_state(
     let message = SocketMessage::ApplyState(state);
     match send_message(&message) {
         Ok(_) => println!("Successfully sent ApplyState message to komorebi"),
-        Err(e) => eprintln!("Failed to send ApplyState message to komorebi: {}", e),
+        Err(e) => eprintln!("Failed to send ApplyState message to komorebi: {e}"),
     }
 }
 pub fn export_state_to_komorebi(world: &mut World) {
@@ -286,7 +286,7 @@ pub fn export_state_to_komorebi(world: &mut World) {
                 let message = SocketMessage::ApplyState(komotool_s.clone());
                 match send_message(&message) {
                     Ok(_) => println!("Successfully sent ApplyState message to komotool"),
-                    Err(e) => eprintln!("Failed to send ApplyState message to komotool: {}", e),
+                    Err(e) => eprintln!("Failed to send ApplyState message to komotool: {e}"),
                 }
             } else {
                 // States are the same, do nothing

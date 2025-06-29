@@ -8,7 +8,6 @@ use crate::components::{
     WindowManager, despawn_monitor_marker_component, insert_monitor_marker_component,
 };
 use crate::prelude::{InsertMarkerFn, OldIndex};
-use crate::relationships;
 use crate::resources::MonitorExtendedMarkerMap;
 use bevy_ecs::component::HookContext;
 use bevy_ecs::entity::Entity;
@@ -52,7 +51,7 @@ where
     }
     fn clone_behavior() -> bevy_ecs::component::ComponentCloneBehavior {
         use bevy_ecs::component::{DefaultCloneBehaviorBase, DefaultCloneBehaviorViaClone};
-        (&&&bevy_ecs::component::DefaultCloneBehaviorSpecialization::<Self>::default())
+        bevy_ecs::component::DefaultCloneBehaviorSpecialization::<Self>::default()
             .default_clone_behavior()
     }
     fn map_entities<M: bevy_ecs::entity::EntityMapper>(this: &mut Self, mapper: &mut M) {

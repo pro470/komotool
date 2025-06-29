@@ -5,14 +5,12 @@ use crate::components::{
     insert_workspace_marker_component,
 };
 use crate::prelude::{
-    MarkerFn, OldIndex, OldIndexInner, WorkspaceChildren, apply_markers_to_children,
-    apply_markers_to_container_hierarchy, get_children, insert_monitor_marker_component,
+    MarkerFn, OldIndexInner, apply_markers_to_children, get_children, insert_monitor_marker_component,
     run_insert_marker,
 };
-use crate::relationships;
 use crate::relationships::{
     Check, ContainsParentChild, GetIndex, InsertMarkerFn, KomorebiType, RelationshipIndexSet,
-    bevy_on_insert, bevy_on_remove, get_old_index, get_old_index_inner, komotool_on_insert,
+    bevy_on_insert, bevy_on_remove, get_old_index_inner, komotool_on_insert,
     parent_markers_to_hierarchy, relationships_hook, to_hierarchy_with_marker,
 };
 use crate::resources::{
@@ -24,7 +22,6 @@ use bevy_ecs::entity::Entity;
 use bevy_ecs::prelude::Resource;
 use bevy_ecs::relationship::Relationship;
 use bevy_ecs::world::DeferredWorld;
-use bevy_log::warn;
 use bevy_reflect::Reflect;
 use komorebi_client::{Container, Monitor, Window, Workspace};
 
@@ -56,7 +53,7 @@ where
     }
     fn clone_behavior() -> bevy_ecs::component::ComponentCloneBehavior {
         use bevy_ecs::component::{DefaultCloneBehaviorBase, DefaultCloneBehaviorViaClone};
-        (&&&bevy_ecs::component::DefaultCloneBehaviorSpecialization::<Self>::default())
+        bevy_ecs::component::DefaultCloneBehaviorSpecialization::<Self>::default()
             .default_clone_behavior()
     }
 }
@@ -459,7 +456,7 @@ pub fn komorebi_relationship_check(
     mut world: DeferredWorld,
     entity: Entity,
     parent: Entity,
-    mut komorebi_type: &mut KomorebiType,
+    komorebi_type: &mut KomorebiType,
 ) -> bool {
     if let Some(children) = world.entity(entity).get::<KomorebiChildren>() {
         let children_komorebi_type = children.get_komorebi_type();
