@@ -1,5 +1,5 @@
 use bevy_app::TaskPoolPlugin;
-use bevy_app::{App, AppExit, ScheduleRunnerPlugin};
+use bevy_app::{App, AppExit};
 use bevy_diagnostic::FrameCountPlugin;
 use bevy_mod_scripting::ScriptFunctionsPlugin;
 use bevy_mod_scripting::core::BMSScriptingInfrastructurePlugin;
@@ -15,6 +15,7 @@ use komotool_rhai::KomoToolRhaiPlugin;
 use komotool_utils::KomoToolUtilsPlugin;
 //use komotool_windows::KomoToolWindowsPlugin;
 use komotool_framepace::KomotoolFramepacePlugin;
+use komotool_schedule_runner::KomotoolScheduleRunner;
 use komotoolc_pipe::KomoToolcPipePlugin;
 
 fn main() -> AppExit {
@@ -23,7 +24,7 @@ fn main() -> AppExit {
         .add_plugins(TaskPoolPlugin::default())
         .add_plugins(FrameCountPlugin)
         .add_plugins(TimePlugin)
-        .add_plugins(ScheduleRunnerPlugin::default())
+        .add_plugins(KomotoolScheduleRunner)
         .add_plugins(AllocatorDiagnosticPlugin)
         .add_plugins(KomoToolPipePlugin)
         //.add_plugins(KomoToolWindowsPlugin)

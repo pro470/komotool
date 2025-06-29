@@ -17,6 +17,7 @@ komotoolc_pipe = { path = "crates/komotoolc_pipe" }
 komotool_ecs = { path = "crates/komotool_ecs" }
 komotool_assets = { path = "crates/komotool_assets" }
 komotool_framepace = { path = "crates/komotool_framepace" }
+komotool_schedule_runner = { path = "crates/komotool_schedule_runner" }
 bevy_mod_scripting = { workspace = true }
 bevy_diagnostic = { workspace = true }
 
@@ -35,6 +36,8 @@ bevy_time = "0.16.0"
 bevy_asset = { version = "0.16.0", features = ["file_watcher", "multi_threaded"]}
 bevy_platform = "0.16.0"
 bevy_diagnostic = "0.16.0"
+bevy_tasks = "0.16.0"
+bevy_log = "0.16.0"
 anyhow = "1.0.98"
 serde_json = "1.0.140"
 komorebi-client  = { git = "https://github.com/pro470/komorebi", branch = "komotool"}

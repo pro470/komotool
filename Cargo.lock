@@ -3455,6 +3455,7 @@ dependencies = [
  "komotool_lua",
  "komotool_pipe",
  "komotool_rhai",
+ "komotool_schedule_runner",
  "komotool_utils",
  "komotoolc_pipe",
 ]
@@ -3586,6 +3587,18 @@ dependencies = [
  "bevy_state",
  "komotool_assets",
  "komotool_utils",
+]
+
+[[package]]
+name = "komotool_schedule_runner"
+version = "0.1.0"
+dependencies = [
+ "bevy_app",
+ "bevy_log",
+ "bevy_tasks",
+ "crossbeam-channel",
+ "komorebi-client",
+ "komotool_pipe",
 ]
 
 [[package]]
