@@ -13,7 +13,7 @@ pub mod prelude {
     pub use systems::*;
 }
 
-use crate::systems::{commands_remove_komotool_startup_schedule, export_state_to_komorebi};
+use crate::systems::export_state_to_komorebi;
 use bevy_app::{App, Plugin};
 use bevy_ecs::schedule::IntoScheduleConfigs;
 use components::*;
@@ -53,15 +53,7 @@ impl Plugin for KomoToolEcsPlugin {
             .register_type::<FocusedGlobal>()
             .register_type::<MaximizedWindow>()
             .register_type::<LastFocused>()
-            .add_systems(
-                KomoToolStartUpFinished,
-                export_state_to_komorebi
-                    .before_ignore_deferred(commands_remove_komotool_startup_schedule),
-            )
-            .add_systems(
-                KomoToolStartUpFinished,
-                commands_remove_komotool_startup_schedule,
-            );
+            .add_systems(KomoToolStartUpFinished, export_state_to_komorebi);
         register_container_types(app);
         register_monitor_types(app);
         register_window_types(app);

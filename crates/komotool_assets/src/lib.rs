@@ -31,6 +31,7 @@ use komotool_utils::startup_schedule::{
     KomoToolStartUp, KomoToolStartUpFinished, PostUpdateStartup, PreUpdateStartup, UpdateStartup,
 };
 use remove_watcher::{check_file_events, setup_file_watcher};
+use std::ops::{Deref, DerefMut};
 use std::{
     collections::HashMap,
     env, fs,
@@ -69,6 +70,7 @@ impl Plugin for KomotoolAssetsPlugin {
 
         // Add general script loading functionality
         app.init_resource::<ScriptEntityMapping>()
+            .init_resource::<HasRunStartUp>()
             .add_systems(Startup, setup_file_watcher)
             .add_systems(PreUpdate, check_file_events)
             .add_systems(PreStartup, load_scripts)
@@ -131,14 +133,31 @@ pub fn load_scripts(asset_server: Res<AssetServer>, mut commands: Commands) {
     commands.insert_resource(ScriptLoadTracker { handle });
 }
 
+#[derive(Resource, Default)]
+pub struct HasRunStartUp(bool);
+
+impl Deref for HasRunStartUp {
+    type Target = bool;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for HasRunStartUp {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
 /// System to check if scripts are loaded and register them
 pub fn check_scripts_loaded(
     asset_server: Res<AssetServer>,
     tracker: Res<ScriptLoadTracker>,
-    mut has_run: Local<bool>,
+    mut has_run: ResMut<HasRunStartUp>,
     mut commands: Commands,
 ) {
-    if *has_run {
+    if **has_run {
         return;
     }
     if let Some(RecursiveDependencyLoadState::Loaded) =
@@ -149,7 +168,7 @@ pub fn check_scripts_loaded(
         commands.run_schedule(UpdateStartup);
         commands.run_schedule(PostUpdateStartup);
         commands.run_schedule(KomoToolStartUpFinished);
-        *has_run = true;
+        **has_run = true;
     }
     if let Some(RecursiveDependencyLoadState::Failed(e)) =
         asset_server.get_recursive_dependency_load_state(&tracker.handle)

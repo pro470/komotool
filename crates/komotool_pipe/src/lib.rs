@@ -8,7 +8,7 @@ pub mod prelude {
 use crate::prelude::update_komorebi_state_from_notifications;
 use anyhow::Result;
 use bevy_app::{App, First, Plugin};
-use bevy_ecs::event::{Event, EventWriter};
+use bevy_ecs::event::{Event, EventReader, EventWriter};
 use bevy_ecs::system::{Commands, NonSend};
 use bevy_reflect::Reflect;
 use crossbeam_channel::{Receiver, Sender, unbounded};
@@ -47,7 +47,7 @@ impl Plugin for KomoToolPipePlugin {
 
         // Add system to process received messages
         app.insert_non_send_resource(receiver)
-            .add_systems(First, handle_pipe_notifications);
+            .add_systems(First, handle_event_notification);
     }
 }
 
@@ -139,5 +139,17 @@ pub fn handle_pipe_notifications(
             events.write(PipeNotificationEvent { notification });
         }
         commands.run_system_cached(update_komorebi_state_from_notifications);
+    }
+}
+
+pub fn handle_event_notification(
+    events: EventReader<PipeNotificationEvent>,
+    receiver: NonSend<Receiver<Notification>>,
+    mut commands: Commands,
+) {
+    if !events.is_empty() && receiver.is_empty() {
+        commands.run_system_cached(update_komorebi_state_from_notifications);
+    } else {
+        commands.run_system_cached(handle_pipe_notifications)
     }
 }

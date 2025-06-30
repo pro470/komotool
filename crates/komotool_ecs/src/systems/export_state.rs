@@ -10,7 +10,6 @@ use bevy_ecs::world::{CommandQueue, World};
 use komorebi_client::{
     Container, Monitor, Ring, SocketMessage, State, Window, Workspace, send_message,
 };
-use komotool_utils::startup_schedule::remove_komotool_startup_schedule;
 
 #[allow(clippy::too_many_arguments)]
 pub fn export_state(
@@ -292,13 +291,4 @@ pub fn export_state_to_komorebi(world: &mut World) {
         // At least one of the resources (KomorebiState or KomotoolState) doesn't exist, do nothing.
         println!("KomorebiState or KomotoolState resource missing after flush, skipping send.");
     }
-}
-
-pub fn commands_remove_komotool_startup_schedule(
-    mut komotool_command_queue: ResMut<KomotoolCommandQueue>,
-) {
-    komotool_command_queue
-        .0
-        .push(run_system_cached(remove_komotool_startup_schedule).handle_error_with(warn));
-    println!("queueing for removal of startup schedule");
 }

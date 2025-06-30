@@ -3594,11 +3594,14 @@ name = "komotool_schedule_runner"
 version = "0.1.0"
 dependencies = [
  "bevy_app",
+ "bevy_ecs",
  "bevy_log",
  "bevy_tasks",
  "crossbeam-channel",
  "komorebi-client",
+ "komotool_assets",
  "komotool_pipe",
+ "komotool_utils",
 ]
 
 [[package]]
