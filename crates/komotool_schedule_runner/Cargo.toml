@@ -1,0 +1,18 @@
+[package]
+name = "komotool_schedule_runner"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bevy_app = { workspace = true}
+bevy_tasks = {workspace = true}
+bevy_log = {workspace = true}
+bevy_ecs = {workspace = true}
+crossbeam-channel = {workspace = true}
+komorebi-client = {workspace = true}
+komotool_pipe = {path = "../komotool_pipe"}
+komotool_assets = {path = "../komotool_assets"}
+komotool_utils = {path = "../komotool_utils"}
+
+[lints]
+workspace = true
