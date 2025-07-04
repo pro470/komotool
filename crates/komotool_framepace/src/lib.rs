@@ -54,9 +54,9 @@ impl Default for FramepaceSettings {
             // Default idle threshold to 60 seconds
             idle_threshold: Duration::from_secs(60),
             // Fixed time limiters
-            fixed_time_limiter: Duration::from_secs_f64(1.0 / 30.0),
+            fixed_time_limiter: Duration::from_secs_f64(1.0),
             // Fixed time idle limiters
-            fixed_time_idle_limiter: Duration::from_secs_f64(1.0 / 4.0),
+            fixed_time_idle_limiter: Duration::from_secs_f64(1.0),
         }
     }
 }

@@ -8,11 +8,13 @@ bevy_app = { workspace = true}
 bevy_tasks = {workspace = true}
 bevy_log = {workspace = true}
 bevy_ecs = {workspace = true}
+bevy_time = {workspace = true}
 crossbeam-channel = {workspace = true}
 komorebi-client = {workspace = true}
 komotool_pipe = {path = "../komotool_pipe"}
 komotool_assets = {path = "../komotool_assets"}
 komotool_utils = {path = "../komotool_utils"}
+komotool_framepace = {path = "../komotool_framepace"}
 
 [lints]
 workspace = true

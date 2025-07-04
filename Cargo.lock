@@ -3597,9 +3597,11 @@ dependencies = [
  "bevy_ecs",
  "bevy_log",
  "bevy_tasks",
+ "bevy_time",
  "crossbeam-channel",
  "komorebi-client",
  "komotool_assets",
+ "komotool_framepace",
  "komotool_pipe",
  "komotool_utils",
 ]
