@@ -5,7 +5,7 @@ use bevy_app::{App, AppExit, First, Last, MainScheduleOrder, Plugin, PluginsStat
 use bevy_ecs::resource::Resource;
 use bevy_ecs::schedule::{IntoScheduleConfigs, ScheduleLabel};
 use bevy_ecs::system::ResMut;
-use bevy_log::{info, warn};
+use bevy_log::{error, info, warn};
 use bevy_time::{Time, TimeSystem, Virtual, time_system};
 use crossbeam_channel::{Receiver, RecvTimeoutError, Sender};
 use komorebi_client::Notification;
@@ -19,6 +19,13 @@ pub struct KomotoolScheduleRunnerPlugin;
 
 impl Plugin for KomotoolScheduleRunnerPlugin {
     fn build(&self, app: &mut App) {
+        let (event_tx, event_rx) = crossbeam_channel::unbounded::<AppEvent>();
+
+        app.world_mut().insert_resource(KomotoolChannal {
+            sender: event_tx.clone(),
+            reciver: event_rx.clone(),
+        });
+
         app.set_runner(move |mut app: App| -> AppExit {
             let plugins_state = app.plugins_state();
             if plugins_state != PluginsState::Cleaned {
@@ -49,8 +56,9 @@ impl Plugin for KomotoolScheduleRunnerPlugin {
                         return exit;
                     };
 
-                    if let Some(has_run) =
-                        app.world().get_resource::<komotool_assets::HasRunStartUp>()
+                    if let Some(has_run) = app
+                        .world()
+                        .get_resource::<komotool_ecs::resources::HasRunStartUp>()
                     {
                         if **has_run {
                             break;
@@ -66,7 +74,6 @@ impl Plugin for KomotoolScheduleRunnerPlugin {
                         .retain(|&l| l != KomoToolStartUp.intern());
                 }
 
-                let (event_tx, event_rx) = crossbeam_channel::unbounded::<AppEvent>();
                 let thread_event_tx = event_tx.clone();
 
                 // Spawne einen Thread für den Pipe-Listener
@@ -155,6 +162,12 @@ impl Plugin for KomotoolScheduleRunnerPlugin {
                                     return exit;
                                 }
                             }
+                            AppEvent::AssetEvent => {
+                                println!("Asset event tick");
+                                if let Err(exit) = tick(&mut app) {
+                                    return exit;
+                                }
+                            }
                         },
                         Err(e) => {
                             println!("Error: {e}");
@@ -184,6 +197,7 @@ impl Plugin for KomotoolScheduleRunnerPlugin {
 pub enum AppEvent {
     PipeNotification(Box<Notification>),
     FixedTime,
+    AssetEvent,
 }
 
 #[derive(Resource)]
@@ -191,4 +205,10 @@ pub struct KomotoolFixedTimeSender(pub Sender<Duration>);
 
 pub fn set_max_delta_virtual_time(mut fixed_time: ResMut<Time<Virtual>>) {
     fixed_time.set_max_delta(Duration::MAX);
+}
+
+#[derive(Resource)]
+pub struct KomotoolChannal {
+    pub sender: Sender<AppEvent>,
+    pub reciver: Receiver<AppEvent>,
 }

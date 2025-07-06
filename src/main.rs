@@ -21,6 +21,10 @@ use komotoolc_pipe::KomoToolcPipePlugin;
 fn main() -> AppExit {
     App::new()
         .add_plugins(StatesPlugin)
+        .add_plugins(bevy_log::LogPlugin {
+            level: bevy_log::Level::TRACE,
+            ..Default::default()
+        })
         .add_plugins(TaskPoolPlugin::default())
         .add_plugins(FrameCountPlugin)
         .add_plugins(TimePlugin)

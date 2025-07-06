@@ -3445,6 +3445,7 @@ version = "0.1.0"
 dependencies = [
  "bevy_app",
  "bevy_diagnostic",
+ "bevy_log",
  "bevy_mod_scripting",
  "bevy_state",
  "bevy_time",
@@ -3467,13 +3468,16 @@ dependencies = [
  "bevy_app",
  "bevy_asset",
  "bevy_ecs",
+ "bevy_log",
  "bevy_mod_scripting",
  "bevy_reflect",
  "bevy_state",
  "crossbeam-channel",
  "komotool_ecs",
+ "komotool_schedule_runner",
  "komotool_utils",
  "notify 8.0.0",
+ "notify-debouncer-full 0.5.0",
 ]
 
 [[package]]
@@ -3600,7 +3604,7 @@ dependencies = [
  "bevy_time",
  "crossbeam-channel",
  "komorebi-client",
- "komotool_assets",
+ "komotool_ecs",
  "komotool_framepace",
  "komotool_pipe",
  "komotool_utils",

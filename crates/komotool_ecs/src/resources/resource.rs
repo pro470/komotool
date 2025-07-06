@@ -8,6 +8,7 @@ use komorebi_client::{
     WindowContainerBehaviour,
 };
 use std::collections::{HashMap, HashSet};
+use std::ops::{Deref, DerefMut};
 
 #[derive(Resource, Reflect)]
 pub struct AppState {
@@ -90,3 +91,20 @@ pub struct KeepAliveContainers(pub HashSet<Entity>);
 
 #[derive(Resource, Default, Reflect)]
 pub struct KomotoolCommandQueue(#[reflect(ignore)] pub CommandQueue);
+
+#[derive(Resource, Default)]
+pub struct HasRunStartUp(bool);
+
+impl Deref for HasRunStartUp {
+    type Target = bool;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for HasRunStartUp {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}

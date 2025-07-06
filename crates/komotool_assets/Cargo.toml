@@ -9,11 +9,14 @@ bevy_app = { workspace = true }
 bevy_ecs = { workspace = true }
 bevy_state = { workspace = true }
 bevy_reflect = { workspace = true }
+bevy_log = "0.16.0"
 bevy_mod_scripting = { workspace = true }
 komotool_utils = { path = "../komotool_utils" }
+komotool_schedule_runner = { path = "../komotool_schedule_runner" }
 komotool_ecs = { path = "../komotool_ecs" }
 crossbeam-channel = { workspace = true }
 notify = "8.0.0"
+notify-debouncer-full = "0.5.0"
 
 [lints]
 workspace = true

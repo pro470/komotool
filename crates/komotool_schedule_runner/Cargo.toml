@@ -12,8 +12,8 @@ bevy_time = {workspace = true}
 crossbeam-channel = {workspace = true}
 komorebi-client = {workspace = true}
 komotool_pipe = {path = "../komotool_pipe"}
-komotool_assets = {path = "../komotool_assets"}
 komotool_utils = {path = "../komotool_utils"}
+komotool_ecs = {path = "../komotool_ecs"}
 komotool_framepace = {path = "../komotool_framepace"}
 
 [lints]

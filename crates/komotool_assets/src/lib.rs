@@ -1,10 +1,10 @@
-pub mod remove_watcher;
+pub mod watcher;
 
 pub mod prelude {
     pub use super::*;
-    pub use remove_watcher::*;
 }
 
+use crate::watcher::add_komotool_watcher;
 use bevy_app::{App, Plugin, PreStartup, PreUpdate, Startup};
 use bevy_asset::{
     AssetApp, AssetEvent, AssetId, AssetPath, AssetServer, Assets, Handle, LoadedFolder,
@@ -16,6 +16,7 @@ use bevy_ecs::event::EventReader;
 use bevy_ecs::resource::Resource;
 use bevy_ecs::schedule::IntoScheduleConfigs;
 use bevy_ecs::system::{Commands, Res, ResMut};
+use bevy_log::error;
 use bevy_mod_scripting::core::asset::{Language, ScriptAsset, ScriptMetadataStore};
 use bevy_mod_scripting::core::event::IntoCallbackLabel;
 use bevy_mod_scripting::core::script::{ScriptComponent, ScriptId};
@@ -23,6 +24,8 @@ use bevy_mod_scripting::core::{IntoScriptPluginParams, ScriptingSystemSet};
 use bevy_mod_scripting::lua::LuaScriptingPlugin;
 use bevy_mod_scripting::rhai::RhaiScriptingPlugin;
 use bevy_reflect::Reflect;
+use komotool_ecs::resources::HasRunStartUp;
+use komotool_schedule_runner::KomotoolChannal;
 use komotool_utils::callbacklabels::{
     OnPostStartUp, OnPostUpdate, OnPreStartUp, OnPreUpdate, OnStartUp, OnUpdate,
 };
@@ -30,8 +33,8 @@ use komotool_utils::handler::{KomoToolScriptStore, KomoToolScriptStoreAll, Scrip
 use komotool_utils::startup_schedule::{
     KomoToolStartUp, KomoToolStartUpFinished, PostUpdateStartup, PreUpdateStartup, UpdateStartup,
 };
-use remove_watcher::{check_file_events, setup_file_watcher};
 use std::ops::{Deref, DerefMut};
+use std::time::Duration;
 use std::{
     collections::HashMap,
     env, fs,
@@ -57,10 +60,26 @@ pub struct KomotoolAssetsPlugin;
 impl Plugin for KomotoolAssetsPlugin {
     fn build(&self, app: &mut App) {
         if let Ok(komotool_config_path) = get_or_create_komotool_config_path() {
-            app.register_asset_source(
-                "komotool_config",
-                AssetSourceBuilder::platform_default(&komotool_config_path.to_string_lossy(), None),
-            );
+            if let Some(komotool_sender) = app.world().get_resource::<KomotoolChannal>() {
+                let komotool_sender = komotool_sender.sender.clone();
+                app.register_asset_source(
+                    "komotool_config",
+                    AssetSourceBuilder::platform_default(
+                        &komotool_config_path.to_string_lossy(),
+                        None,
+                    )
+                    .with_watcher(move |sender| {
+                        add_komotool_watcher(
+                            komotool_config_path.clone(),
+                            sender,
+                            Duration::from_millis(300),
+                            komotool_sender.to_owned(),
+                        )
+                    }),
+                );
+            } else {
+                error!("Failed to get KomotoolChannal resource");
+            }
         }
 
         app.add_plugins(AssetPlugin {
@@ -71,8 +90,6 @@ impl Plugin for KomotoolAssetsPlugin {
         // Add general script loading functionality
         app.init_resource::<ScriptEntityMapping>()
             .init_resource::<HasRunStartUp>()
-            .add_systems(Startup, setup_file_watcher)
-            .add_systems(PreUpdate, check_file_events)
             .add_systems(PreStartup, load_scripts)
             .add_systems(KomoToolStartUp, check_scripts_loaded)
             .add_systems(
@@ -131,23 +148,6 @@ pub fn load_scripts(asset_server: Res<AssetServer>, mut commands: Commands) {
     let asset_path = bevy_asset::AssetPath::from_path(path).with_source(source);
     let handle = asset_server.load_folder(asset_path);
     commands.insert_resource(ScriptLoadTracker { handle });
-}
-
-#[derive(Resource, Default)]
-pub struct HasRunStartUp(bool);
-
-impl Deref for HasRunStartUp {
-    type Target = bool;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for HasRunStartUp {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
 }
 
 /// System to check if scripts are loaded and register them
@@ -438,7 +438,6 @@ pub fn handle_script_store_updates_all<
 >(
     mut events: EventReader<AssetEvent<ScriptAsset>>,
     assets: Res<Assets<ScriptAsset>>,
-    asset_server: Res<AssetServer>,
     metadata_store: Res<ScriptMetadataStore>,
     mut preupdate: ResMut<KomoToolScriptStoreAll<L0>>,
     mut update: ResMut<KomoToolScriptStoreAll<L1>>,
@@ -546,15 +545,15 @@ pub fn handle_script_store_updates_all<
                 }
             }
             AssetEvent::Removed { id } => {
-                if let Some(path) = asset_server.get_path(*id) {
-                    let script_id = ScriptId::from(path.path().to_string_lossy().to_string());
+                if let Some(path) = metadata_store.get(*id) {
+                    let script_id = path.script_id.clone();
 
                     // Remove from all stores
                     update.scripts.shift_remove(&script_id);
                     preupdate.scripts.shift_remove(&script_id);
                     postupdate.scripts.shift_remove(&script_id);
 
-                    println!("File removed: {}", path.path().to_string_lossy());
+                    println!("File removed: {}", path.script_id.to_string());
                 }
             }
             _ => {}

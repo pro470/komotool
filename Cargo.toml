@@ -20,6 +20,7 @@ komotool_framepace = { path = "crates/komotool_framepace" }
 komotool_schedule_runner = { path = "crates/komotool_schedule_runner" }
 bevy_mod_scripting = { workspace = true }
 bevy_diagnostic = { workspace = true }
+bevy_log = { workspace = true }
 
 [workspace]
 members = ["crates/*"]
