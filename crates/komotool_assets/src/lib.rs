@@ -108,9 +108,8 @@ pub fn get_or_create_komotool_config_path() -> std::io::Result<PathBuf> {
             Ok(komotool_path)
         }
         Err(e) => {
-            let error = format!(
-                "Failed to fetch USERPROFILE environment variable. ValueError: {e}"
-            );
+            let error =
+                format!("Failed to fetch USERPROFILE environment variable. ValueError: {e}");
             Err(std::io::Error::new(std::io::ErrorKind::NotFound, error))
         }
     }

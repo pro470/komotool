@@ -881,7 +881,7 @@ pub fn bevy_on_insert<BevyRelatonship: Relationship<RelationshipTarget: GetIndex
             return true;
         }
 
-        if check.check::<BevyRelatonship>(world.reborrow(), entity, target_entity) {
+        if check.check::<BevyRelatonship>(world.reborrow(), entity, target_entity, true) {
             return true;
         }
 
@@ -991,9 +991,10 @@ pub fn apply_markers_to_monitor_hierarchy<Marker: Resource + Clone + Default>(
     insert_marker: &dyn MarkerFn<Marker>,
 ) {
     run_insert_marker(
-        marker_map,
+        monitor_index,
         monitor_entity,
         deferred_world.reborrow(),
+        marker_map,
         insert_marker,
     );
 
@@ -1018,9 +1019,10 @@ pub fn apply_markers_to_workspace_hierarchy<Marker: Resource + Clone + Default>(
     insert_marker: &dyn MarkerFn<Marker>,
 ) {
     run_insert_marker(
-        marker_map,
+        workspace_index,
         workspace_entity,
         deferred_world.reborrow(),
+        marker_map,
         insert_marker,
     );
 
@@ -1045,9 +1047,10 @@ pub fn apply_markers_to_container_hierarchy<Marker: Resource + Clone + Default>(
     insert_marker: &dyn MarkerFn<Marker>,
 ) {
     run_insert_marker(
-        marker_map,
+        container_index,
         container_entity,
         deferred_world.reborrow(),
+        marker_map,
         insert_marker,
     );
 
@@ -1125,12 +1128,13 @@ pub fn apply_markers_to_children<Marker: Resource + Clone + Default>(
 }
 
 pub fn run_insert_marker<Marker: Resource + Clone + Default>(
-    marker: &Marker,
+    index: usize,
     entity: Entity,
     mut deferred_world: DeferredWorld,
+    marker: &Marker,
     insert_marker: &dyn MarkerFn<Marker>,
 ) {
-    insert_marker.marker(0, entity, deferred_world.commands().reborrow(), marker);
+    insert_marker.marker(index, entity, deferred_world.commands().reborrow(), marker);
 }
 
 pub fn get_children<
@@ -1171,6 +1175,7 @@ pub trait Check {
         world: DeferredWorld,
         entity: Entity,
         parent: Entity,
+        auto_remove: bool,
     ) -> bool;
 }
 pub trait MarkerFn<Marker> {
@@ -1236,16 +1241,17 @@ where
 }
 impl<F> Check for F
 where
-    F: FnMut(DeferredWorld, Entity, Entity) -> bool,
+    F: FnMut(DeferredWorld, Entity, Entity, bool) -> bool,
 {
     fn check<BR: Relationship<RelationshipTarget: GetIndex>>(
         &mut self,
         world: DeferredWorld,
         entity: Entity,
         parent: Entity,
+        auto_remove: bool,
     ) -> bool {
         // Simply call the function/closure with the arguments
-        self(world, entity, parent)
+        self(world, entity, parent, auto_remove)
     }
 }
 
@@ -1324,7 +1330,7 @@ fn parent_markers_to_hierarchy<BevyRelationship: Relationship<RelationshipTarget
             .get::<BevyRelationship::RelationshipTarget>()
         {
             if let Some(parent_idx) = children.get_index_of(&parent) {
-                f(entity, world.reborrow(), parent_idx);
+                f(entity, world.reborrow(), parent_idx + 1);
 
                 return Some(childof);
             }
@@ -1640,20 +1646,31 @@ impl<Child: Component, Parent: Component> Check for ContainsParentChild<Child, P
         mut world: DeferredWorld,
         entity: Entity,
         parent: Entity,
+        auto_remove: bool,
     ) -> bool {
         if !world.entity(entity).contains::<Child>() {
             warn!(
-                "The Monitor relationship can only be used on entities with the Workspace component."
+                "The {} relationship can only be used on entities with the {} component.",
+                core::any::type_name::<Parent>(),
+                core::any::type_name::<Child>(),
             );
-            world.commands().entity(entity).remove::<BevyRelationship>();
+
+            if auto_remove {
+                world.commands().entity(entity).remove::<BevyRelationship>();
+            }
             return true;
         }
 
         if !world.entity(parent).contains::<Parent>() {
             warn!(
-                "The Monitor relationship can only be used on entity targets with the Monitor component."
+                "The {} relationship can only be used on entities with the {} component.",
+                core::any::type_name::<Child>(),
+                core::any::type_name::<Parent>(),
             );
-            world.commands().entity(entity).remove::<BevyRelationship>();
+
+            if auto_remove {
+                world.commands().entity(entity).remove::<BevyRelationship>();
+            }
             return true;
         }
 

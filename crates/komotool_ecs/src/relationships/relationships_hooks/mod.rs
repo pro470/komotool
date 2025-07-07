@@ -21,43 +21,13 @@ pub fn on_remove_komorebi_relationship<Komorebitype: HasKomorebiType>(
     mut world: DeferredWorld,
     entity: Entity,
     relationship_hook_mode: RelationshipHookMode,
-) -> bool {
+) {
     if !relationships_hook::<KomorebiChildOf>(relationship_hook_mode) {
-        return true;
+        return;
     }
+    world.commands().entity(entity).remove::<KomorebiChildren>();
 
-    let mut needs_to_remove_chlidren = false;
-    let mut needs_to_revmove_childof = false;
-
-    let entity_ref = world.entity(entity);
-    if let Some(children) =
-        entity_ref
-            .get::<<KomorebiChildOf as bevy_ecs::relationship::Relationship>::RelationshipTarget>()
-    {
-        if Komorebitype::KOMOREBI_CHILD_TYPE == children.get_komorebi_type() {
-            needs_to_remove_chlidren = true;
-        }
-    }
-
-    if let Some(childof) = entity_ref.get::<KomorebiChildOf>() {
-        if let Some(parant_children) = world.entity(childof.get()).get::<KomorebiChildren>() {
-            if Komorebitype::KOMOREBI_CHILD_TYPE == parant_children.get_komorebi_type() {
-                needs_to_revmove_childof = true;
-            }
-        } else {
-            needs_to_revmove_childof = true;
-        }
-    }
-
-    if needs_to_remove_chlidren {
-        world.commands().entity(entity).remove::<KomorebiChildren>();
-    }
-
-    if needs_to_revmove_childof {
-        world.commands().entity(entity).remove::<KomorebiChildOf>();
-    }
-
-    false
+    world.commands().entity(entity).remove::<KomorebiChildOf>();
 }
 
 pub fn register_relationships_hooks_inner<Komorebitype: HasKomorebiType + Component>(

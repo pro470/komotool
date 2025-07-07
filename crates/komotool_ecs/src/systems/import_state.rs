@@ -1,12 +1,9 @@
 use crate::RelationRegistry;
 use crate::components::Focused;
 use crate::components::*;
-use crate::prelude::WorkspaceChildOf;
-use crate::relationships::{ContainerChildOf, MonitorChildOf, WindowManagerChildOf};
+use crate::relationships::KomorebiChildOf;
 #[cfg(not(debug_assertions))]
-use crate::relationships::{
-    ContainerChildren, MonitorChildren, WindowManagerChildren, WorkspaceChildren,
-};
+use crate::relationships::KomorebiChildren;
 use crate::resources::*;
 use bevy_ecs::entity::{ContainsEntity, Entity};
 use bevy_ecs::query::{QueryEntityError, With};
@@ -50,17 +47,17 @@ pub fn import_komorebi_workspace_state(
                         *workspace = komo_ws.clone();
                         commands
                             .entity(*monitor_entity)
-                            .add_one_related::<MonitorChildOf>(entity);
+                            .add_one_related::<KomorebiChildOf>(entity);
                         #[cfg(not(debug_assertions))]
                         {
                             // This code will only be included in release builds
-                            commands.entity(entity).remove::<WorkspaceChildren>();
+                            commands.entity(entity).remove::<KomorebiChildren>();
                         }
                     }
                 }
                 Entry::Vacant(entry) => {
                     let entity = commands
-                        .spawn((komo_ws.clone(), MonitorChildOf(*monitor_entity)))
+                        .spawn((komo_ws.clone(), KomorebiChildOf(*monitor_entity)))
                         .id();
                     entry.insert(entity);
                 }
@@ -81,7 +78,7 @@ pub fn import_komorebi_workspace_state(
                 match existing_workspaces.get(*entity) {
                     Ok(_) => {
                         commands.entity(*entity).remove::<Focused>();
-                        commands.entity(*entity).remove::<MonitorChildOf>();
+                        commands.entity(*entity).remove::<KomorebiChildOf>();
                         true // Keep the entity in the map
                     }
                     Err(error) => {
@@ -89,7 +86,7 @@ pub fn import_komorebi_workspace_state(
                             QueryEntityError::AliasedMutability(_) => {
                                 // Entity exists but is mutably borrowed elsewhere. Keep it.
                                 commands.entity(*entity).remove::<Focused>();
-                                commands.entity(*entity).remove::<MonitorChildOf>();
+                                commands.entity(*entity).remove::<KomorebiChildOf>();
                                 true // Keep in map
                             }
                             QueryEntityError::QueryDoesNotMatch(_, _)
@@ -131,7 +128,7 @@ pub fn import_komorebi_monitor_state(
         // This code will only be included in release builds
         commands
             .entity(window_manager_entity)
-            .remove::<WindowManagerChildren>();
+            .remove::<KomorebiChildren>();
     }
 
     for komo_mon in state.monitors.elements() {
@@ -148,11 +145,11 @@ pub fn import_komorebi_monitor_state(
                     *monitor = komo_mon.clone();
                     commands
                         .entity(window_manager_entity)
-                        .add_one_related::<WindowManagerChildOf>(entity);
+                        .add_one_related::<KomorebiChildOf>(entity);
                     #[cfg(not(debug_assertions))]
                     {
                         // This code will only be included in release builds
-                        commands.entity(entity).remove::<MonitorChildren>();
+                        commands.entity(entity).remove::<KomorebiChildren>();
                     }
                 }
             }
@@ -161,7 +158,7 @@ pub fn import_komorebi_monitor_state(
                 entry.insert(entity);
                 commands
                     .entity(window_manager_entity)
-                    .add_one_related::<WindowManagerChildOf>(entity);
+                    .add_one_related::<KomorebiChildOf>(entity);
             }
         }
     }
@@ -179,14 +176,14 @@ pub fn import_komorebi_monitor_state(
                 match existing_monitors.get(*entity) {
                     Ok(_) => {
                         commands.entity(*entity).remove::<Focused>();
-                        commands.entity(*entity).remove::<WindowManagerChildOf>();
+                        commands.entity(*entity).remove::<KomorebiChildOf>();
                         true // Keep the entity in the map
                     }
                     Err(error) => {
                         match error {
                             QueryEntityError::AliasedMutability(_) => {
                                 commands.entity(*entity).remove::<Focused>();
-                                commands.entity(*entity).remove::<WindowManagerChildOf>();
+                                commands.entity(*entity).remove::<KomorebiChildOf>();
                                 // Entity exists but is mutably borrowed elsewhere. Keep it.
                                 true // Keep in map
                             }
@@ -247,7 +244,7 @@ pub fn import_komorebi_window_state(
                                 commands.entity(entity).remove::<MaximizedWindow>();
                                 commands
                                     .entity(container_entity)
-                                    .add_one_related::<ContainerChildOf>(entity);
+                                    .add_one_related::<KomorebiChildOf>(entity);
                             }
                         }
                         Entry::Vacant(entry) => {
@@ -256,7 +253,7 @@ pub fn import_komorebi_window_state(
                             entry.insert(entity);
                             commands
                                 .entity(container_entity)
-                                .add_one_related::<ContainerChildOf>(entity);
+                                .add_one_related::<KomorebiChildOf>(entity);
                         }
                     }
                 }
@@ -295,7 +292,7 @@ pub fn import_komorebi_window_state(
                         Ok(_) => {
                             // Ensure focus is removed as it's no longer managed
                             commands.entity(*entity).remove::<Focused>();
-                            commands.entity(*entity).remove::<ContainerChildOf>();
+                            commands.entity(*entity).remove::<KomorebiChildOf>();
                             true // Keep the entity in the map
                         }
                         Err(_) => {
@@ -311,7 +308,7 @@ pub fn import_komorebi_window_state(
                             // Entity exists and has the component, but is mutably borrowed elsewhere.
                             // Keep the entity, don't despawn.
                             commands.entity(*entity).remove::<Focused>();
-                            commands.entity(*entity).remove::<ContainerChildOf>();
+                            commands.entity(*entity).remove::<KomorebiChildOf>();
                             true // Keep in map
                         }
                         QueryEntityError::QueryDoesNotMatch(_, _)
@@ -363,11 +360,11 @@ pub fn import_komorebi_container_state(
                             *container = komo_cont.clone();
                             commands
                                 .entity(*workspace_entity)
-                                .add_one_related::<WorkspaceChildOf>(entity);
+                                .add_one_related::<KomorebiChildOf>(entity);
                             #[cfg(not(debug_assertions))]
                             {
                                 // This code will only be included in release builds
-                                commands.entity(entity).remove::<ContainerChildren>();
+                                commands.entity(entity).remove::<KomorebiChildren>();
                             }
                             commands.entity(entity).remove::<MonocleContainer>();
                         }
@@ -380,7 +377,7 @@ pub fn import_komorebi_container_state(
                         entry.insert(entity);
                         commands
                             .entity(*workspace_entity)
-                            .add_one_related::<WorkspaceChildOf>(entity);
+                            .add_one_related::<KomorebiChildOf>(entity);
                     }
                 }
             }
@@ -417,7 +414,7 @@ pub fn import_komorebi_container_state(
                 match existing_containers.get(*entity) {
                     Ok(_) => {
                         commands.entity(*entity).remove::<Focused>();
-                        commands.entity(*entity).remove::<WorkspaceChildOf>();
+                        commands.entity(*entity).remove::<KomorebiChildOf>();
                         true // Keep the entity in the map
                     }
                     Err(error) => {
@@ -425,7 +422,7 @@ pub fn import_komorebi_container_state(
                             QueryEntityError::AliasedMutability(_) => {
                                 // Entity exists but is mutably borrowed elsewhere. Keep it.
                                 commands.entity(*entity).remove::<Focused>();
-                                commands.entity(*entity).remove::<WorkspaceChildOf>();
+                                commands.entity(*entity).remove::<KomorebiChildOf>();
                                 true // Keep in map
                             }
                             QueryEntityError::QueryDoesNotMatch(_, _)

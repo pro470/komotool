@@ -60,9 +60,7 @@ pub fn run_pipe_listener(sender: &Sender<Notification>) -> Result<()> {
             socket
         }
         Err(e) => {
-            eprintln!(
-                "Failed to connect to the named pipe: {e}. Retrying in 2s..."
-            );
+            eprintln!("Failed to connect to the named pipe: {e}. Retrying in 2s...");
             return Ok(()); // Retry connecting
         }
     };

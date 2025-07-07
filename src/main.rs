@@ -72,7 +72,7 @@ fn main() -> AppExit {
     {
         app.add_plugins((
             LogPlugin {
-                level: bevy::log::Level::INFO,
+                level: bevy::log::Level::DEBUG,
                 ..Default::default()
             },
             InputPlugin,
