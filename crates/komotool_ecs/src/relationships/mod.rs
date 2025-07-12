@@ -1,8 +1,10 @@
 pub mod container;
-mod komorebi_relationship;
-mod maximized_window;
+pub mod focused;
+pub mod komorebi_one_to_one_relationship;
+pub mod komorebi_relationship;
+pub mod maximized_window;
 pub mod monitor;
-mod monocle_container;
+pub mod monocle_container;
 pub mod relationships_hooks;
 pub mod window;
 pub mod window_manager;
@@ -13,11 +15,13 @@ use bevy_ecs::relationship::{
     Relationship, RelationshipHookMode, RelationshipSourceCollection, RelationshipTarget,
 };
 
+use crate::components::Focused;
 use crate::systems::{
     Containermakerset, MaximizedWindowmakerid, Monitormakerset, MonocleContainermakerid,
     Windowmakerset, Workspacemakerset,
 };
-use bevy_ecs::component::{ComponentId, HookContext};
+use bevy_ecs::component::StorageType::Table;
+use bevy_ecs::component::{ComponentId, HookContext, Immutable, StorageType};
 use bevy_ecs::prelude::Component;
 use bevy_ecs::resource::Resource;
 use bevy_ecs::system::Commands;
@@ -1407,6 +1411,10 @@ pub fn update_markers_inner<Marker: Resource + Clone + Default>(
 
     for idx in old_idx..children.len() {
         if let Some(child_entity) = children.get(idx) {
+            if world.entity(*child_entity).contains::<Focused>() {
+                world.commands().entity(*child_entity).insert(Focused);
+            }
+
             apply_to_hierarchy.hierarchy(
                 world.reborrow(),
                 *child_entity,

@@ -8,6 +8,7 @@ use crate::resources::*;
 use bevy_ecs::entity::{ContainsEntity, Entity};
 use bevy_ecs::query::{QueryEntityError, With};
 use bevy_ecs::system::{Commands, Query, Res, ResMut, Single};
+use bevy_log::info;
 use komorebi_client::{Container, Monitor, Window, Workspace};
 use std::collections::{HashSet, hash_map::Entry};
 
@@ -31,7 +32,8 @@ pub fn import_komorebi_workspace_state(
         };
         let monitor_entity = monitor_map.0.get(serial).unwrap_or(&Entity::PLACEHOLDER);
         let workspaces = komo_mon.workspaces();
-        for komo_ws in workspaces.iter() {
+        let focused_index = komo_mon.focused_workspace_idx();
+        for (i, komo_ws) in workspaces.iter().enumerate() {
             // Use name if available, otherwise fall back to ID
             let key = match komo_ws.name() {
                 Some(name) => name.clone(),
@@ -48,6 +50,11 @@ pub fn import_komorebi_workspace_state(
                         commands
                             .entity(*monitor_entity)
                             .add_one_related::<KomorebiChildOf>(entity);
+
+                        if i == focused_index {
+                            commands.entity(entity).insert(Focused);
+                        }
+
                         #[cfg(not(debug_assertions))]
                         {
                             // This code will only be included in release builds
@@ -59,6 +66,11 @@ pub fn import_komorebi_workspace_state(
                     let entity = commands
                         .spawn((komo_ws.clone(), KomorebiChildOf(*monitor_entity)))
                         .id();
+
+                    if i == focused_index {
+                        commands.entity(entity).insert(Focused);
+                    }
+
                     entry.insert(entity);
                 }
             }
@@ -131,7 +143,9 @@ pub fn import_komorebi_monitor_state(
             .remove::<KomorebiChildren>();
     }
 
-    for komo_mon in state.monitors.elements() {
+    let index = state.monitors.focused_idx();
+
+    for (i, komo_mon) in state.monitors.elements().iter().enumerate() {
         let Some(serial) = komo_mon.serial_number_id() else {
             continue;
         };
@@ -146,6 +160,9 @@ pub fn import_komorebi_monitor_state(
                     commands
                         .entity(window_manager_entity)
                         .add_one_related::<KomorebiChildOf>(entity);
+                    if i == index {
+                        commands.entity(entity).insert(Focused);
+                    }
                     #[cfg(not(debug_assertions))]
                     {
                         // This code will only be included in release builds
@@ -159,6 +176,9 @@ pub fn import_komorebi_monitor_state(
                 commands
                     .entity(window_manager_entity)
                     .add_one_related::<KomorebiChildOf>(entity);
+                if i == index {
+                    commands.entity(entity).insert(Focused);
+                }
             }
         }
     }
@@ -225,6 +245,7 @@ pub fn import_komorebi_window_state(
         let workspaces = komo_mon.workspaces();
         for komo_ws in workspaces.iter() {
             for komo_cont in komo_ws.containers() {
+                let index = komo_cont.focused_window_idx();
                 let container_entity = match container_map.0.get(komo_cont.id()) {
                     Some(entity) => *entity,
                     None => continue,
@@ -245,6 +266,9 @@ pub fn import_komorebi_window_state(
                                 commands
                                     .entity(container_entity)
                                     .add_one_related::<KomorebiChildOf>(entity);
+                                if index == 0 {
+                                    commands.entity(entity).insert(Focused);
+                                }
                             }
                         }
                         Entry::Vacant(entry) => {
@@ -254,6 +278,9 @@ pub fn import_komorebi_window_state(
                             commands
                                 .entity(container_entity)
                                 .add_one_related::<KomorebiChildOf>(entity);
+                            if index == 0 {
+                                commands.entity(entity).insert(Focused);
+                            }
                         }
                     }
                 }
@@ -347,7 +374,8 @@ pub fn import_komorebi_container_state(
                 continue;
             };
             let workspace_entity = workspace_map.0.get(name).unwrap_or(&Entity::PLACEHOLDER);
-            for komo_cont in komo_ws.containers() {
+            let index = komo_ws.focused_container_idx();
+            for (i, komo_cont) in komo_ws.containers().iter().enumerate() {
                 let id = komo_cont.id();
                 current_ids.insert(id.clone());
 
@@ -361,6 +389,11 @@ pub fn import_komorebi_container_state(
                             commands
                                 .entity(*workspace_entity)
                                 .add_one_related::<KomorebiChildOf>(entity);
+
+                            if i == index {
+                                commands.entity(entity).insert(Focused);
+                            }
+
                             #[cfg(not(debug_assertions))]
                             {
                                 // This code will only be included in release builds
@@ -378,6 +411,10 @@ pub fn import_komorebi_container_state(
                         commands
                             .entity(*workspace_entity)
                             .add_one_related::<KomorebiChildOf>(entity);
+
+                        if i == index {
+                            commands.entity(entity).insert(Focused);
+                        }
                     }
                 }
             }

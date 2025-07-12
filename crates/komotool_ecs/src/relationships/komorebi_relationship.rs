@@ -1,5 +1,5 @@
 use crate::components::{
-    WindowManager, despawn_container_marker_component, despawn_monitor_marker_component,
+    Focused, WindowManager, despawn_container_marker_component, despawn_monitor_marker_component,
     despawn_window_marker_component, despawn_workspace_marker_component,
     insert_container_marker_component, insert_window_marker_component,
     insert_workspace_marker_component,
@@ -141,7 +141,7 @@ impl Relationship for KomorebiChildOf {
                     entity,
                     parent,
                     komorebi_type,
-                )
+                );
             },
         )
     }

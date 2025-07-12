@@ -15,6 +15,7 @@ pub mod prelude {
     pub use systems::*;
 }
 
+use crate::relationships::focused::FocusTarget;
 use crate::relationships::{
     ContainerChildOf, ContainerChildren, KomorebiChildOf, KomorebiChildren, KomorebiType,
     MonitorChildOf, MonitorChildren, WindowManagerChildren, WorkspaceChildOf, WorkspaceChildren,
@@ -59,6 +60,7 @@ impl Plugin for KomoToolEcsPlugin {
             .register_type::<MonocleContainer>()
             .register_type::<FloatingWindow>()
             .register_type::<Focused>()
+            .register_type::<FocusTarget>()
             .register_type::<FocusedGlobal>()
             .register_type::<MaximizedWindow>()
             .register_type::<LastFocused>()
