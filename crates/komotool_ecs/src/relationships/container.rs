@@ -159,8 +159,7 @@ impl Relationship for ContainerChildOf {
                             insert_marker.marker(index, entity, world.commands(), marker)
                         },
                     )
-                {
-                    if let Some(parent_monitor_entity) =
+                    && let Some(parent_monitor_entity) =
                         apply_parent_markers_to_hierarchy::<MonitorChildOf>(
                             entity,
                             parent_workspace_entity,
@@ -191,7 +190,6 @@ impl Relationship for ContainerChildOf {
                             },
                         );
                     }
-                }
             },
         );
     }

@@ -1,5 +1,5 @@
 use crate::components::Focused;
-use crate::prelude::{KomorebiChildOf, KomorebiType};
+use crate::prelude::KomorebiType;
 use crate::relationships::KomorebiObserver;
 use crate::relationships::komorebi_one_to_one_relationship::{
     KomorebiOneToOneRelationship, KomorebiOneToOneRelationshipTarget,
@@ -14,7 +14,7 @@ use bevy_ecs::relationship::Relationship;
 use bevy_ecs::resource::Resource;
 use bevy_ecs::system::{Commands, Query};
 use bevy_ecs::world::DeferredWorld;
-use bevy_log::{info, warn};
+use bevy_log::warn;
 use bevy_reflect::Reflect;
 use std::ops::{Deref, DerefMut};
 

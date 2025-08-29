@@ -124,11 +124,10 @@ pub fn export_state(
                 new_workspace.floating_windows = Vec::new(); // Reset floating windows, will be populated by window records
 
                 current_workspace_opt = Some(new_workspace);
-                if is_focused {
-                    if let Some((ref current_monitor, _)) = current_monitor_opt {
+                if is_focused
+                    && let Some((ref current_monitor, _)) = current_monitor_opt {
                         workspace_focus_idx = Some(current_monitor.workspaces.elements().len());
                     }
-                }
             } else {
                 eprintln!("Workspace entity {entity:?} not found in query");
                 current_workspace_opt = None; // Ensure we don't use stale data
@@ -140,25 +139,23 @@ pub fn export_state(
         // --- Container Level ---
         if win_idx == 0 {
             // Finish previous container if exists
-            if let Some(current_container) = current_container_opt.take() {
-                if let Some(ref mut current_workspace) = current_workspace_opt {
+            if let Some(current_container) = current_container_opt.take()
+                && let Some(ref mut current_workspace) = current_workspace_opt {
                     current_workspace
                         .containers
                         .elements_mut()
                         .push_back(current_container);
                 }
-            }
 
             // Start new container
             if let Ok(container_data) = container_query.get(entity) {
                 let mut new_container = container_data.clone();
                 new_container.windows_mut().clear();
                 current_container_opt = Some(new_container);
-                if is_focused {
-                    if let Some(ref current_workspace) = current_workspace_opt {
+                if is_focused
+                    && let Some(ref current_workspace) = current_workspace_opt {
                         container_focus_idx = Some(current_workspace.containers.elements().len());
                     }
-                }
             } else {
                 eprintln!("Container entity {entity:?} not found in query");
                 current_container_opt = None; // Ensure we don't use stale data
@@ -246,11 +243,10 @@ pub fn export_state_to_komorebi(world: &mut World) {
     // Step 1: Check KomotoolState.current in a scope
     {
         let komotool_state_res = world.get_resource::<KomotoolState>();
-        if let Some(state_res) = komotool_state_res {
-            if state_res.current.is_some() {
+        if let Some(state_res) = komotool_state_res
+            && state_res.current.is_some() {
                 komotool_state_is_some = true;
             }
-        }
         // Implicitly drop the borrow of komotool_state_res here
     }
 

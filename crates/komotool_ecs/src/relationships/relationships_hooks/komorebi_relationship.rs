@@ -1,5 +1,4 @@
 use crate::components::{Focused, MonocleContainer};
-use crate::prelude::FocusTarget;
 use crate::relationships::KomorebiChildOf;
 use crate::relationships::focused::OldFocusTarget;
 use crate::relationships::monocle_container::MonocleContainerTarget;

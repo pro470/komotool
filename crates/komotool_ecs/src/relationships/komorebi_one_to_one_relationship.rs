@@ -1,6 +1,5 @@
-use crate::relationships;
 use crate::relationships::{
-    GetIndex, HasKomorebiType, KomorebiChildOf, KomorebiChildren, KomorebiType, relationships_hook,
+    GetIndex, KomorebiChildOf, KomorebiChildren, KomorebiType,
 };
 use bevy_ecs::change_detection::MaybeLocation;
 use bevy_ecs::component::{Component, HookContext, Mutable};
@@ -184,8 +183,8 @@ pub fn komorebi_oto_relationship_on_remove<Relationship: KomorebiOneToOneRelatio
         } else {
             return KomorebiOTOonRemoveResult::Err;
         }
-        if let Ok(target_entity_mut) = world.get_entity(target_entity) {
-            if let Some(relationship_target) =
+        if let Ok(target_entity_mut) = world.get_entity(target_entity)
+            && let Some(relationship_target) =
                 target_entity_mut.get::<Relationship::Komorebionetoonerelationshiptarget>()
             {
                 let old_entity = relationship_target.get_entity();
@@ -199,7 +198,6 @@ pub fn komorebi_oto_relationship_on_remove<Relationship: KomorebiOneToOneRelatio
                     return KomorebiOTOonRemoveResult::Ok(target_entity, index);
                 }
             }
-        }
         KomorebiOTOonRemoveResult::Err
     } else {
         warn!(

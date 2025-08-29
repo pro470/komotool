@@ -12,7 +12,7 @@ pub mod window_manager;
 pub mod workspace;
 
 use bevy_ecs::entity::{
-    Entities, Entity, EntityHash, EntityMapper, EntitySetIterator, MapEntities,
+    Entity, EntityHash, EntityMapper, EntitySetIterator, MapEntities,
 };
 use bevy_ecs::relationship::{
     Relationship, RelationshipHookMode, RelationshipSourceCollection, RelationshipTarget,
@@ -23,8 +23,7 @@ use crate::systems::{
     Containermakerset, MaximizedWindowmakerid, Monitormakerset, MonocleContainermakerid,
     Windowmakerset, Workspacemakerset,
 };
-use bevy_ecs::component::StorageType::Table;
-use bevy_ecs::component::{ComponentId, HookContext, Immutable, StorageType};
+use bevy_ecs::component::{ComponentId, HookContext};
 use bevy_ecs::event::Event;
 use bevy_ecs::prelude::Component;
 use bevy_ecs::resource::Resource;
@@ -941,14 +940,14 @@ pub fn bevy_on_remove<BevyRelatonship: Relationship>(
 ) {
     if let Some(target_entity) = world.entity(entity).get::<BevyRelatonship>() {
         let target_entity = target_entity.get();
-        if let Ok(mut target_entity_mut) = world.get_entity_mut(target_entity) {
-            if let Some(mut relationship_target) =
+        if let Ok(mut target_entity_mut) = world.get_entity_mut(target_entity)
+            && let Some(mut relationship_target) =
                 target_entity_mut.get_mut::<BevyRelatonship::RelationshipTarget>()
             {
                 relationship_target.collection_mut_risky().remove(entity);
 
-                if relationship_target.len() == 0 {
-                    if let Ok(mut entity) = world.commands().get_entity(target_entity) {
+                if relationship_target.len() == 0
+                    && let Ok(mut entity) = world.commands().get_entity(target_entity) {
                         // this "remove" operation must check emptiness because in the event that an identical
 
                         // relationship is inserted on top, this despawn would result in the removal of that identical
@@ -964,9 +963,7 @@ pub fn bevy_on_remove<BevyRelatonship: Relationship>(
                             }
                         });
                     }
-                }
             }
-        }
     } else {
         warn!(
             "The {}({entity:?}) relationship does not exist. This is likely a bug.",
@@ -1345,13 +1342,11 @@ fn parent_markers_to_hierarchy<BevyRelationship: Relationship<RelationshipTarget
         if let Some(children) = world
             .entity(childof)
             .get::<BevyRelationship::RelationshipTarget>()
-        {
-            if let Some(parent_idx) = children.get_index_of(&parent) {
+            && let Some(parent_idx) = children.get_index_of(&parent) {
                 f(entity, world.reborrow(), parent_idx + 1);
 
                 return Some(childof);
             }
-        }
     }
     None
 }
@@ -1750,16 +1745,14 @@ pub fn remove_all_markers(mut world: DeferredWorld, entity: Entity) {
         if window_maker_set.contains(&component_id) {
             to_remove.push(component_id);
         }
-        if let Some(monocle_container_maker) = monocle_container_maker {
-            if component_id == **monocle_container_maker {
+        if let Some(monocle_container_maker) = monocle_container_maker
+            && component_id == **monocle_container_maker {
                 to_remove.push(component_id);
             }
-        }
-        if let Some(maximized_window_maker) = maximized_window_maker {
-            if component_id == **maximized_window_maker {
+        if let Some(maximized_window_maker) = maximized_window_maker
+            && component_id == **maximized_window_maker {
                 to_remove.push(component_id);
             }
-        }
     }
 
     for component_id in to_remove {

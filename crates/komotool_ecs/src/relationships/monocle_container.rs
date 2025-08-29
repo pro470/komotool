@@ -8,7 +8,7 @@ use crate::relationships::komorebi_one_to_one_relationship::{
     komorebi_oto_relationship_on_remove, komorebi_oto_relationship_target_on_replace,
 };
 use crate::relationships::{
-    KomorebiChildOf, KomorebiChildren, KomorebiObserver, apply_markers_to_container_hierarchy,
+    KomorebiChildren, KomorebiObserver, apply_markers_to_container_hierarchy,
 };
 use bevy_ecs::component::HookContext;
 use bevy_ecs::entity::Entity;
@@ -29,8 +29,7 @@ impl KomorebiOneToOneRelationship for MonocleContainer {
     fn on_insert(mut world: DeferredWorld, hookcontext: HookContext) {
         if let KomorebiOTOonInsertResult::Ok(target_entity, idx) =
             komorebi_oto_relationship_on_insert::<Self>(world.reborrow(), hookcontext)
-        {
-            if let Some(mut komorebi_children) = world
+            && let Some(mut komorebi_children) = world
                 .entity_mut(target_entity)
                 .get_mut::<KomorebiChildren>()
             {
@@ -53,19 +52,16 @@ impl KomorebiOneToOneRelationship for MonocleContainer {
                     }),
                     &despawn_container_marker_component,
                 )
-            }
-        };
+            };
     }
 
     fn on_remove(mut world: DeferredWorld, hookcontext: HookContext) {
         if let KomorebiOTOonRemoveResult::Ok(target_entity, idx) =
             komorebi_oto_relationship_on_remove::<Self>(world.reborrow(), hookcontext)
-        {
-            if let Some(mut komorebi_children) = world
+            && let Some(mut komorebi_children) = world
                 .entity_mut(target_entity)
                 .get_mut::<KomorebiChildren>()
-            {
-                if !komorebi_children
+                && !komorebi_children
                     .collection_mut_risky()
                     .contains(&hookcontext.entity)
                 {
@@ -89,8 +85,6 @@ impl KomorebiOneToOneRelationship for MonocleContainer {
                         &insert_container_marker_component,
                     )
                 }
-            }
-        }
     }
 }
 

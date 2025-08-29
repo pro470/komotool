@@ -8,7 +8,6 @@ use crate::resources::*;
 use bevy_ecs::entity::{ContainsEntity, Entity};
 use bevy_ecs::query::{QueryEntityError, With};
 use bevy_ecs::system::{Commands, Query, Res, ResMut, Single};
-use bevy_log::info;
 use komorebi_client::{Container, Monitor, Window, Workspace};
 use std::collections::{HashSet, hash_map::Entry};
 
@@ -683,8 +682,8 @@ pub fn build_relation_registry(
                     );
                 }
             }
-            if let Some(monocle) = komo_ws.monocle_container() {
-                if let Some(monocle_entity) = container_map.0.get(monocle.id()) {
+            if let Some(monocle) = komo_ws.monocle_container()
+                && let Some(monocle_entity) = container_map.0.get(monocle.id()) {
                     insert_monitor_marker_component(
                         monitor_marker_idx,
                         *monocle_entity,
@@ -698,10 +697,9 @@ pub fn build_relation_registry(
                         &workspace_extended_marker_map,
                     );
                 };
-            }
 
-            if let Some(maximized) = komo_ws.maximized_window() {
-                if let Some(maximized_entity) = window_map.0.get(&maximized.hwnd.to_string()) {
+            if let Some(maximized) = komo_ws.maximized_window()
+                && let Some(maximized_entity) = window_map.0.get(&maximized.hwnd.to_string()) {
                     insert_monitor_marker_component(
                         monitor_marker_idx,
                         *maximized_entity,
@@ -715,7 +713,6 @@ pub fn build_relation_registry(
                         &workspace_extended_marker_map,
                     );
                 }
-            }
         }
     }
 }

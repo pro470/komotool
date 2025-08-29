@@ -1,14 +1,13 @@
 use crate::components::{
-    Focused, WindowManager, despawn_container_marker_component, despawn_monitor_marker_component,
+    WindowManager, despawn_container_marker_component, despawn_monitor_marker_component,
     despawn_window_marker_component, despawn_workspace_marker_component,
     insert_container_marker_component, insert_window_marker_component,
     insert_workspace_marker_component,
 };
 use crate::prelude::{
-    FocusTarget, MarkerFn, OldIndexInner, apply_markers_to_children, get_children,
+    MarkerFn, OldIndexInner, apply_markers_to_children, get_children,
     insert_monitor_marker_component, run_insert_marker,
 };
-use crate::relationships::focused::OldFocusTarget;
 use crate::relationships::{
     Check, ContainsParentChild, DespawnInsertMarker, GetIndex, InsertMarkerFn, KomorebiObserver,
     KomorebiType, RelationshipIndexSet, bevy_on_insert, bevy_on_remove, get_old_index_inner,
@@ -24,9 +23,9 @@ use bevy_ecs::entity::Entity;
 use bevy_ecs::event::Event;
 use bevy_ecs::prelude::Resource;
 use bevy_ecs::relationship::Relationship;
-use bevy_ecs::system::{In, InMut, Query};
+use bevy_ecs::system::{In, Query};
 use bevy_ecs::world::DeferredWorld;
-use bevy_log::{info, warn};
+use bevy_log::warn;
 use bevy_reflect::Reflect;
 use komorebi_client::{Container, Monitor, Window, Workspace};
 use std::ops::{Deref, DerefMut};
