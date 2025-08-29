@@ -425,11 +425,18 @@ pub fn import_komorebi_container_state(
                     Entry::Occupied(entry) => {
                         let entity = *entry.get();
                         commands.entity(entity).insert(MonocleContainer);
+                        commands
+                            .entity(*workspace_entity)
+                            .add_one_related::<KomorebiChildOf>(entity);
                     }
 
                     Entry::Vacant(entry) => {
                         // Spawn new container with MonocleContainer
-                        let entity = commands.spawn((monocle.clone(), MonocleContainer)).id();
+                        let entity = commands.spawn(monocle.clone()).id();
+                        commands
+                            .entity(*workspace_entity)
+                            .add_one_related::<KomorebiChildOf>(entity);
+                        commands.entity(entity).insert(MonocleContainer);
                         entry.insert(entity);
                     }
                 }

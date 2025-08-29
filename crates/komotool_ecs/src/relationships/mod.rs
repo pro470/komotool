@@ -6,11 +6,14 @@ pub mod maximized_window;
 pub mod monitor;
 pub mod monocle_container;
 pub mod relationships_hooks;
+pub mod relationships_observers;
 pub mod window;
 pub mod window_manager;
 pub mod workspace;
 
-use bevy_ecs::entity::{Entity, EntityHash, EntityMapper, EntitySetIterator, MapEntities};
+use bevy_ecs::entity::{
+    Entities, Entity, EntityHash, EntityMapper, EntitySetIterator, MapEntities,
+};
 use bevy_ecs::relationship::{
     Relationship, RelationshipHookMode, RelationshipSourceCollection, RelationshipTarget,
 };
@@ -22,10 +25,11 @@ use crate::systems::{
 };
 use bevy_ecs::component::StorageType::Table;
 use bevy_ecs::component::{ComponentId, HookContext, Immutable, StorageType};
+use bevy_ecs::event::Event;
 use bevy_ecs::prelude::Component;
 use bevy_ecs::resource::Resource;
 use bevy_ecs::system::Commands;
-use bevy_ecs::world::{DeferredWorld, EntityWorldMut};
+use bevy_ecs::world::{DeferredWorld, EntityRef, EntityWorldMut};
 use bevy_log::warn;
 use bevy_platform::prelude::Box;
 use bevy_reflect::Reflect;
@@ -1203,6 +1207,15 @@ pub trait HasKomorebiType: Component {
     const KOMOREBI_CHILD_TYPE: KomorebiType;
 }
 
+pub trait KomorebiObserver: Event {
+    type ChildOf: Relationship<RelationshipTarget = Self::CHILDREN>;
+    type CHILDREN: RelationshipTarget<Relationship = Self::ChildOf, Collection = RelationshipIndexSet>;
+    fn hook_context(&self) -> HookContext;
+    fn idx(&self) -> Option<usize>;
+    fn komorebi_type(&self) -> KomorebiType {
+        KomorebiType::NotDefined
+    }
+}
 impl HasKomorebiType for Monitor {
     const KOMOREBI_CHILD_TYPE: KomorebiType = KomorebiType::Workspace;
 }
@@ -1575,6 +1588,16 @@ impl KomorebiType {
             2 => Some(KomorebiType::Container),
             3 => Some(KomorebiType::Window),
             _ => None,
+        }
+    }
+
+    pub fn verify_komorebi_type(&self, entity: EntityRef) -> bool {
+        match self {
+            KomorebiType::Monitor => entity.contains::<Monitor>(),
+            KomorebiType::Workspace => entity.contains::<Workspace>(),
+            KomorebiType::Container => entity.contains::<Container>(),
+            KomorebiType::Window => entity.contains::<Window>(),
+            KomorebiType::NotDefined => false,
         }
     }
 }

@@ -40,6 +40,16 @@ pub trait KomorebiOneToOneRelationshipTarget: Component<Mutability = Mutable> + 
     fn on_replace(world: DeferredWorld, hookcontext: HookContext);
 }
 
+pub enum KomorebiOTOonInsertResult {
+    Ok(Entity, usize),
+    Err,
+}
+
+pub enum KomorebiOTOonRemoveResult {
+    Ok(Entity, usize),
+    Err,
+}
+
 pub fn komorebi_oto_relationship_on_insert<Relationship: KomorebiOneToOneRelationship>(
     mut world: DeferredWorld,
     HookContext {
@@ -48,9 +58,9 @@ pub fn komorebi_oto_relationship_on_insert<Relationship: KomorebiOneToOneRelatio
         relationship_hook_mode,
         ..
     }: HookContext,
-) -> bool {
+) -> KomorebiOTOonInsertResult {
     if let RelationshipHookMode::Skip = relationship_hook_mode {
-        return true;
+        return KomorebiOTOonInsertResult::Err;
     }
 
     if let Some(komorebi_child_of) = world.entity(entity).get::<KomorebiChildOf>() {
@@ -58,11 +68,11 @@ pub fn komorebi_oto_relationship_on_insert<Relationship: KomorebiOneToOneRelatio
 
         if let Some(komrebi_children) = world.entity(target_entity).get::<KomorebiChildren>() {
             let komorebi_type = komrebi_children.get_komorebi_type();
-            if komorebi_type != Relationship::CHILD
+            if !Relationship::CHILD.verify_komorebi_type(world.entity(entity))
                 && !matches!(Relationship::CHILD, KomorebiType::NotDefined)
             {
                 world.commands().entity(entity).remove::<Relationship>();
-                return true;
+                return KomorebiOTOonInsertResult::Err;
             }
             if let Some(index) = komrebi_children.get_index_of(&entity) {
                 if let Some(new_target_entity) = get_komorebi_oto_parent::<Relationship>(
@@ -75,7 +85,7 @@ pub fn komorebi_oto_relationship_on_insert<Relationship: KomorebiOneToOneRelatio
                 ) {
                     target_entity = new_target_entity;
                 } else {
-                    return true;
+                    return KomorebiOTOonInsertResult::Err;
                 }
 
                 if let Ok(mut target_entity_mut) = world.get_entity_mut(target_entity) {
@@ -107,8 +117,9 @@ pub fn komorebi_oto_relationship_on_insert<Relationship: KomorebiOneToOneRelatio
                         target_entity
                     );
                     world.commands().entity(entity).remove::<Relationship>();
+                    return KomorebiOTOonInsertResult::Err;
                 }
-                false
+                KomorebiOTOonInsertResult::Ok(target_entity, index)
             } else {
                 warn!(
                     "{}Failed to get index for {}.",
@@ -118,7 +129,7 @@ pub fn komorebi_oto_relationship_on_insert<Relationship: KomorebiOneToOneRelatio
                     core::any::type_name::<Relationship::Komorebionetoonerelationshiptarget>()
                 );
                 world.commands().entity(entity).remove::<Relationship>();
-                true
+                KomorebiOTOonInsertResult::Err
             }
         } else {
             warn!(
@@ -130,7 +141,7 @@ pub fn komorebi_oto_relationship_on_insert<Relationship: KomorebiOneToOneRelatio
                 core::any::type_name::<Relationship::Komorebionetoonerelationshiptarget>()
             );
             world.commands().entity(entity).remove::<Relationship>();
-            true
+            KomorebiOTOonInsertResult::Err
         }
     } else {
         warn!(
@@ -142,7 +153,7 @@ pub fn komorebi_oto_relationship_on_insert<Relationship: KomorebiOneToOneRelatio
             core::any::type_name::<Relationship::Komorebionetoonerelationshiptarget>()
         );
         world.commands().entity(entity).remove::<Relationship>();
-        true
+        KomorebiOTOonInsertResult::Err
     }
 }
 
@@ -154,9 +165,9 @@ pub fn komorebi_oto_relationship_on_remove<Relationship: KomorebiOneToOneRelatio
         relationship_hook_mode,
         ..
     }: HookContext,
-) -> bool {
+) -> KomorebiOTOonRemoveResult {
     if let RelationshipHookMode::Skip = relationship_hook_mode {
-        return true;
+        return KomorebiOTOonRemoveResult::Err;
     }
 
     if let Some(komorebi_child_of) = world.entity(entity).get::<KomorebiChildOf>() {
@@ -171,23 +182,25 @@ pub fn komorebi_oto_relationship_on_remove<Relationship: KomorebiOneToOneRelatio
         ) {
             target_entity = new_target_entity;
         } else {
-            return true;
+            return KomorebiOTOonRemoveResult::Err;
         }
         if let Ok(target_entity_mut) = world.get_entity(target_entity) {
             if let Some(relationship_target) =
                 target_entity_mut.get::<Relationship::Komorebionetoonerelationshiptarget>()
             {
                 let old_entity = relationship_target.get_entity();
+                let index = relationship_target.get_index();
                 if old_entity == entity {
-                    if let Ok(mut entity) = world.commands().get_entity(entity) {
+                    if let Ok(mut entity) = world.commands().get_entity(target_entity) {
                         entity.queue(|mut entity: EntityWorldMut| {
                             entity.remove::<Relationship::Komorebionetoonerelationshiptarget>();
                         });
                     }
+                    return KomorebiOTOonRemoveResult::Ok(target_entity, index);
                 }
             }
         }
-        false
+        KomorebiOTOonRemoveResult::Err
     } else {
         warn!(
             "{}Failed to get {} for {}.",
@@ -197,7 +210,7 @@ pub fn komorebi_oto_relationship_on_remove<Relationship: KomorebiOneToOneRelatio
             core::any::type_name::<KomorebiChildOf>(),
             core::any::type_name::<Relationship::Komorebionetoonerelationshiptarget>()
         );
-        true
+        KomorebiOTOonRemoveResult::Err
     }
 }
 

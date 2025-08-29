@@ -1,11 +1,13 @@
 pub mod container;
 mod focused;
+mod komorebi_relationship;
 pub mod monitor;
+mod monocle_container;
 pub mod window;
 pub mod workspace;
 
 use crate::components::Focused;
-use crate::prelude::{KomorebiChildOf, KomorebiChildren, relationships_hook};
+use crate::prelude::{FocusTarget, KomorebiChildOf, KomorebiChildren, relationships_hook};
 use crate::relationships::HasKomorebiType;
 use crate::relationships::komorebi_one_to_one_relationship::{
     KomorebiOneToOneRelationship, KomorebiOneToOneRelationshipTarget,
@@ -21,6 +23,8 @@ pub fn register_relationships_hooks(world: &mut World) {
     container::register_relationships_hooks_container(world);
     window::register_relationships_hooks_window(world);
     focused::register_relationships_hooks_focused(world);
+    komorebi_relationship::register_relationships_hooks_komorebi_relationship(world);
+    monocle_container::register_relationships_hooks_monocle_container(world);
 }
 
 pub fn on_remove_komorebi_relationship<Komorebitype: HasKomorebiType>(
@@ -36,6 +40,8 @@ pub fn on_remove_komorebi_relationship<Komorebitype: HasKomorebiType>(
     world.commands().entity(entity).remove::<KomorebiChildOf>();
 
     world.commands().entity(entity).remove::<Focused>();
+
+    world.commands().entity(entity).remove::<FocusTarget>();
 }
 
 pub fn register_relationships_hooks_inner<Komorebitype: HasKomorebiType + Component>(

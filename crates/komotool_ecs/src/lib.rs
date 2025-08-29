@@ -16,10 +16,11 @@ pub mod prelude {
 }
 
 use crate::relationships::focused::FocusTarget;
+use crate::relationships::relationships_observers::add_relationships_observers;
 use crate::relationships::{
-    ContainerChildOf, ContainerChildren, KomorebiChildOf, KomorebiChildren, KomorebiType,
-    MonitorChildOf, MonitorChildren, WindowManagerChildren, WorkspaceChildOf, WorkspaceChildren,
-    register_relationships_hooks,
+    AutoMarkerKomorebiRelationship, ContainerChildOf, ContainerChildren, KomorebiChildOf,
+    KomorebiChildren, KomorebiType, MonitorChildOf, MonitorChildren, WindowManagerChildren,
+    WorkspaceChildOf, WorkspaceChildren, register_relationships_hooks,
 };
 use bevy_app::{App, First, Last, Plugin, PostStartup};
 use bevy_ecs::prelude::resource_changed;
@@ -53,6 +54,7 @@ impl Plugin for KomoToolEcsPlugin {
             .init_resource::<KeepAliveMonitors>()
             .init_resource::<KeepAliveWorkspaces>()
             .init_resource::<KeepAliveContainers>()
+            .init_resource::<AutoMarkerKomorebiRelationship>()
             .register_type::<Monitor>()
             .register_type::<Window>()
             .register_type::<Container>()
@@ -74,6 +76,7 @@ impl Plugin for KomoToolEcsPlugin {
             .register_type::<KomorebiChildOf>()
             .register_type::<KomorebiChildren>()
             .register_type::<KomorebiType>()
+            .register_type::<AutoMarkerKomorebiRelationship>()
             .add_systems(
                 First,
                 (
@@ -108,6 +111,7 @@ impl Plugin for KomoToolEcsPlugin {
         register_window_types(app);
         register_workspace_types(app);
         register_komorebi_types(app);
-        register_relationships_hooks(app.world_mut())
+        register_relationships_hooks(app.world_mut());
+        add_relationships_observers(app.world_mut());
     }
 }

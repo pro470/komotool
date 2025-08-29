@@ -5,14 +5,15 @@ use crate::components::{
     insert_workspace_marker_component,
 };
 use crate::prelude::{
-    MarkerFn, OldIndexInner, apply_markers_to_children, get_children,
+    FocusTarget, MarkerFn, OldIndexInner, apply_markers_to_children, get_children,
     insert_monitor_marker_component, run_insert_marker,
 };
+use crate::relationships::focused::OldFocusTarget;
 use crate::relationships::{
-    Check, ContainsParentChild, DespawnInsertMarker, GetIndex, InsertMarkerFn, KomorebiType,
-    RelationshipIndexSet, bevy_on_insert, bevy_on_remove, get_old_index_inner, komotool_on_insert,
-    parent_markers_to_hierarchy, relationships_hook, remove_all_markers, to_hierarchy_with_marker,
-    update_markers_inner,
+    Check, ContainsParentChild, DespawnInsertMarker, GetIndex, InsertMarkerFn, KomorebiObserver,
+    KomorebiType, RelationshipIndexSet, bevy_on_insert, bevy_on_remove, get_old_index_inner,
+    komotool_on_insert, parent_markers_to_hierarchy, relationships_hook, remove_all_markers,
+    to_hierarchy_with_marker, update_markers_inner,
 };
 use crate::resources::{
     ContainerExtendedMarkerMap, MonitorExtendedMarkerMap, WindowExtendedMarkerMap,
@@ -20,6 +21,7 @@ use crate::resources::{
 };
 use bevy_ecs::component::{Component, HookContext};
 use bevy_ecs::entity::Entity;
+use bevy_ecs::event::Event;
 use bevy_ecs::prelude::Resource;
 use bevy_ecs::relationship::Relationship;
 use bevy_ecs::system::{In, InMut, Query};
@@ -27,6 +29,7 @@ use bevy_ecs::world::DeferredWorld;
 use bevy_log::{info, warn};
 use bevy_reflect::Reflect;
 use komorebi_client::{Container, Monitor, Window, Workspace};
+use std::ops::{Deref, DerefMut};
 
 #[derive(Reflect)]
 pub struct KomorebiChildOf(pub Entity);
@@ -128,20 +131,35 @@ impl Relationship for KomorebiChildOf {
                         (parent, komorebi_type),
                     );
                 }
+                if **world
+                    .get_resource::<AutoMarkerKomorebiRelationship>()
+                    .unwrap_or(&AutoMarkerKomorebiRelationship::default())
+                {
+                    insert_match_komorebi_type_to_hierarchy(
+                        entity,
+                        world.reborrow(),
+                        child_idx,
+                        komorebi_type,
+                    );
 
-                insert_match_komorebi_type_to_hierarchy(
-                    entity,
-                    world.reborrow(),
-                    child_idx,
-                    komorebi_type,
-                );
+                    insert_parent_markers_to_komorebi_hierarchy(
+                        world.reborrow(),
+                        entity,
+                        parent,
+                        komorebi_type,
+                    );
+                }
 
-                insert_parent_markers_to_komorebi_hierarchy(
-                    world.reborrow(),
-                    entity,
-                    parent,
+                world.commands().trigger(KomorebiRelationshipOnInsert {
+                    hook_context: HookContext {
+                        entity,
+                        caller,
+                        relationship_hook_mode,
+                        component_id,
+                    },
+                    idx: Some(child_idx),
                     komorebi_type,
-                );
+                });
             },
         )
     }
@@ -174,25 +192,41 @@ impl Relationship for KomorebiChildOf {
         match old_idx {
             OldIndexInner::OldIndex((old_idx, komorebi_type)) => {
                 if let Some(old_idx) = old_idx {
-                    despawn_match_komorebi_type_to_hierarchy(
-                        entity,
-                        world.reborrow(),
-                        old_idx + 1,
-                        komorebi_type,
-                    );
+                    if **world
+                        .get_resource::<AutoMarkerKomorebiRelationship>()
+                        .unwrap_or(&AutoMarkerKomorebiRelationship::default())
+                    {
+                        despawn_match_komorebi_type_to_hierarchy(
+                            entity,
+                            world.reborrow(),
+                            old_idx + 1,
+                            komorebi_type,
+                        );
 
-                    despawn_parent_markers_to_komorebi_hierarchy(
-                        world.reborrow(),
-                        entity,
-                        komorebi_type,
-                    );
+                        despawn_parent_markers_to_komorebi_hierarchy(
+                            world.reborrow(),
+                            entity,
+                            komorebi_type,
+                        );
 
-                    update_markers_komorebi_relationship(
+                        update_markers_komorebi_relationship(
+                            komorebi_type,
+                            world.reborrow(),
+                            entity,
+                            old_idx,
+                        );
+                    }
+
+                    world.commands().trigger(KomorebiRelationshipOnReplace {
+                        hook_context: HookContext {
+                            entity,
+                            caller,
+                            relationship_hook_mode,
+                            component_id,
+                        },
+                        old_idx: Some(old_idx),
                         komorebi_type,
-                        world.reborrow(),
-                        entity,
-                        old_idx,
-                    );
+                    });
                 }
             }
             OldIndexInner::EntityDoesNotExist => {
@@ -208,6 +242,83 @@ impl Relationship for KomorebiChildOf {
     }
 }
 
+#[derive(Resource, Reflect)]
+pub struct AutoMarkerKomorebiRelationship(bool);
+
+impl Default for AutoMarkerKomorebiRelationship {
+    fn default() -> Self {
+        Self(true)
+    }
+}
+
+impl Deref for AutoMarkerKomorebiRelationship {
+    type Target = bool;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for AutoMarkerKomorebiRelationship {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+#[derive(Event)]
+pub struct KomorebiRelationshipOnInsert {
+    pub hook_context: HookContext,
+    pub idx: Option<usize>,
+    pub komorebi_type: KomorebiType,
+}
+
+#[derive(Event)]
+pub struct KomorebiRelationshipOnRemove {
+    pub hook_context: HookContext,
+}
+
+#[derive(Event)]
+pub struct KomorebiRelationshipOnReplace {
+    pub hook_context: HookContext,
+    pub old_idx: Option<usize>,
+    pub komorebi_type: KomorebiType,
+}
+
+impl KomorebiObserver for KomorebiRelationshipOnInsert {
+    type ChildOf = KomorebiChildOf;
+
+    type CHILDREN = KomorebiChildren;
+
+    fn hook_context(&self) -> HookContext {
+        self.hook_context
+    }
+
+    fn idx(&self) -> Option<usize> {
+        self.idx
+    }
+
+    fn komorebi_type(&self) -> KomorebiType {
+        self.komorebi_type
+    }
+}
+
+impl KomorebiObserver for KomorebiRelationshipOnReplace {
+    type ChildOf = KomorebiChildOf;
+
+    type CHILDREN = KomorebiChildren;
+
+    fn hook_context(&self) -> HookContext {
+        self.hook_context
+    }
+
+    fn idx(&self) -> Option<usize> {
+        self.old_idx
+    }
+
+    fn komorebi_type(&self) -> KomorebiType {
+        self.komorebi_type
+    }
+}
 pub fn set_komorebi_type_in_children(
     (In(entity), In(komorebi_type)): (In<Entity>, In<KomorebiType>),
     mut komorebi_children: Query<&mut KomorebiChildren>,
